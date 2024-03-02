@@ -1,0 +1,8 @@
+@Node_HostAddress = http://localhost:5216
+
+
+@name = testName
+GET {{Node_HostAddress}}/feature/{{name}}/state/
+Accept: application/json
+
+###
