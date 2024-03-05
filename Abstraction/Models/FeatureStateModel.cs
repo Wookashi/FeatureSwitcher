@@ -1,7 +1,7 @@
 ﻿namespace Wookashi.FeatureSwitcher.Abstraction.Models;
 
-public class FeatureStateModel(string name, bool isEnabled)
+public record FeatureStateModel(string Name, bool IsEnabled)
 {
-    public string Name { get; set; } = name;
-    public bool IsEnabled { get; set; } = isEnabled;
+    public string Name { get; } = Name;
+    public bool IsEnabled { get; } = IsEnabled;
 }
