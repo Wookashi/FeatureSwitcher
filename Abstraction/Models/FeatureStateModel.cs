@@ -1,4 +1,4 @@
-﻿namespace Wookashi.FeatureSwitcher.Abstraction;
+﻿namespace Wookashi.FeatureSwitcher.Abstraction.Models;
 
 public class FeatureStateModel(string name, bool isEnabled)
 {

@@ -8,8 +8,4 @@
         <RootNamespace>Wookashi.FeatureSwitcher.Abstraction</RootNamespace>
     </PropertyGroup>
 
-    <ItemGroup>
-      <Folder Include="Models\" />
-    </ItemGroup>
-
 </Project>
