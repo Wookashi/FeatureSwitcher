@@ -8,4 +8,8 @@
         <RootNamespace>Wookashi.FeatureSwitcher.Client</RootNamespace>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\Abstraction\Abstraction.csproj" />
+    </ItemGroup>
+
 </Project>
