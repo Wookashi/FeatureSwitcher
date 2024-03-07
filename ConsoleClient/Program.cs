@@ -1,5 +1,4 @@
 ﻿using Spectre.Console;
-using Wookashi.FeatureSwitcher.Abstraction;
 using Wookashi.FeatureSwitcher.Abstraction.Models;
 using Wookashi.FeatureSwitcher.Client;
 
