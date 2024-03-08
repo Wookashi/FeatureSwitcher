@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Wookashi.FeatureSwitcher.Abstraction;
 using Wookashi.FeatureSwitcher.Abstraction.Models;
 
@@ -9,6 +10,10 @@ public class FeatureManager : IFeatureManager
     private bool _alreadyRegistered;
     public void RegisterFeatures(List<FeatureStateModel> features)
     {
+        if (_alreadyRegistered)
+        {
+            throw new InvalidOperationException("Features was registered already!");
+        }
         _alreadyRegistered = true;
      //   throw new System.NotImplementedException();
     }
