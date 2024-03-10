@@ -1,6 +1,7 @@
 ﻿using Spectre.Console;
-using Wookashi.FeatureSwitcher.Abstraction.Models;
 using Wookashi.FeatureSwitcher.Client;
+using Wookashi.FeatureSwitcher.Client.Implementation;
+using Wookashi.FeatureSwitcher.Client.Implementation.Models;
 
 
 var featureCollection = new List<FeatureStateModel>

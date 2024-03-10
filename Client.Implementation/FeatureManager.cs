@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using Wookashi.FeatureSwitcher.Abstraction;
-using Wookashi.FeatureSwitcher.Abstraction.Models;
+﻿using Wookashi.FeatureSwitcher.Client.Abstraction;
+using Wookashi.FeatureSwitcher.Client.Implementation.Models;
 
-namespace Wookashi.FeatureSwitcher.Client;
+namespace Wookashi.FeatureSwitcher.Client.Implementation;
 
 public class FeatureManager : IFeatureManager
 {

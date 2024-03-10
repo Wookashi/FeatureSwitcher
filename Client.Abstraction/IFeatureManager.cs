@@ -1,6 +1,4 @@
-using Wookashi.FeatureSwitcher.Abstraction.Models;
-
-namespace Wookashi.FeatureSwitcher.Abstraction;
+namespace Wookashi.FeatureSwitcher.Client.Abstraction;
 
 public interface IFeatureManager
 {

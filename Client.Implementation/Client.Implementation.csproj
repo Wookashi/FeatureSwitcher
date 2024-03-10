@@ -4,8 +4,8 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <AssemblyName>Wookashi.FeatureSwitcher.Client</AssemblyName>
-        <RootNamespace>Wookashi.FeatureSwitcher.Client</RootNamespace>
+        <AssemblyName>Wookashi.FeatureSwitcher.Client.Implementation</AssemblyName>
+        <RootNamespace>Wookashi.FeatureSwitcher.Client.Implementation</RootNamespace>
         <Version>0.2.1-dev</Version>
         <Title>Feature Switcher Client</Title>
         <Authors>Wookashi</Authors>
@@ -13,7 +13,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Abstraction\Abstraction.csproj" />
+      <ProjectReference Include="..\Client.Abstraction\Client.Abstraction.csproj" />
     </ItemGroup>
 
 </Project>

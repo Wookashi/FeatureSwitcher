@@ -4,8 +4,8 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <AssemblyName>Wookashi.FeatureSwitcher.Abstraction</AssemblyName>
-        <RootNamespace>Wookashi.FeatureSwitcher.Abstraction</RootNamespace>
+        <AssemblyName>Wookashi.FeatureSwitcher.Client.Abstraction</AssemblyName>
+        <RootNamespace>Wookashi.FeatureSwitcher.Client.Abstraction</RootNamespace>
     </PropertyGroup>
 
 </Project>

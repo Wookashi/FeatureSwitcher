@@ -1,12 +1,12 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client\Client.csproj", "{C73349CA-DC08-4B67-9981-4EA0AFAD335C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client.Implementation", "Client.Implementation\Client.Implementation.csproj", "{C73349CA-DC08-4B67-9981-4EA0AFAD335C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node", "Node\Node.csproj", "{099DA7B8-14F4-4387-8ED2-667ECBFBD3F8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleClient", "ConsoleClient\ConsoleClient.csproj", "{D17646EF-E3CB-4F20-A573-F7CD7E5C95CB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Abstraction", "Abstraction\Abstraction.csproj", "{D9E47F17-3AFE-42DC-8D20-0120E6F55FC0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client.Abstraction", "Client.Abstraction\Client.Abstraction.csproj", "{D9E47F17-3AFE-42DC-8D20-0120E6F55FC0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
