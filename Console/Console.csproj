@@ -6,8 +6,8 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-        <AssemblyName>Wookashi.FeatureSwitcher.ConsoleClient</AssemblyName>
-        <RootNamespace>Wookashi.FeatureSwitcher.ConsoleClient</RootNamespace>
+        <AssemblyName>Wookashi.FeatureSwitcher.Console</AssemblyName>
+        <RootNamespace>Wookashi.FeatureSwitcher.Console</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

@@ -1,5 +1,4 @@
 ﻿using Spectre.Console;
-using Wookashi.FeatureSwitcher.Client;
 using Wookashi.FeatureSwitcher.Client.Implementation;
 using Wookashi.FeatureSwitcher.Client.Implementation.Models;
 
@@ -15,8 +14,7 @@ var featureCollection = new List<FeatureStateModel>
     new("Qux2", true),
 };
 
-var featureManager = new FeatureManager();
-featureManager.RegisterFeatures(featureCollection);
+var featureManager = new FeatureManager("Console", featureCollection);
 
 while (true)
 {
