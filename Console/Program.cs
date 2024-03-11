@@ -11,7 +11,7 @@ var featureCollection = new List<FeatureStateModel>
     new("Qux", false),
     new("Quu1", true),
     new("Quu3", false),
-    new("Qux2", true),
+    new("Qux4", true),
 };
 
 var featureManager = new FeatureManager("Console", featureCollection);
