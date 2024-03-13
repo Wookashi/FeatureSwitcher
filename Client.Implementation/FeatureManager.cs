@@ -17,7 +17,7 @@ public class FeatureManager : IFeatureManager
 
     public bool IsFeatureEnabled(string featureName)
     {
-        // do the magic
+        
         var collectionFeature = _features.FirstOrDefault(feature => feature.Name == featureName);
         if (collectionFeature is null)
         {
