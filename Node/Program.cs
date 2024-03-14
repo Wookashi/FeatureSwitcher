@@ -1,3 +1,5 @@
+using Wookashi.FeatureSwitcher.Node.Models;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -16,7 +18,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.MapGet("/feature/{name}/state", (HttpRequest request) =>
+app.MapGet("/features/{name}/state", (HttpRequest request) =>
     {
         var featureName = request.RouteValues["name"];
         return true;
@@ -27,5 +29,11 @@ app.MapGet("/feature/{name}/state", (HttpRequest request) =>
         Summary = "Allow checking feature state in real time",
         Description = "Client can provide feature name and in response is feature state information"
     });
+
+app.MapPost("/features/register", (RegisterFeaturesRequestModel registerModel) =>
+    {
+        //save featres state and register it.
+        return true;
+    }
 
 app.Run();
