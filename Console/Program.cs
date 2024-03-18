@@ -18,7 +18,7 @@ var featureManager = new FeatureManager("Console", featureCollection);
 
 while (true)
 {
-    Thread.Sleep(1000);
+    Thread.Sleep(2000);
     Console.Clear();
     var table = new Table().Centered();
     table.AddColumn("Feature name");
