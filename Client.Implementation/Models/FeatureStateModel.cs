@@ -1,7 +1,8 @@
 ﻿namespace Wookashi.FeatureSwitcher.Client.Implementation.Models;
 
-public record FeatureStateModel(string Name, bool IsEnabled)
+public record FeatureStateModel(string Name, bool InitialState)
 {
     public string Name { get; } = Name;
-    public bool IsEnabled { get; } = IsEnabled;
+    public bool InitialState { get; } = InitialState;
+    public bool CurrentLocalState { get; set; } = InitialState;
 }
