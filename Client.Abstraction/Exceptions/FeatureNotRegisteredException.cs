@@ -1,3 +1,3 @@
 namespace Wookashi.FeatureSwitcher.Client.Abstraction.Exceptions;
 
-public class FeatureNotRegisteredException(string message) : ApplicationException(message, 1);
+public sealed class FeatureNotRegisteredException(string message) : ApplicationException(message, 1);
