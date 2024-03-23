@@ -1,4 +1,6 @@
-﻿using Spectre.Console;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Http;
+using Spectre.Console;
 using Wookashi.FeatureSwitcher.Client.Implementation;
 using Wookashi.FeatureSwitcher.Client.Implementation.Models;
 
@@ -14,12 +16,15 @@ var featureCollection = new List<FeatureStateModel>
     new("Qux2", true),
 };
 
-var featureManager = new FeatureManager("Console", featureCollection);
+var serviceProvider = new ServiceCollection().AddHttpClient().BuildServiceProvider();
+
+var httpClientFactory = serviceProvider.GetService<IHttpClientFactory>();
+
+var featureManager = new FeatureManager(httpClientFactory, "Console", featureCollection);
 
 while (true)
 {
-    Thread.Sleep(2000);
-    Console.Clear();
+    Thread.Sleep(1000);
     var table = new Table().Centered();
     table.AddColumn("Feature name");
     table.AddColumn("State");
@@ -29,13 +34,13 @@ while (true)
     foreach (var featureName in featureCollection.Select(feature => feature.Name))
     {
         
-        table.AddRow(featureName, featureManager.IsFeatureEnabled(featureName) ? "[green]Yes[/]" : "[red]No[/]");
+        table.AddRow(featureName, featureManager.IsFeatureEnabledAsync(featureName).Result ? "[green]Yes[/]" : "[red]No[/]");
     }
 
     table.Border = TableBorder.Rounded;
     table.BorderColor(Color.Blue);
     table.Title = new TableTitle("Feature toggles");
     table.Caption = new TableTitle($"Last updated {DateTime.Now.ToLongTimeString()}");
-
+    Console.Clear();
     AnsiConsole.Write(table);
 }
