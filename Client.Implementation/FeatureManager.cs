@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Net.Sockets;
+using System.Text.Json;
 using Wookashi.FeatureSwitcher.Client.Abstraction;
 using Wookashi.FeatureSwitcher.Client.Abstraction.Exceptions;
 using Wookashi.FeatureSwitcher.Client.Implementation.Models;
@@ -9,13 +10,15 @@ public class FeatureManager : IFeatureManager
 {
     private List<FeatureStateModel> _features;
     private readonly string _appName;
-    private IHttpClientFactory _httpClientFactory;
-    private Uri _nodeAddress = new("http://localhost:5216");
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly Uri _nodeAddress = new("http://localhost:5216");
 
-    public FeatureManager(string appName, List<FeatureStateModel> features, Uri? nodeAddress = null)
+    public FeatureManager(IHttpClientFactory httpClintFactory, string appName, List<FeatureStateModel> features,
+        Uri? nodeAddress = null)
     {
         _appName = appName;
         _features = features;
+        _httpClientFactory = httpClintFactory;
         if (nodeAddress is not null)
         {
             _nodeAddress = nodeAddress;
@@ -27,25 +30,53 @@ public class FeatureManager : IFeatureManager
         var collectionFeature = _features.FirstOrDefault(feature => feature.Name == featureName);
         if (collectionFeature is null)
         {
-            throw new FeatureNotRegisteredException("Feature is not registered in node!");
+            throw new FeatureNotRegisteredException("Feature is not registered yet!");
         }
 
-        var nodeState = await IsFeatureEnabledOnNode(featureName);
+        bool? nodeState = null;
+        try
+        {
+            nodeState = await IsFeatureEnabledOnNode(featureName);
+        }
+        catch (NodeUnreachableException)
+        {
+            //do nothing
+        }
+
+        if (nodeState is not null)
+        {
+            collectionFeature.CurrentLocalState = nodeState.Value;
+        }
 
         return collectionFeature.CurrentLocalState;
     }
 
     private async Task<bool> IsFeatureEnabledOnNode(string featureName)
     {
-        var httpClient = _httpClientFactory.CreateClient();
-        var test = new FeatureStateModel("test", true);
-        var response = await httpClient.PostAsync("/feature-state", new StringContent(JsonSerializer.Serialize(test)));
-
         var model = false;
-        if (response.IsSuccessStatusCode)
+        try
         {
-            var res = response.Content.ReadAsStringAsync().Result;
-            model = JsonSerializer.Deserialize<bool>(res);
+            var httpClient = _httpClientFactory.CreateClient();
+            var response = await httpClient.GetAsync($"{_nodeAddress}/{_appName}/{featureName}/state/");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var res = response.Content.ReadAsStringAsync().Result;
+                model = JsonSerializer.Deserialize<bool>(res);
+            }
+            else
+            {
+                throw new NodeUnreachableException(response.ReasonPhrase ?? "Unknown error");
+            }
+        }
+        catch (HttpRequestException requestException) when (requestException.InnerException is SocketException)
+        {
+            throw new NodeUnreachableException(requestException.Message,
+                ((SocketException)requestException.InnerException).ErrorCode);
+        }
+        catch (Exception exc)
+        {
+            throw new NodeUnreachableException(exc.Message);
         }
 
         return model;
