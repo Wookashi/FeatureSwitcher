@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Http;
 using Spectre.Console;
 using Wookashi.FeatureSwitcher.Client.Implementation;
 using Wookashi.FeatureSwitcher.Client.Implementation.Models;
