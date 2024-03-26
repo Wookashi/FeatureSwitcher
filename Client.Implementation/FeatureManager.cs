@@ -12,14 +12,13 @@ public class FeatureManager : IFeatureManager
     private readonly string _appName;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly Uri _nodeAddress = new("http://localhost:5216");
-    //Tactical comment
 
-    public FeatureManager(IHttpClientFactory httpClintFactory, string appName, List<FeatureStateModel> features,
+    public FeatureManager(IHttpClientFactory httpClientFactory, string appName, List<FeatureStateModel> features,
         Uri? nodeAddress = null)
     {
         _appName = appName;
         _features = features;
-        _httpClientFactory = httpClintFactory;
+        _httpClientFactory = httpClientFactory;
         if (nodeAddress is not null)
         {
             _nodeAddress = nodeAddress;
