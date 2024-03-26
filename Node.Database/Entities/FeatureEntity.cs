@@ -1,12 +1,13 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace Wookashi.FeatureSwitcher.Node.Database.Entities;
 
-internal sealed class FeatureEntity
+[Index(nameof(Name), IsUnique = true)]
+public sealed class FeatureEntity
 {
     [Key]
-    private int Id { get; set; }
+    public int Id { get; set; }
     
     [Required]
     [MaxLength(100)]

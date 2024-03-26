@@ -11,6 +11,17 @@ internal sealed class FeaturesDataContext : DbContext
     {
         optionsBuilder.UseInMemoryDatabase(databaseName: "TestDb");
     }
+    
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        builder.Entity<ApplicationEntity>()
+            .HasIndex(entity => entity.Name)
+            .IsUnique();
+        builder.Entity<FeatureEntity>()
+            .HasIndex(entity => entity.Name)
+            .IsUnique();
+    }
+    
     public DbSet<FeatureEntity> Features { get; set; }
     public DbSet<ApplicationEntity> Applications { get; set; }
 }
