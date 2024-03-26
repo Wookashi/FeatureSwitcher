@@ -1,8 +1,8 @@
 .idea/
 Client.Implementation/[Bb]in
 Client.Implementation/[Oo]bj
-Node/[Bb]in
-Node/[Oo]bj
+Node.Api/[Bb]in
+Node.Api/[Oo]bj
 Node.Abstraction/[Bb]in
 Node.Abstraction/[Oo]bj
 Node.Database/[Bb]in
