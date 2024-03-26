@@ -3,6 +3,10 @@ Client.Implementation/[Bb]in
 Client.Implementation/[Oo]bj
 Node/[Bb]in
 Node/[Oo]bj
+Node.Abstraction/[Bb]in
+Node.Abstraction/[Oo]bj
+Node.Database/[Bb]in
+Node.Database/[Oo]bj
 Client.Abstraction/[Bb]in
 Client.Abstraction/[Oo]bj
 Client.Tests/[Bb]in
