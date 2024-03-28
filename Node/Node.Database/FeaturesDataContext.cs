@@ -1,0 +1,27 @@
+using Microsoft.EntityFrameworkCore;
+using Wookashi.FeatureSwitcher.Node.Database.Entities;
+
+namespace Wookashi.FeatureSwitcher.Node.Database;
+
+internal sealed class FeaturesDataContext : DbContext
+{
+    //TODO Use "normal" db in future
+    protected override void OnConfiguring
+        (DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.UseInMemoryDatabase(databaseName: "TestDb");
+    }
+    
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        builder.Entity<ApplicationEntity>()
+            .HasIndex(entity => entity.Name)
+            .IsUnique();
+        builder.Entity<FeatureEntity>()
+            .HasIndex(entity => entity.Name)
+            .IsUnique();
+    }
+    
+    public DbSet<FeatureEntity> Features { get; set; }
+    public DbSet<ApplicationEntity> Applications { get; set; }
+}

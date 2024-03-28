@@ -1,0 +1,16 @@
+/Users/wookashi/RiderProjects/FeatureSwitcher/Client/bin/Debug/net8.0/Wookashi.FeatureSwitcher.Client.deps.json
+/Users/wookashi/RiderProjects/FeatureSwitcher/Client/bin/Debug/net8.0/Wookashi.FeatureSwitcher.Client.dll
+/Users/wookashi/RiderProjects/FeatureSwitcher/Client/bin/Debug/net8.0/Wookashi.FeatureSwitcher.Client.pdb
+/Users/wookashi/RiderProjects/FeatureSwitcher/Client/obj/Debug/net8.0/Client.GeneratedMSBuildEditorConfig.editorconfig
+/Users/wookashi/RiderProjects/FeatureSwitcher/Client/obj/Debug/net8.0/Client.AssemblyInfoInputs.cache
+/Users/wookashi/RiderProjects/FeatureSwitcher/Client/obj/Debug/net8.0/Client.AssemblyInfo.cs
+/Users/wookashi/RiderProjects/FeatureSwitcher/Client/obj/Debug/net8.0/Client.csproj.CoreCompileInputs.cache
+/Users/wookashi/RiderProjects/FeatureSwitcher/Client/obj/Debug/net8.0/Client.sourcelink.json
+/Users/wookashi/RiderProjects/FeatureSwitcher/Client/obj/Debug/net8.0/Wookashi.FeatureSwitcher.Client.dll
+/Users/wookashi/RiderProjects/FeatureSwitcher/Client/obj/Debug/net8.0/refint/Wookashi.FeatureSwitcher.Client.dll
+/Users/wookashi/RiderProjects/FeatureSwitcher/Client/obj/Debug/net8.0/Wookashi.FeatureSwitcher.Client.pdb
+/Users/wookashi/RiderProjects/FeatureSwitcher/Client/obj/Debug/net8.0/ref/Wookashi.FeatureSwitcher.Client.dll
+/Users/wookashi/RiderProjects/FeatureSwitcher/Client/bin/Debug/net8.0/Wookashi.FeatureSwitcher.Abstraction.dll
+/Users/wookashi/RiderProjects/FeatureSwitcher/Client/bin/Debug/net8.0/Wookashi.FeatureSwitcher.Abstraction.pdb
+/Users/wookashi/RiderProjects/FeatureSwitcher/Client/obj/Debug/net8.0/Client.csproj.AssemblyReference.cache
+/Users/wookashi/RiderProjects/FeatureSwitcher/Client/obj/Debug/net8.0/Client.csproj.Up2Date

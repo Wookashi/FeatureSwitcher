@@ -1,0 +1,118 @@
+{
+  "format": 1,
+  "restore": {
+    "/Users/wookashi/RiderProjects/FeatureSwitcher/Client/Client.csproj": {}
+  },
+  "projects": {
+    "/Users/wookashi/RiderProjects/FeatureSwitcher/Client.Abstraction/Client.Abstraction.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/wookashi/RiderProjects/FeatureSwitcher/Client.Abstraction/Client.Abstraction.csproj",
+        "projectName": "Wookashi.FeatureSwitcher.Abstraction",
+        "projectPath": "/Users/wookashi/RiderProjects/FeatureSwitcher/Client.Abstraction/Client.Abstraction.csproj",
+        "packagesPath": "/Users/wookashi/.nuget/packages/",
+        "outputPath": "/Users/wookashi/RiderProjects/FeatureSwitcher/Client.Abstraction/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/wookashi/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.201/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "/Users/wookashi/RiderProjects/FeatureSwitcher/Client/Client.csproj": {
+      "version": "0.2.1-dev",
+      "restore": {
+        "projectUniqueName": "/Users/wookashi/RiderProjects/FeatureSwitcher/Client/Client.csproj",
+        "projectName": "Wookashi.FeatureSwitcher.Client",
+        "projectPath": "/Users/wookashi/RiderProjects/FeatureSwitcher/Client/Client.csproj",
+        "packagesPath": "/Users/wookashi/.nuget/packages/",
+        "outputPath": "/Users/wookashi/RiderProjects/FeatureSwitcher/Client/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/wookashi/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {
+              "/Users/wookashi/RiderProjects/FeatureSwitcher/Client.Abstraction/Client.Abstraction.csproj": {
+                "projectPath": "/Users/wookashi/RiderProjects/FeatureSwitcher/Client.Abstraction/Client.Abstraction.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.201/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}
