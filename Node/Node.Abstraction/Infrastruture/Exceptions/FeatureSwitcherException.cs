@@ -1,4 +1,4 @@
-namespace Wookashi.FeatureSwitcher.Node.Exceptions;
+namespace Wookashi.FeatureSwitcher.Node.Abstraction.Infrastruture.Exceptions;
 
 public class FeatureSwitcherException(string message, int code) : Exception(message)
 {

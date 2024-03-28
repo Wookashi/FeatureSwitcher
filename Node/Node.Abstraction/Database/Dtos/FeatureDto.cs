@@ -1,4 +1,4 @@
-namespace Wookashi.FeatureSwitcher.Node.Database.Dtos;
+namespace Wookashi.FeatureSwitcher.Node.Abstraction.Database.Dtos;
 
 public sealed class FeatureDto(string featureName, bool state)
 {

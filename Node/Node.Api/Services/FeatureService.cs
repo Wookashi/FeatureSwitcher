@@ -1,6 +1,6 @@
-using Wookashi.FeatureSwitcher.Node.Abstraction;
-using Wookashi.FeatureSwitcher.Node.Database.Dtos;
-using Wookashi.FeatureSwitcher.Node.Database.Repositories;
+using Wookashi.FeatureSwitcher.Node.Abstraction.Database.Dtos;
+using Wookashi.FeatureSwitcher.Node.Abstraction.Database.Repositories;
+using Wookashi.FeatureSwitcher.Node.Abstraction.Infrastruture.Exceptions;
 using Wookashi.FeatureSwitcher.Node.Models;
 
 namespace Wookashi.FeatureSwitcher.Node.Services;
@@ -33,7 +33,7 @@ internal sealed class FeatureService
             .Where(feature => !appFeatures.Select(ftr => ftr.Name)
                 .Contains(feature.FeatureName)).ToList();
 
-        _featureRepository.AddFeatures(featuresToAdd);
+        _featureRepository.AddFeaturesForApplication(featuresToAdd);
         featuresList.AddRange(featuresToAdd
             .Select(feature => new FeatureDto(
                 registerModel.AppName, 

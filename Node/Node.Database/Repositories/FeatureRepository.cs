@@ -1,4 +1,5 @@
-using Wookashi.FeatureSwitcher.Node.Database.Dtos;
+using Wookashi.FeatureSwitcher.Node.Abstraction.Database.Dtos;
+using Wookashi.FeatureSwitcher.Node.Abstraction.Database.Repositories;
 using Wookashi.FeatureSwitcher.Node.Database.Entities;
 
 namespace Wookashi.FeatureSwitcher.Node.Database.Repositories;

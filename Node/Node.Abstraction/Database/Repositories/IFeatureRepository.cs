@@ -1,6 +1,6 @@
-using Wookashi.FeatureSwitcher.Node.Database.Dtos;
+using Wookashi.FeatureSwitcher.Node.Abstraction.Database.Dtos;
 
-namespace Wookashi.FeatureSwitcher.Node.Database.Repositories;
+namespace Wookashi.FeatureSwitcher.Node.Abstraction.Database.Repositories;
 
 public interface IFeatureRepository
 {
