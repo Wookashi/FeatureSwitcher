@@ -1,4 +1,4 @@
-namespace Wookashi.FeatureSwitcher.Node.Models;
+namespace Wookashi.FeatureSwitcher.Node.Api.Models;
 
 internal class RegisterFeatureStateModel(string featureName, bool initialState)
 {

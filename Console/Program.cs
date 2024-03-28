@@ -19,7 +19,7 @@ var serviceProvider = new ServiceCollection().AddHttpClient().BuildServiceProvid
 
 var httpClientFactory = serviceProvider.GetService<IHttpClientFactory>();
 
-var featureManager = new FeatureManager(httpClientFactory, "Console", featureCollection);
+var featureManager = new FeatureManager(httpClientFactory!, "Console", featureCollection);
 
 while (true)
 {

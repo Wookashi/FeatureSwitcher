@@ -5,8 +5,8 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-        <AssemblyName>Wookashi.FeatureSwitcher.Node</AssemblyName>
-        <RootNamespace>Wookashi.FeatureSwitcher.Node</RootNamespace>
+        <AssemblyName>Wookashi.FeatureSwitcher.Node.Api</AssemblyName>
+        <RootNamespace>Wookashi.FeatureSwitcher.Node.Api</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -21,11 +21,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Database\" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\Node.Abstraction\Node.Abstraction.csproj" />
+      <ProjectReference Include="..\Node.Database\Node.Database.csproj" />
     </ItemGroup>
 
 </Project>

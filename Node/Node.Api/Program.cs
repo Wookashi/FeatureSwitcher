@@ -1,5 +1,12 @@
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.OpenApi.Models;
-using Wookashi.FeatureSwitcher.Node.Models;
+using Wookashi.FeatureSwitcher.Node.Abstraction.Database.Dtos;
+using Wookashi.FeatureSwitcher.Node.Abstraction.Database.Repositories;
+using Wookashi.FeatureSwitcher.Node.Abstraction.Infrastructure.Exceptions;
+using Wookashi.FeatureSwitcher.Node.Api.Models;
+using Wookashi.FeatureSwitcher.Node.Api.Services;
+using Wookashi.FeatureSwitcher.Node.Database.Extensions;
+using Wookashi.FeatureSwitcher.Node.Database.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddDatabase();
 
 var app = builder.Build();
 
@@ -19,22 +27,21 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-//TODO Temporary solution
 //TODO Add to settings or system variables
-var _environment = "testEnvironment";
-var featuresList = new List<FeatureStateDto>
-{
-    new("someAppName","testEnvironment","someFeatureForTestPurposes", true),
-    new("someOtherAppName","testOtherEnvironment","someFeatureForTestPurposes2", true)
-
-};
-
+const string environment = "testEnvironment";
 // END TODO
 
-app.MapGet("/{applicationName}/{featureName}/state/", (HttpRequest request, string applicationName , string featureName) =>
+app.MapGet("/{applicationName}/{featureName}/state/", (string applicationName, string featureName, IFeatureRepository featureRepository) =>
     {
-        //todo return notfoundcode
-        return true;
+        var featureService = new FeatureService(featureRepository, new ApplicationDto(applicationName, environment));
+        try
+        {
+            return Results.Ok(featureService.GetFeatureState(featureName));           
+        }
+        catch (FeatureNotFoundException)
+        {
+            return Results.NotFound();
+        }
     })
     .WithName("GetFeatureState")
     .WithOpenApi(operation => new OpenApiOperation(operation)
@@ -43,40 +50,22 @@ app.MapGet("/{applicationName}/{featureName}/state/", (HttpRequest request, stri
         Description = "Client can provide feature name and in response is feature state information"
     });
 
-app.MapPost("/features/register", (RegisterFeaturesRequestModel registerModel) =>
+app.MapPost("/features/register", (RegisterFeaturesRequestModel registerModel, IFeatureRepository featureRepository) =>
     {
-        //TODO check environment
-        if (registerModel.Environment != _environment)
+        if (registerModel.Environment != environment)
         {
             return Results.BadRequest(new BadHttpRequestException("Environment does not match"));
         }
-        
-       // var appFeatures = featuresList.Where(feature => feature.Environment == registerModel.Environment && feature.AppName == registerModel.AppName).ToList();
-        var appFeatures = featuresList
-            .Where(feature => feature.Environment == registerModel.Environment && feature.AppName == registerModel.AppName)
-            .ToList();
 
-        var featuresToDelete = appFeatures
-            .Where(feature => !registerModel.Features.Select(f => f.FeatureName)
-                .Contains(feature.FeatureName)).ToList();
-        
-        var featuresToAdd = registerModel.Features
-            .Where(feature => !appFeatures.Select(f => f.FeatureName)
-                .Contains(feature.FeatureName)).ToList();
-            
-        featuresList.AddRange(featuresToAdd
-            .Select(feature => new FeatureStateDto(
-                registerModel.AppName, 
-                registerModel.Environment,
-                feature.FeatureName,
-                feature.InitialState))
-            .ToList());
+        var featureService = new FeatureService(featureRepository, new ApplicationDto(registerModel.AppName, registerModel.Environment));
 
-        foreach (var feature in featuresToDelete)
+        try
         {
-            var featureToDelete = featuresList.FirstOrDefault(ftr => ftr.FeatureName == feature.FeatureName);
-            if (featureToDelete == null) continue;
-            featuresList.Remove(featureToDelete);
+            featureService.RegisterFeatures(registerModel.Features);           
+        }
+        catch (IncorrectEnvironmentException exception)
+        {
+            return Results.BadRequest(new BadHttpRequestException(exception.Message));
         }
         return Results.Ok();
     })

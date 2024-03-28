@@ -1,8 +1,8 @@
 namespace Wookashi.FeatureSwitcher.Node.Abstraction.Database.Dtos;
 
-public sealed class ApplicationDto(string appName, string environment)
+public sealed class ApplicationDto(string name, string environment)
 {
-    public string AppName { get; set; } = appName;
+    public string Name { get; set; } = name;
     public string Environment { get; set; } = environment;
     
 }

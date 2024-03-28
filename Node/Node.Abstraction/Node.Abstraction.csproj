@@ -9,7 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Infrastruture\" />
+      <Folder Include="Infrastructure\" />
     </ItemGroup>
 
 </Project>

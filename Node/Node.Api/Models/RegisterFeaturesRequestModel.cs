@@ -1,8 +1,8 @@
-namespace Wookashi.FeatureSwitcher.Node.Models;
+namespace Wookashi.FeatureSwitcher.Node.Api.Models;
 
 internal sealed class RegisterFeaturesRequestModel
 {
-    internal string AppName { get; set; }
-    public string Environment { get; set; }
-    internal List<RegisterFeatureStateModel> Features { get; set; }
+    internal string AppName { get; set; } = String.Empty;
+    public string Environment { get; set; } = String.Empty;
+    internal List<RegisterFeatureStateModel> Features { get; set; } = [];
 }
