@@ -1,6 +1,6 @@
 .idea/
-Client.Implementation/[Bb]in
-Client.Implementation/[Oo]bj
+Client/Client.Implementation/[Bb]in
+Client/Client.Implementation/[Oo]bj
 Node/Node.Api/[Bb]in
 Node/Node.Api/[Oo]bj
 Node/Node.Abstraction/[Bb]in
