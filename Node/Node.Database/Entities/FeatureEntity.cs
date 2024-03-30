@@ -16,5 +16,5 @@ public sealed class FeatureEntity
     [Required]
     public bool IsEnabled { get; set; }
     
-    public ApplicationEntity Application { get; set; }
+    public ApplicationEntity? Application { get; set; }
 }
