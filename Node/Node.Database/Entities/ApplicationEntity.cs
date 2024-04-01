@@ -6,11 +6,13 @@ namespace Wookashi.FeatureSwitcher.Node.Database.Entities;
 [Index(nameof(Name), IsUnique = true)]
 public class ApplicationEntity
 {
-    [Key] private int Id { get; set; }
+    [Key] 
+    public int 
+        Id { get; set; }
 
     [Required]
     [MaxLength(100)]
-public string Name { get; set; } = null!;
+    public string Name { get; set; } = null!;
 
     [Required]
     [MaxLength(100)]
