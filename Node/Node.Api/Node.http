@@ -1,24 +1,24 @@
-@Node_HostAddress = http://localhost:5216/api
+@Node_HostAddress = http://localhost:5216
 
-@disabledFeatureName = testFeatureNameDisabled
-@enabledFeatureName = testFeatureNameEnabled
-@applicationName = testApplicationName
-@environment = testEnvironment
+@disabledFeatureName = testFnDsbed
+@enabledFeatureName = testFnEnbled
+@applicationName = tAppName
+@environment = testEnv
 
-POST {{Node_HostAddress}}/features/register HTTP/1.1
+POST {{Node_HostAddress}}/applications HTTP/1.1
 content-type: application/json
 
 {
-  "AppName": "{{applicationName}}",
-  "Environment": "{{environment}}",
-  "Features": [
+  "appName": "{{applicationName}}",
+  "environment": "{{environment}}",
+  "features": [
     {
-      "FeatureName": "{{enabledFeatureName}}",
-      "InitialState": true
+      "featureName": "{{enabledFeatureName}}",
+      "initialState": true
     },
     {
-      "FeatureName": "{{disabledFeatureName}}",
-      "InitialState": false
+      "featureName": "{{disabledFeatureName}}",
+      "initialState": false
     }
   ]
 }
