@@ -8,6 +8,16 @@ namespace Wookashi.FeatureSwitcher.Node.Database.Repositories;
 
 internal sealed class FeatureRepository : IFeatureRepository
 {
+    public List<ApplicationDto> GetApplications()
+    {
+        using (var context = new FeaturesDataContext())
+        {
+            return context.Applications
+                .Select(application => new ApplicationDto(application.Name, application.Environment))
+                .ToList();
+        }
+    }
+
     public List<FeatureDto> GetFeaturesForApplication(ApplicationDto application)
     {
         using (var context = new FeaturesDataContext())

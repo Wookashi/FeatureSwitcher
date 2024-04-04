@@ -8,23 +8,22 @@ namespace Wookashi.FeatureSwitcher.Node.Api.Services;
 internal sealed class FeatureService
 {
     private readonly IFeatureRepository _featureRepository;
-    private readonly ApplicationDto _application;
     
-    public FeatureService(IFeatureRepository featuresRepository, ApplicationDto application)
+    public FeatureService(IFeatureRepository featuresRepository)
     {
         _featureRepository = featuresRepository;
-        _application = application;
      //   _environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
     }
 
     /// <summary>
     /// Register features for application. new features will be added, current will stay and unsupported will be deleted
     /// </summary>
-    /// <param name="featureModels"></param>
+    /// <param name="application">Application to register</param>
+    /// <param name="featureModels">Features to register</param>
     /// <exception cref="IncorrectEnvironmentException"></exception>
-    internal void RegisterFeatures(List<RegisterFeatureStateModel> featureModels)
+    internal void RegisterApplication(ApplicationDto application, List<RegisterFeatureStateModel> featureModels)
     {
-        var appFeatures = _featureRepository.GetFeaturesForApplication(_application).ToList();
+        var appFeatures = _featureRepository.GetFeaturesForApplication(application).ToList();
 
         var featuresToAdd = featureModels
             .Where(feature => !appFeatures
@@ -35,7 +34,7 @@ internal sealed class FeatureService
         
         if (featuresToAdd.Any())
         {
-            _featureRepository.AddFeaturesForApplication(_application, featuresToAdd);
+            _featureRepository.AddFeaturesForApplication(application, featuresToAdd);
         }
 
         
@@ -45,12 +44,22 @@ internal sealed class FeatureService
         
         if (featuresToDelete.Any())
         {
-            _featureRepository.DeleteFeaturesForApplication(_application, featuresToDelete);
+            _featureRepository.DeleteFeaturesForApplication(application, featuresToDelete);
         }
     }
 
-    internal bool GetFeatureState(string featureName)
+    internal bool GetFeatureState(ApplicationDto application, string featureName)
     {
-        return _featureRepository.GetFeatureState(_application, featureName);
+        return _featureRepository.GetFeatureState(application, featureName);
+    }
+    
+    internal List<ApplicationDto> GetApplications()
+    {
+        return _featureRepository.GetApplications();
+    }
+    
+    internal List<FeatureDto> GetFeaturesForApplication(ApplicationDto application)
+    {
+        return _featureRepository.GetFeaturesForApplication(application);
     }
 }
