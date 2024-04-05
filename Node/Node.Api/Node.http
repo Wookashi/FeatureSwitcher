@@ -2,7 +2,7 @@
 
 @disabledFeatureName = testFnDsbed
 @enabledFeatureName = testFnEnbled
-@applicationName = tAppName
+@applicationName = AppName
 @environment = testEnv
 
 POST {{Node_HostAddress}}/applications HTTP/1.1
@@ -25,22 +25,17 @@ content-type: application/json
 
 ###
 
-GET {{Node_HostAddress}}/applications/{{applicationName}}/features/{{enabledFeatureName}}/state/
-Accept: application/json
-
-###
-
-GET {{Node_HostAddress}}/applications/{{applicationName}}/features/{{disabledFeatureName}}/state/
-Accept: application/json
-
-###
-
 GET {{Node_HostAddress}}/applications/
 Accept: application/json
 
 ###
 
-GET {{Node_HostAddress}}/application/{{applicationName}}/features
+GET {{Node_HostAddress}}/applications/{{applicationName}}/features
+Accept: application/json
+
+###
+
+GET {{Node_HostAddress}}/applications/{{applicationName}}/features/{{disabledFeatureName}}/state/
 Accept: application/json
 
 ###
