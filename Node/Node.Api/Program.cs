@@ -57,25 +57,6 @@ app.MapPost("/applications", (ApplicationRegistrationRequestModel registerModel,
         Summary = "Allow register current used features in specific app",
         Description = "Client can provide all possible features it can serve"
     });
-
-app.MapGet("/{applicationName}/{featureName}/state/", (string applicationName, string featureName, IFeatureRepository featureRepository) =>
-    {
-        var featureService = new FeatureService(featureRepository);
-        try
-        {
-            return Results.Ok(featureService.GetFeatureState(new ApplicationDto(applicationName, environment), featureName));           
-        }
-        catch (FeatureNotFoundException)
-        {
-            return Results.NotFound();
-        }
-    })
-    .WithName("GetFeatureState")
-    .WithOpenApi(operation => new OpenApiOperation(operation)
-    {
-        Summary = "Allow checking feature state in real time",
-        Description = "Client can provide feature name and in response is feature state information"
-    });
     
 app.MapGet("/applications", (IFeatureRepository featureRepository) =>
     {
@@ -116,5 +97,24 @@ app.MapGet("/applications/{applicationName}/features/", (string applicationName,
     Summary = "List all features",
     Description = "List all features with states for application"
 });
+
+app.MapGet("/applications/{applicationName}/features/{featureName}/state/", (string applicationName, string featureName, IFeatureRepository featureRepository) =>
+    {
+        var featureService = new FeatureService(featureRepository);
+        try
+        {
+            return Results.Ok(featureService.GetFeatureState(new ApplicationDto(applicationName, environment), featureName));           
+        }
+        catch (FeatureNotFoundException)
+        {
+            return Results.NotFound();
+        }
+    })
+    .WithName("GetFeatureState")
+    .WithOpenApi(operation => new OpenApiOperation(operation)
+    {
+        Summary = "Allow checking feature state in real time",
+        Description = "Client can provide feature name and in response is feature state information"
+    });
 
 app.Run();
