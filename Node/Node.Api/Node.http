@@ -40,7 +40,6 @@ Accept: application/json
 
 ###
 
-
 GET {{Node_HostAddress}}/applications/{{applicationName}}/features/{{enabledFeatureName}}/state/
 Accept: application/json
 
