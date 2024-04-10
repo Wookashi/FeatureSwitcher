@@ -8,7 +8,7 @@ namespace Wookashi.FeatureSwitcher.Client.Implementation;
 
 public class FeatureManager : IFeatureManager
 {
-    private List<FeatureStateModel> _features;
+    private readonly List<FeatureStateModel> _features;
     private readonly string _appName;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly Uri _nodeAddress = new("http://localhost:5216");
@@ -53,7 +53,7 @@ public class FeatureManager : IFeatureManager
 
     private async Task<bool> IsFeatureEnabledOnNode(string featureName)
     {
-        var model = false;
+        bool model;
         try
         {
             var httpClient = _httpClientFactory.CreateClient();
