@@ -29,6 +29,7 @@ app.UseHttpsRedirection();
 
 //TODO Add to settings or system variables
 const string environment = "testEnv";
+
 // END TODO
 
 app.MapPost("/applications", (ApplicationRegistrationRequestModel registerModel, IFeatureRepository featureRepository) =>
