@@ -57,7 +57,7 @@ public class FeatureManager : IFeatureManager
         try
         {
             var httpClient = _httpClientFactory.CreateClient();
-            var response = await httpClient.GetAsync($"{_nodeAddress}/{_appName}/{featureName}/state/");
+            var response = await httpClient.GetAsync($"{_nodeAddress}/applications/{_appName}/features/{featureName}/state/");
 
             if (response.IsSuccessStatusCode)
             {
