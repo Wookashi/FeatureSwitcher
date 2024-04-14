@@ -1,4 +1,5 @@
 ﻿using System.Net.Sockets;
+using System.Text;
 using System.Text.Json;
 using Wookashi.FeatureSwitcher.Client.Abstraction;
 using Wookashi.FeatureSwitcher.Client.Abstraction.Exceptions;
@@ -10,13 +11,15 @@ public class FeatureManager : IFeatureManager
 {
     private readonly List<FeatureStateModel> _features;
     private readonly string _appName;
+    private readonly string _environmentName;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly Uri _nodeAddress = new("http://localhost:5216");
 
-    public FeatureManager(IHttpClientFactory httpClientFactory, string appName, List<FeatureStateModel> features,
+    public FeatureManager(IHttpClientFactory httpClientFactory, string appName, string environmentName, List<FeatureStateModel> features,
         Uri? nodeAddress = null)
     {
         _appName = appName;
+        _environmentName = environmentName;
         _features = features;
         _httpClientFactory = httpClientFactory;
         if (nodeAddress is not null)
@@ -51,6 +54,43 @@ public class FeatureManager : IFeatureManager
         return collectionFeature.CurrentLocalState;
     }
 
+    public async Task RegisterFeaturesOnNode() // TODO change in future releases should be done automaticaly
+    {
+        try
+        {
+            var httpClient = _httpClientFactory.CreateClient();
+            var applicationPackage = new AppRegistrationModel
+            {
+                AppName = _appName,
+                Environment = _environmentName,
+                Features = _features.Select(feature =>
+                        new AppRegistrationModel.RegisterFeatureStateModel(
+                            featureName: feature.Name,
+                            initialState: feature.InitialState)
+                    )
+                    .ToList()
+            };
+            var content = new StringContent(JsonSerializer.Serialize(applicationPackage), Encoding.UTF8, "application/json");
+
+            var response = await httpClient.PostAsync($"{_nodeAddress}applications", content);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new RegistrationException(response.ReasonPhrase ?? "Unknown error", (int)response.StatusCode);
+            }
+        }
+        catch (HttpRequestException requestException) when (requestException.InnerException is SocketException)
+        {
+            throw new NodeUnreachableException(requestException.Message,
+                ((SocketException)requestException.InnerException).ErrorCode);
+        }
+        catch (Exception exc)
+        {
+            throw new NodeUnreachableException(exc.Message);
+        }
+
+    }
+    
     private async Task<bool> IsFeatureEnabledOnNode(string featureName)
     {
         bool model;
