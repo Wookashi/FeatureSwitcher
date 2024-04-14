@@ -52,7 +52,7 @@ app.MapPost("/applications", (ApplicationRegistrationRequestModel registerModel,
 
         return Results.Created();
     })
-    .WithName("RegisterFeatures")
+    .WithName("Register Application and Features")
     .WithOpenApi(operation => new OpenApiOperation(operation)
     {
         Summary = "Allow register current used features in specific app",
