@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Wookashi.FeatureSwitcher.Node.Database.Entities;
 
 [Index(nameof(Name), IsUnique = true)]
-public sealed class FeatureEntity
+public sealed class FeatureEntity(ApplicationEntity application)
 {
     [Key]
     public int Id { get; set; }
@@ -16,5 +16,5 @@ public sealed class FeatureEntity
     [Required]
     public bool IsEnabled { get; set; }
     
-    public ApplicationEntity? Application { get; set; }
+    public ApplicationEntity Application { get; set; } = application;
 }
