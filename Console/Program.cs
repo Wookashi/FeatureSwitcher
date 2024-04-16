@@ -19,7 +19,8 @@ var serviceProvider = new ServiceCollection().AddHttpClient().BuildServiceProvid
 
 var httpClientFactory = serviceProvider.GetService<IHttpClientFactory>();
 
-var featureManager = new FeatureManager(httpClientFactory!, "Console", featureCollection);
+var featureManager = new FeatureManager(httpClientFactory!, "Console", "testEnv", featureCollection);
+await featureManager.RegisterFeaturesOnNode();
 
 while (true)
 {
