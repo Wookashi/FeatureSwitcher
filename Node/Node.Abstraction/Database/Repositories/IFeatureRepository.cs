@@ -9,4 +9,5 @@ public interface IFeatureRepository
     public void AddFeaturesForApplication(ApplicationDto application, List<FeatureDto> featuresList);
     public void DeleteFeaturesForApplication(ApplicationDto application, List<FeatureDto> featuresList);
     public bool GetFeatureState(ApplicationDto application, string featureName);
+    public void UpdateFeature(ApplicationDto application, FeatureDto featureDto);
 }

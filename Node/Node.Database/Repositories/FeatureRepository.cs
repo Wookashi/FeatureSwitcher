@@ -50,6 +50,24 @@ internal sealed class FeatureRepository : IFeatureRepository
         }
     }
 
+    public void UpdateFeature(ApplicationDto application, FeatureDto featureDto)
+    {
+        using (var context = new FeaturesDataContext())
+        {
+            var featureEntity = context.Features
+                .FirstOrDefault(feature => feature.Application.Name == application.Name
+                                           && feature.Application.Environment == application.Environment
+                                           && feature.Name == featureDto.Name);
+
+            if (featureEntity is null)
+            {
+                throw new FeatureNotFoundException("Feature not found");
+            }
+            featureEntity.IsEnabled = featureDto.State;
+            context.SaveChanges();
+        }
+    }
+
     public void AddFeaturesForApplication(ApplicationDto application, List<FeatureDto> featuresList)
     {
         if (featuresList.Count == 0)
@@ -75,11 +93,11 @@ internal sealed class FeatureRepository : IFeatureRepository
                                            && app.Environment == application.Environment);
             }
             
-            var featureEntities = featuresList.Select(feature => new FeatureEntity()
+            var featureEntities = featuresList.Select(feature => new FeatureEntity
             {
-                Application = applicationEntity,
                 Name = feature.Name,
-                IsEnabled = feature.State
+                IsEnabled = feature.State,
+                Application = applicationEntity
             });
             context.Features.AddRange(featureEntities);
             context.SaveChanges();

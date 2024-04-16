@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Http.HttpResults;
+using System.Text.Json;
 using Microsoft.OpenApi.Models;
 using Wookashi.FeatureSwitcher.Node.Abstraction.Database.Dtos;
 using Wookashi.FeatureSwitcher.Node.Abstraction.Database.Repositories;
@@ -6,7 +6,6 @@ using Wookashi.FeatureSwitcher.Node.Abstraction.Infrastructure.Exceptions;
 using Wookashi.FeatureSwitcher.Node.Api.Models;
 using Wookashi.FeatureSwitcher.Node.Api.Services;
 using Wookashi.FeatureSwitcher.Node.Database.Extensions;
-using Wookashi.FeatureSwitcher.Node.Database.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -116,6 +115,28 @@ app.MapGet("/applications/{applicationName}/features/{featureName}/state/", (str
     {
         Summary = "Allow checking feature state in real time",
         Description = "Client can provide feature name and in response is feature state information"
+    });
+
+app.MapPut("/applications/{applicationName}/features/{featureName}", (string applicationName, string featureName, JsonElement jsonElement, IFeatureRepository featureRepository) =>
+    {
+        var featureService = new FeatureService(featureRepository);
+        try
+        {
+            var enabled = jsonElement.GetProperty("state").GetBoolean();
+            var feature = new FeatureDto(featureName, enabled);
+            featureService.UpdateFeature(new ApplicationDto(applicationName, environment), feature);
+            return Results.Ok();           
+        }
+        catch (FeatureNotFoundException)
+        {
+            return Results.NotFound();
+        }
+    })
+    .WithName("SetFeatureState")
+    .WithOpenApi(operation => new OpenApiOperation(operation)
+    {
+        Summary = "Allow setting feature state",
+        Description = "Client can provide app, feature name and state"
     });
 
 app.Run();
