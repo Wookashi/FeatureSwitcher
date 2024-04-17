@@ -44,3 +44,13 @@ GET {{Node_HostAddress}}/applications/{{applicationName}}/features/{{enabledFeat
 Accept: application/json
 
 ###
+
+PUT {{Node_HostAddress}}/applications/{{applicationName}}/features/{{disabledFeatureName}} HTTP/1.1
+content-type: application/json
+
+{
+  "state": true
+}
+
+###
+# How to build custom objects: https://stackoverflow.com/questions/73569005/http-put-request-in-c-sharp-with-json-content
