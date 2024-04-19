@@ -13,7 +13,7 @@ var featureCollection = new List<FeatureStateModel>
     new("Quu1", true),
     new("Quu3", false),
     new("Qux2", true),
-    new("Quu3", false), //should throw exception
+    new("Quu4", false), //should throw exception
 };
 
 var serviceProvider = new ServiceCollection().AddHttpClient().BuildServiceProvider();

@@ -22,6 +22,14 @@ public class FeatureManager : IFeatureManager
         _environmentName = environmentName;
         _features = features;
         _httpClientFactory = httpClientFactory;
+
+        if (features
+            .GroupBy(feature => feature.Name)
+            .Any(g => g.Count() > 1))
+        {
+            throw new FeatureNameCollisionException("Feature names must be unique!");
+        }
+        
         if (nodeAddress is not null)
         {
             _nodeAddress = nodeAddress;
