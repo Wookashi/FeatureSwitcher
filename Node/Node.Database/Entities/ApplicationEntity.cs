@@ -7,8 +7,7 @@ namespace Wookashi.FeatureSwitcher.Node.Database.Entities;
 public class ApplicationEntity
 {
     [Key] 
-    public int 
-        Id { get; set; }
+    public int Id { get; set; }
 
     [Required]
     [MaxLength(100)]
