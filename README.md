@@ -7,8 +7,12 @@ Project have three components:
 
 ### Client
 Nuget package (Wookashi.FeatureSwitcher.Client) should be installed in .Net application to help manage features state.
+
 ### Node
+Docker container should be placed very close to client apps.
+
 ### Manager
+User interface used to manipulate features.
 
 ## Authors
 * **Lukas Hryciuk** - [Wookashi](https://github.com/Wookashi)
