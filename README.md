@@ -16,7 +16,6 @@ User interface used to manipulate features.
 
 ## Authors
 * **Lukas Hryciuk** - [Wookashi](https://github.com/Wookashi)
-  List of authors could be change ;)
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
