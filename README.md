@@ -14,6 +14,9 @@ Docker container should be placed very close to client apps.
 ### Manager
 User interface used to manipulate features.
 
+## 🤝 Contributing
+
+We welcome contributions! Check out the [Contributing Guide](CONTRIBUTING.md) to get started.
 ## Authors
 * **Lukas Hryciuk** - [Wookashi](https://github.com/Wookashi)
 
