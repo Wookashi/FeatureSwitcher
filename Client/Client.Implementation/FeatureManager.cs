@@ -9,13 +9,13 @@ namespace Wookashi.FeatureSwitcher.Client.Implementation;
 
 public class FeatureManager : IFeatureManager
 {
-    private readonly List<FeatureStateModel> _features;
+    private readonly List<IFeatureStateModel> _features;
     private readonly string _appName;
     private readonly string _environmentName;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly Uri _nodeAddress = new("http://localhost:5216");
 
-    public FeatureManager(IHttpClientFactory httpClientFactory, string appName, string environmentName, List<FeatureStateModel> features,
+    public FeatureManager(IHttpClientFactory httpClientFactory, string appName, string environmentName, List<IFeatureStateModel> features,
         Uri? nodeAddress = null)
     {
         _appName = appName;

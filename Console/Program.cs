@@ -1,19 +1,20 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console;
+using Wookashi.FeatureSwitcher.Client.Abstraction;
 using Wookashi.FeatureSwitcher.Client.Implementation;
-using Wookashi.FeatureSwitcher.Client.Implementation.Models;
+using Wookashi.FeatureSwitcher.Console;
 
 
-var featureCollection = new List<FeatureStateModel>
+var featureCollection = new List<IFeatureStateModel>
 {
-    new("Foo",true),
-    new("Bar", false),
-    new("Baz", true),
-    new("Qux", false),
-    new("Quu1", true),
-    new("Quu3", false),
-    new("Qux2", true),
-    new("Quu4", false), //should throw exc
+    new ApplicationFeature("Foo",true, new Uri("www.wp.pl")),
+    new ApplicationFeature("Bar", false, new Uri("www.wp.pl")),
+    new ApplicationFeature("Baz", true, new Uri("www.wp.pl")),
+    new ApplicationFeature("Qux", false, new Uri("www.wp.pl")),
+    new ApplicationFeature("Quu1", true, new Uri("www.wp.pl")),
+    new ApplicationFeature("Quu3", false, new Uri("www.wp.pl")),
+    new ApplicationFeature("Qux2", true, new Uri("www.wp.pl")),
+    new ApplicationFeature("Quu4", false, new Uri("www.wp.pl")), //TODO should throw exc
 };
 
 var serviceProvider = new ServiceCollection().AddHttpClient().BuildServiceProvider();
