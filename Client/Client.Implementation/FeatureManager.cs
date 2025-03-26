@@ -99,6 +99,8 @@ public class FeatureManager : IFeatureManager
 
     }
     
+    // TODO Cache default 15s, maybe configurable?
+    //TODO When node is unreachable use last state and throw error after configurable period of time
     private async Task<bool> IsFeatureEnabledOnNode(string featureName)
     {
         bool model;
