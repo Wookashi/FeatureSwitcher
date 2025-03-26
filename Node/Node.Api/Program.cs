@@ -26,10 +26,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-//TODO Add to settings or system variables
-const string environment = "testEnv";
-
-// END TODO
+var environment = builder.Configuration["NodeSettings:Environment"] ?? "FailConfigurationSetting";
 
 app.MapPost("/applications", (ApplicationRegistrationRequestModel registerModel, IFeatureRepository featureRepository) =>
     {
