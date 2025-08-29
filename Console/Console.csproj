@@ -16,15 +16,16 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Client\Client.Implementation\Client.Implementation.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
       <Content Update="appsettings.json">
         <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Client\Abstraction\Client.Abstraction.csproj" />
+      <ProjectReference Include="..\Client\Implementation\Client.Implementation.csproj" />
     </ItemGroup>
 
 </Project>

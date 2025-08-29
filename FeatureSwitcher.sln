@@ -1,14 +1,14 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client.Implementation", "Client\Client.Implementation\Client.Implementation.csproj", "{C73349CA-DC08-4B67-9981-4EA0AFAD335C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client.Implementation", "Client\Implementation\Client.Implementation.csproj", "{C73349CA-DC08-4B67-9981-4EA0AFAD335C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node.Api", "Node\Node.Api\Node.Api.csproj", "{099DA7B8-14F4-4387-8ED2-667ECBFBD3F8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node.Api", "Node\Api\Node.Api.csproj", "{099DA7B8-14F4-4387-8ED2-667ECBFBD3F8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Console", "Console\Console.csproj", "{D17646EF-E3CB-4F20-A573-F7CD7E5C95CB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client.Tests", "Client\Client.Tests\Client.Tests.csproj", "{AF5F4875-F1A1-4B07-A15B-F06F12CD8CAC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client.Implementation.Tests", "Client\Tests\Client.Implementation.Tests.csproj", "{AF5F4875-F1A1-4B07-A15B-F06F12CD8CAC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node.Database", "Node\Node.Database\Node.Database.csproj", "{6E1FBAAF-22F0-45AC-AFE9-05BF7BF92DB7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node.Database", "Node\Database\Node.Database.csproj", "{6E1FBAAF-22F0-45AC-AFE9-05BF7BF92DB7}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Client", "Client", "{2DBF43F1-72BC-4DF7-A240-681626C71471}"
 EndProject
@@ -17,9 +17,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Node", "Node", "{7AA29B48-E
 		Node\node-compose.yml = Node\node-compose.yml
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node.Abstraction", "Node\Node.Abstraction\Node.Abstraction.csproj", "{F1CAC923-496D-480C-831F-96E505845660}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node.Abstraction", "Node\Abstraction\Node.Abstraction.csproj", "{F1CAC923-496D-480C-831F-96E505845660}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client.Abstraction", "Client\Client.Abstraction\Client.Abstraction.csproj", "{57328C0D-07C7-48E5-875B-2651666100F4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client.Abstraction", "Client\Abstraction\Client.Abstraction.csproj", "{57328C0D-07C7-48E5-875B-2651666100F4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node.Database.Sqlite", "Node\Database.Sqlite\Node.Database.Sqlite.csproj", "{B517E0D3-0725-434F-9AA0-4C89B36D58D9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node.Core", "Node\Core\Node.Core\Node.Core.csproj", "{4B701CC4-5963-4604-BE77-01C54352F09B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -55,6 +59,14 @@ Global
 		{57328C0D-07C7-48E5-875B-2651666100F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{57328C0D-07C7-48E5-875B-2651666100F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{57328C0D-07C7-48E5-875B-2651666100F4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B517E0D3-0725-434F-9AA0-4C89B36D58D9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B517E0D3-0725-434F-9AA0-4C89B36D58D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B517E0D3-0725-434F-9AA0-4C89B36D58D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B517E0D3-0725-434F-9AA0-4C89B36D58D9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4B701CC4-5963-4604-BE77-01C54352F09B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B701CC4-5963-4604-BE77-01C54352F09B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B701CC4-5963-4604-BE77-01C54352F09B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B701CC4-5963-4604-BE77-01C54352F09B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{C73349CA-DC08-4B67-9981-4EA0AFAD335C} = {2DBF43F1-72BC-4DF7-A240-681626C71471}
@@ -63,5 +75,7 @@ Global
 		{6E1FBAAF-22F0-45AC-AFE9-05BF7BF92DB7} = {7AA29B48-E847-4495-AF5D-21F39432DD90}
 		{F1CAC923-496D-480C-831F-96E505845660} = {7AA29B48-E847-4495-AF5D-21F39432DD90}
 		{57328C0D-07C7-48E5-875B-2651666100F4} = {2DBF43F1-72BC-4DF7-A240-681626C71471}
+		{B517E0D3-0725-434F-9AA0-4C89B36D58D9} = {7AA29B48-E847-4495-AF5D-21F39432DD90}
+		{4B701CC4-5963-4604-BE77-01C54352F09B} = {7AA29B48-E847-4495-AF5D-21F39432DD90}
 	EndGlobalSection
 EndGlobal

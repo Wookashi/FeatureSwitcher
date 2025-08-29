@@ -18,7 +18,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Client.Abstraction\Client.Abstraction.csproj" />
+      <ProjectReference Include="..\Abstraction\Client.Abstraction.csproj" />
     </ItemGroup>
 
 </Project>

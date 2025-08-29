@@ -7,8 +7,9 @@
 
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
-        <RootNamespace>Client.Tests</RootNamespace>
+        <RootNamespace>Client.Implementation.Tests</RootNamespace>
         <LangVersion>default</LangVersion>
+        <AssemblyName>Client.Implementation.Tests</AssemblyName>
     </PropertyGroup>
 
     <ItemGroup>

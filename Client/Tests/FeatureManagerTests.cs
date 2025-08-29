@@ -1,4 +1,4 @@
-namespace Client.Tests;
+namespace Client.Implementation.Tests;
 
 public class FeatureManagerTests
 {

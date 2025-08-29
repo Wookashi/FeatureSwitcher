@@ -22,7 +22,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Node.Database\Node.Database.csproj" />
+      <ProjectReference Include="..\Abstraction\Node.Abstraction.csproj" />
+      <ProjectReference Include="..\Database\Node.Database.csproj" />
     </ItemGroup>
 
 </Project>
