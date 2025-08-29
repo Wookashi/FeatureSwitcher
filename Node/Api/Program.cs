@@ -13,7 +13,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddDatabase();
+var dbConnectionString = builder.Configuration["NodeConfiguration:ConnectionString"] ?? string.Empty;
+builder.Services.AddDatabase(dbConnectionString);
 
 var app = builder.Build();
 
@@ -22,6 +23,11 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
+
+if (dbConnectionString != string.Empty)
+{
+    app.MigrateDatabase();
 }
 
 app.UseHttpsRedirection();

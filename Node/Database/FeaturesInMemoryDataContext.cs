@@ -3,19 +3,13 @@ using Wookashi.FeatureSwitcher.Node.Database.Entities;
 
 namespace Wookashi.FeatureSwitcher.Node.Database;
 
-public class FeaturesDataContext : DbContext
+internal sealed class FeaturesInMemoryDataContext : DbContext
 {
-    // public FeaturesDataContext(DbContextOptions<FeaturesDataContext> options)
-    //     : base(options)
-    // {
-    // }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    //TODO Use "normal" db in future
+    protected override void OnConfiguring
+        (DbContextOptionsBuilder optionsBuilder)
     {
-        if (!optionsBuilder.IsConfigured)
-        {
-            optionsBuilder.UseSqlite("Data Source=mydatabase.db");
-        }
+        optionsBuilder.UseInMemoryDatabase(databaseName: "TestDb");
     }
     
     protected override void OnModelCreating(ModelBuilder builder)
@@ -27,7 +21,7 @@ public class FeaturesDataContext : DbContext
             .HasIndex(entity => entity.Name)
             .IsUnique();
     }
-        
+    
     public DbSet<FeatureEntity> Features { get; set; }
     public DbSet<ApplicationEntity> Applications { get; set; }
 }

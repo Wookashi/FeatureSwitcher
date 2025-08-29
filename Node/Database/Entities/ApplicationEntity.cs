@@ -17,5 +17,5 @@ public class ApplicationEntity
     [MaxLength(100)]
     public string Environment { get; set; } = null!;
     
-    public IEnumerable<FeatureEntity> Features { get; set; }
+    public IEnumerable<FeatureEntity> Features { get; set; }  = new List<FeatureEntity>();
 }

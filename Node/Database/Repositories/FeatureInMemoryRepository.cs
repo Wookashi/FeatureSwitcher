@@ -6,11 +6,11 @@ using Wookashi.FeatureSwitcher.Node.Database.Entities;
 
 namespace Wookashi.FeatureSwitcher.Node.Database.Repositories;
 
-internal sealed class FeatureRepository : IFeatureRepository
+internal sealed class FeatureInMemoryRepository : IFeatureRepository
 {
     public List<ApplicationDto> GetApplications()
     {
-        using (var context = new FeaturesDataContext())
+        using (var context = new FeaturesInMemoryDataContext())
         {
             return context.Applications
                 .Select(application => new ApplicationDto(application.Name, application.Environment))
@@ -20,7 +20,7 @@ internal sealed class FeatureRepository : IFeatureRepository
 
     public List<FeatureDto> GetFeaturesForApplication(ApplicationDto application)
     {
-        using (var context = new FeaturesDataContext())
+        using (var context = new FeaturesInMemoryDataContext())
         {
             var list = context.Features
                 .Where(feature => feature.Application.Name == application.Name
@@ -35,7 +35,7 @@ internal sealed class FeatureRepository : IFeatureRepository
     
     public bool GetFeatureState(ApplicationDto application, string featureName)
     {
-        using (var context = new FeaturesDataContext())
+        using (var context = new FeaturesInMemoryDataContext())
         {
             var featureEntity = context.Features
                 .FirstOrDefault(feature => feature.Application.Name == application.Name
@@ -52,7 +52,7 @@ internal sealed class FeatureRepository : IFeatureRepository
 
     public void UpdateFeature(ApplicationDto application, FeatureDto featureDto)
     {
-        using (var context = new FeaturesDataContext())
+        using (var context = new FeaturesInMemoryDataContext())
         {
             var featureEntity = context.Features
                 .FirstOrDefault(feature => feature.Application.Name == application.Name
@@ -75,7 +75,7 @@ internal sealed class FeatureRepository : IFeatureRepository
             return;
         }
         
-        using (var context = new FeaturesDataContext())
+        using (var context = new FeaturesInMemoryDataContext())
         {
             var applicationEntity = context.Applications
                 .FirstOrDefault(app => app.Name == application.Name
@@ -85,7 +85,7 @@ internal sealed class FeatureRepository : IFeatureRepository
                 context.Applications.Add(new ApplicationEntity
                 {
                     Name = application.Name,
-                    Environment = application.Environment,
+                    Environment = application.Environment
                 });
                 context.SaveChanges();
                 applicationEntity = context.Applications
@@ -93,11 +93,14 @@ internal sealed class FeatureRepository : IFeatureRepository
                                            && app.Environment == application.Environment);
             }
             
-            var featureEntities = featuresList.Select(feature => new FeatureEntity
+            var featureEntities = featuresList.Select(feature =>
             {
-                Name = feature.Name,
-                IsEnabled = feature.State,
-                Application = applicationEntity ?? throw new InvalidOperationException()
+                    return new FeatureEntity
+                    {
+                        Name = feature.Name,
+                        IsEnabled = feature.State,
+                        Application = applicationEntity ?? throw new InvalidOperationException()
+                    };
             });
             context.Features.AddRange(featureEntities);
             context.SaveChanges();
@@ -111,7 +114,7 @@ internal sealed class FeatureRepository : IFeatureRepository
             return;
         }
         
-        using (var context = new FeaturesDataContext())
+        using (var context = new FeaturesInMemoryDataContext())
         {
             var applicationEntity = context.Applications
                 .Include(applicationEntity => applicationEntity.Features)
