@@ -7,21 +7,29 @@ using Wookashi.FeatureSwitcher.Console;
 
 var featureCollection = new List<IFeatureStateModel>
 {
-    new ApplicationFeature("Foo",true, new Uri("www.wp.pl")),
-    new ApplicationFeature("Bar", false, new Uri("www.wp.pl")),
-    new ApplicationFeature("Baz", true, new Uri("www.wp.pl")),
-    new ApplicationFeature("Qux", false, new Uri("www.wp.pl")),
-    new ApplicationFeature("Quu1", true, new Uri("www.wp.pl")),
-    new ApplicationFeature("Quu3", false, new Uri("www.wp.pl")),
-    new ApplicationFeature("Qux2", true, new Uri("www.wp.pl")),
-    new ApplicationFeature("Quu4", false, new Uri("www.wp.pl")), //TODO should throw exc
+    new ApplicationFeature("Foo",true, new Uri("https://www.wp.pl")),
+    new ApplicationFeature("Bar", false, new Uri("https://www.wp.pl")),
+    new ApplicationFeature("Baz", true, new Uri("https://www.wp.pl")),
+    new ApplicationFeature("Qux", false, new Uri("https://www.wp.pl")),
+    new ApplicationFeature("Quu1", true, new Uri("https://www.wp.pl")),
+    new ApplicationFeature("Quu3", false, new Uri("https://www.wp.pl")),
+    new ApplicationFeature("Qux2", true, new Uri("https://www.wp.pl")),
+    new ApplicationFeature("Quu4", false, new Uri("https://www.wp.pl")), //TODO should throw exc
 };
 
 var serviceProvider = new ServiceCollection().AddHttpClient().BuildServiceProvider();
 
 var httpClientFactory = serviceProvider.GetService<IHttpClientFactory>();
 
-var featureManager = new FeatureManager(httpClientFactory!, "Console", "testEnv", featureCollection);
+var featureManager = new FeatureManager(
+    new FeatureSwitcherClientConfiguration(
+        httpClientFactory: httpClientFactory!,
+        applicationName: "Console",
+        environmentName:"testEnv",
+        features: featureCollection,
+        environmentNodeAddress: new Uri("http://localhost:5216")
+        ));
+
 await featureManager.RegisterFeaturesOnNode();
 
 while (true)

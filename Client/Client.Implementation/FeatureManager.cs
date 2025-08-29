@@ -13,26 +13,21 @@ public class FeatureManager : IFeatureManager
     private readonly string _appName;
     private readonly string _environmentName;
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly Uri _nodeAddress = new("http://localhost:5216");
+    private readonly Uri _nodeAddress;
 
-    public FeatureManager(IHttpClientFactory httpClientFactory, string appName, string environmentName, List<IFeatureStateModel> features,
-        Uri? nodeAddress = null)
+    public FeatureManager(IFeatureSwitcherClientConfiguration configuration)    
     {
-        _appName = appName;
-        _environmentName = environmentName;
-        _features = features;
-        _httpClientFactory = httpClientFactory;
+        _appName = configuration.ApplicationName;
+        _environmentName = configuration.EnvironmentName;
+        _features = configuration.Features;
+        _httpClientFactory = configuration.HttpClientFactory;
+        _nodeAddress = configuration.EnvironmentNodeAddress;
 
-        if (features
+        if (_features
             .GroupBy(feature => feature.Name)
             .Any(g => g.Count() > 1))
         {
             throw new FeatureNameCollisionException("Feature names must be unique!");
-        }
-        
-        if (nodeAddress is not null)
-        {
-            _nodeAddress = nodeAddress;
         }
     }
 

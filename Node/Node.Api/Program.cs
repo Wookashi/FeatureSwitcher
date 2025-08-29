@@ -26,7 +26,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var environment = builder.Configuration["NodeSettings:Environment"] ?? "FailConfigurationSetting";
+var environment = builder.Configuration["NodeConfiguration:Environment"] ?? "FailConfigurationSetting";
 
 app.MapPost("/applications", (ApplicationRegistrationRequestModel registerModel, IFeatureRepository featureRepository) =>
     {
