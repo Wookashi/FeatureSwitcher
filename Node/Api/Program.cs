@@ -120,12 +120,12 @@ app.MapGet("/applications/{applicationName}/features/{featureName}/state/", (str
         Description = "Client can provide feature name and in response is feature state information"
     });
 
-app.MapPut("/applications/{applicationName}/features/{featureName}", (string applicationName, string featureName, JsonElement jsonElement, IFeatureRepository featureRepository) =>
+app.MapPut("/applications/{applicationName}/features/{featureName}", (string applicationName, string featureName, FeatureStateDto featureState, IFeatureRepository featureRepository) =>
     {
         var featureService = new FeatureService(featureRepository);
         try
         {
-            var enabled = jsonElement.GetProperty("state").GetBoolean();
+            var enabled = featureState.State;
             var feature = new FeatureDto(featureName, enabled);
             featureService.UpdateFeature(new ApplicationDto(applicationName, environment), feature);
             return Results.Ok();           
