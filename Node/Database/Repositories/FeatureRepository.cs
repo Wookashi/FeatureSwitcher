@@ -8,21 +8,22 @@ namespace Wookashi.FeatureSwitcher.Node.Database.Repositories;
 
 internal sealed class FeatureRepository : IFeatureRepository
 {
+    private readonly FeaturesDataContext _context;
+    public FeatureRepository(FeaturesDataContext dbContext)
+    {
+        _context = dbContext;
+    }
     public List<ApplicationDto> GetApplications()
     {
-        using (var context = new FeaturesDataContext())
-        {
-            return context.Applications
+            return _context.Applications
                 .Select(application => new ApplicationDto(application.Name, application.Environment))
                 .ToList();
-        }
+        
     }
 
     public List<FeatureDto> GetFeaturesForApplication(ApplicationDto application)
     {
-        using (var context = new FeaturesDataContext())
-        {
-            var list = context.Features
+            var list = _context.Features
                 .Where(feature => feature.Application.Name == application.Name
                                    && feature.Application.Environment == application.Environment)
                 .Select(feature => new FeatureDto(
@@ -30,14 +31,11 @@ internal sealed class FeatureRepository : IFeatureRepository
                     feature.IsEnabled))
                 .ToList();
             return list;
-        }
     }
     
     public bool GetFeatureState(ApplicationDto application, string featureName)
     {
-        using (var context = new FeaturesDataContext())
-        {
-            var featureEntity = context.Features
+            var featureEntity = _context.Features
                 .FirstOrDefault(feature => feature.Application.Name == application.Name
                                   && feature.Application.Environment == application.Environment
                                   && feature.Name == featureName);
@@ -47,14 +45,11 @@ internal sealed class FeatureRepository : IFeatureRepository
                 throw new FeatureNotFoundException("Feature not found");
             }
             return featureEntity.IsEnabled;
-        }
     }
 
     public void UpdateFeature(ApplicationDto application, FeatureDto featureDto)
     {
-        using (var context = new FeaturesDataContext())
-        {
-            var featureEntity = context.Features
+            var featureEntity = _context.Features
                 .FirstOrDefault(feature => feature.Application.Name == application.Name
                                            && feature.Application.Environment == application.Environment
                                            && feature.Name == featureDto.Name);
@@ -64,8 +59,7 @@ internal sealed class FeatureRepository : IFeatureRepository
                 throw new FeatureNotFoundException("Feature not found");
             }
             featureEntity.IsEnabled = featureDto.State;
-            context.SaveChanges();
-        }
+            _context.SaveChanges();
     }
 
     public void AddFeaturesForApplication(ApplicationDto application, List<FeatureDto> featuresList)
@@ -75,20 +69,18 @@ internal sealed class FeatureRepository : IFeatureRepository
             return;
         }
         
-        using (var context = new FeaturesDataContext())
-        {
-            var applicationEntity = context.Applications
+            var applicationEntity = _context.Applications
                 .FirstOrDefault(app => app.Name == application.Name
                                        && app.Environment == application.Environment);
             if (applicationEntity is null)
             {
-                context.Applications.Add(new ApplicationEntity
+                _context.Applications.Add(new ApplicationEntity
                 {
                     Name = application.Name,
                     Environment = application.Environment,
                 });
-                context.SaveChanges();
-                applicationEntity = context.Applications
+                _context.SaveChanges();
+                applicationEntity = _context.Applications
                     .FirstOrDefault(app => app.Name == application.Name
                                            && app.Environment == application.Environment);
             }
@@ -99,9 +91,8 @@ internal sealed class FeatureRepository : IFeatureRepository
                 IsEnabled = feature.State,
                 Application = applicationEntity ?? throw new InvalidOperationException()
             });
-            context.Features.AddRange(featureEntities);
-            context.SaveChanges();
-        }
+            _context.Features.AddRange(featureEntities);
+            _context.SaveChanges();
     }
     
     public void DeleteFeaturesForApplication(ApplicationDto application, List<FeatureDto> featuresList)
@@ -111,9 +102,8 @@ internal sealed class FeatureRepository : IFeatureRepository
             return;
         }
         
-        using (var context = new FeaturesDataContext())
-        {
-            var applicationEntity = context.Applications
+
+            var applicationEntity = _context.Applications
                 .Include(applicationEntity => applicationEntity.Features)
                 .FirstOrDefault(app => app.Name == application.Name
                                        && app.Environment == application.Environment);
@@ -125,10 +115,9 @@ internal sealed class FeatureRepository : IFeatureRepository
 
             foreach (var featureEntity in applicationEntity.Features)
             {
-                context.Features.Remove(featureEntity);
+                _context.Features.Remove(featureEntity);
             }
             
-            context.SaveChanges();
+            _context.SaveChanges();
         }
-    }
 }

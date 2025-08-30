@@ -1,21 +1,14 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Wookashi.FeatureSwitcher.Node.Database.Entities;
 
 namespace Wookashi.FeatureSwitcher.Node.Database;
 
 public class FeaturesDataContext : DbContext
 {
-    // public FeaturesDataContext(DbContextOptions<FeaturesDataContext> options)
-    //     : base(options)
-    // {
-    // }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    public FeaturesDataContext(DbContextOptions<FeaturesDataContext> options)
+        : base(options)
     {
-        if (!optionsBuilder.IsConfigured)
-        {
-            optionsBuilder.UseSqlite("Data Source=mydatabase.db");
-        }
     }
     
     protected override void OnModelCreating(ModelBuilder builder)

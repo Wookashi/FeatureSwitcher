@@ -2,3 +2,6 @@
 *.user
 [Oo]bj
 [Bb]in
+*.db
+*.db-shm
+*.db-wal
