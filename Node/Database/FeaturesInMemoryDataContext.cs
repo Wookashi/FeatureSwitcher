@@ -5,7 +5,6 @@ namespace Wookashi.FeatureSwitcher.Node.Database;
 
 internal sealed class FeaturesInMemoryDataContext : DbContext
 {
-    //TODO Use "normal" db in future
     protected override void OnConfiguring
         (DbContextOptionsBuilder optionsBuilder)
     {

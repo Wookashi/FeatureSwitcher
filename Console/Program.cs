@@ -14,23 +14,20 @@ var featureCollection = new List<IFeatureStateModel>
     new ApplicationFeature("Quu1", true, new Uri("https://www.wp.pl")),
     new ApplicationFeature("Quu3", false, new Uri("https://www.wp.pl")),
     new ApplicationFeature("Qux2", true, new Uri("https://www.wp.pl")),
-    new ApplicationFeature("Quu4", false, new Uri("https://www.wp.pl")), //TODO should throw exc
+    new ApplicationFeature("Quu4", false, new Uri("https://www.wp.pl"))
 };
 
 var serviceProvider = new ServiceCollection().AddHttpClient().BuildServiceProvider();
 
 var httpClientFactory = serviceProvider.GetService<IHttpClientFactory>();
 
-var featureManager = new FeatureManager(
-    new FeatureSwitcherClientConfiguration(
-        httpClientFactory: httpClientFactory!,
+var featureManager = await new FeatureManagerBuilder(new FeatureSwitcherBasicClientConfiguration(
         applicationName: "Console",
-        environmentName:"testEnv",
-        features: featureCollection,
-        environmentNodeAddress: new Uri("http://localhost:5216")
-        ));
-
-await featureManager.RegisterFeaturesOnNode();
+        environmentName: "testEnv",
+        environmentNodeAddress: new Uri("http://localhost:5216")))
+    .AddFeatures(featureCollection)
+    .AddHttpClientFactory(httpClientFactory!)
+    .BuildAsync();
 
 while (true)
 {

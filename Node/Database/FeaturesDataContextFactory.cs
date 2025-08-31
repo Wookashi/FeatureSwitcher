@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace Wookashi.FeatureSwitcher.Node.Database
 {
+    // ReSharper disable once UnusedType.Global
     public class FeaturesDataContextFactory : IDesignTimeDbContextFactory<FeaturesDataContext>
     {
         public FeaturesDataContext CreateDbContext(string[] args)

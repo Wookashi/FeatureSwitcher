@@ -15,22 +15,21 @@ public class FeatureManager : IFeatureManager
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly Uri _nodeAddress;
 
-    public FeatureManager(IFeatureSwitcherClientConfiguration configuration)    
+    internal FeatureManager(FeatureSwitcherFullClientConfiguration configurationOld)
     {
-        _appName = configuration.ApplicationName;
-        _environmentName = configuration.EnvironmentName;
-        _features = configuration.Features;
-        _httpClientFactory = configuration.HttpClientFactory;
-        _nodeAddress = configuration.EnvironmentNodeAddress;
-
-        if (_features
-            .GroupBy(feature => feature.Name)
-            .Any(g => g.Count() > 1))
-        {
-            throw new FeatureNameCollisionException("Feature names must be unique!");
-        }
+        _appName = configurationOld.ApplicationName;
+        _environmentName = configurationOld.EnvironmentName;
+        _features = configurationOld.Features;
+        _httpClientFactory = configurationOld.HttpClientFactory;
+        _nodeAddress = configurationOld.EnvironmentNodeAddress;
     }
 
+    /// <summary>
+    /// Checks feature state on node or local storage
+    /// </summary>
+    /// <param name="featureName">Feature Name</param>
+    /// <returns>Feature state</returns>
+    /// <exception cref="FeatureNotRegisteredException">Thrown when feature wasn't registered on a strat of application</exception>
     public async Task<bool> IsFeatureEnabledAsync(string featureName)
     {
         var collectionFeature = _features.FirstOrDefault(feature => feature.Name == featureName);
@@ -46,7 +45,7 @@ public class FeatureManager : IFeatureManager
         }
         catch (NodeUnreachableException)
         {
-            //do nothing
+            //TODO Maybe some alert when node is unreachable in some period of time (configurable??)
         }
 
         if (nodeState is not null)
@@ -57,7 +56,7 @@ public class FeatureManager : IFeatureManager
         return collectionFeature.CurrentLocalState;
     }
 
-    public async Task RegisterFeaturesOnNode() // TODO change in future releases should be done automaticaly
+    internal async Task RegisterFeaturesOnNode()
     {
         try
         {
@@ -95,7 +94,12 @@ public class FeatureManager : IFeatureManager
     }
     
     // TODO Cache default 15s, maybe configurable?
-    //TODO When node is unreachable use last state and throw error after configurable period of time
+    /// <summary>
+    /// Checks is feature enable on node
+    /// </summary>
+    /// <param name="featureName">Feature Name</param>
+    /// <returns>Feature state or exception</returns>
+    /// <exception cref="NodeUnreachableException">Returned when node api is unreachable</exception>
     private async Task<bool> IsFeatureEnabledOnNode(string featureName)
     {
         bool model;
