@@ -15,13 +15,13 @@ public class FeatureManager : IFeatureManager
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly Uri _nodeAddress;
 
-    internal FeatureManager(FeatureSwitcherFullClientConfiguration configurationOld)
+    internal FeatureManager(FeatureSwitcherFullClientConfiguration configuration)
     {
-        _appName = configurationOld.ApplicationName;
-        _environmentName = configurationOld.EnvironmentName;
-        _features = configurationOld.Features;
-        _httpClientFactory = configurationOld.HttpClientFactory;
-        _nodeAddress = configurationOld.EnvironmentNodeAddress;
+        _appName = configuration.ApplicationName;
+        _environmentName = configuration.EnvironmentName;
+        _features = configuration.Features;
+        _httpClientFactory = configuration.HttpClientFactory;
+        _nodeAddress = configuration.EnvironmentNodeAddress;
     }
 
     /// <summary>
