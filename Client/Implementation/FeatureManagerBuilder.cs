@@ -11,32 +11,32 @@ public sealed class FeatureManagerBuilder
     
     public FeatureManagerBuilder(IFeatureSwitcherBasicClientConfiguration clientBasicConfiguration)
     {
-        if (_basicConfiguration is null)
+        if (clientBasicConfiguration is null)
         {
-            throw new ArgumentNullException(nameof(_basicConfiguration));
+            throw new ArgumentNullException(nameof(clientBasicConfiguration));
         }
-        if (string.IsNullOrWhiteSpace(_basicConfiguration.ApplicationName))
+        if (string.IsNullOrWhiteSpace(clientBasicConfiguration.ApplicationName))
         {
-            throw new ArgumentNullException(nameof(_basicConfiguration.ApplicationName));
+            throw new ArgumentNullException(nameof(clientBasicConfiguration.ApplicationName));
         }
-        if (string.IsNullOrWhiteSpace(_basicConfiguration.EnvironmentName))
+        if (string.IsNullOrWhiteSpace(clientBasicConfiguration.EnvironmentName))
         {
-            throw new ArgumentNullException(nameof(_basicConfiguration.EnvironmentName));
+            throw new ArgumentNullException(nameof(clientBasicConfiguration.EnvironmentName));
         }
-        if (_basicConfiguration.EnvironmentNodeAddress is null)
+        if (clientBasicConfiguration.EnvironmentNodeAddress is null)
         {
-            throw new ArgumentNullException(nameof(_basicConfiguration.EnvironmentNodeAddress));
+            throw new ArgumentNullException(nameof(clientBasicConfiguration.EnvironmentNodeAddress));
         }
         _basicConfiguration = clientBasicConfiguration;
     }
     
     public FeatureManagerBuilder AddFeatures(List<IFeatureStateModel> features)
     {
-        if (_features is null)
+        if (features is null)
         {
-            throw new ArgumentNullException(nameof(_features));
+            throw new ArgumentNullException(nameof(features));
         }
-        if (_features
+        if (features
             .GroupBy(feature => feature.Name)
             .Any(g => g.Count() > 1))
         {
@@ -48,9 +48,9 @@ public sealed class FeatureManagerBuilder
     
     public FeatureManagerBuilder AddHttpClientFactory(IHttpClientFactory clientFactory)
     {
-        if (_httpClientFactory is null)
+        if (clientFactory is null)
         {
-            throw new ArgumentNullException(nameof(_httpClientFactory));
+            throw new ArgumentNullException(nameof(clientFactory));
         }
         _httpClientFactory = clientFactory;
         return this;
