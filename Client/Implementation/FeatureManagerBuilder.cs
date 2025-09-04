@@ -6,53 +6,55 @@ namespace Wookashi.FeatureSwitcher.Client.Implementation;
 public sealed class FeatureManagerBuilder
 {
     private readonly IFeatureSwitcherBasicClientConfiguration _basicConfiguration;
-    private IHttpClientFactory _httpClientFactory;
-    private List<IFeatureStateModel> _features;
-    
+    private IHttpClientFactory? _httpClientFactory;
+    private List<IFeatureStateModel>? _features;
+
     public FeatureManagerBuilder(IFeatureSwitcherBasicClientConfiguration clientBasicConfiguration)
     {
         if (clientBasicConfiguration is null)
         {
             throw new ArgumentNullException(nameof(clientBasicConfiguration));
         }
+
         if (string.IsNullOrWhiteSpace(clientBasicConfiguration.ApplicationName))
         {
             throw new ArgumentNullException(nameof(clientBasicConfiguration.ApplicationName));
         }
+
         if (string.IsNullOrWhiteSpace(clientBasicConfiguration.EnvironmentName))
         {
             throw new ArgumentNullException(nameof(clientBasicConfiguration.EnvironmentName));
         }
+
         if (clientBasicConfiguration.EnvironmentNodeAddress is null)
         {
             throw new ArgumentNullException(nameof(clientBasicConfiguration.EnvironmentNodeAddress));
         }
+
         _basicConfiguration = clientBasicConfiguration;
     }
-    
+
     public FeatureManagerBuilder AddFeatures(List<IFeatureStateModel> features)
     {
         if (features is null)
         {
             throw new ArgumentNullException(nameof(features));
         }
+
         if (features
             .GroupBy(feature => feature.Name)
             .Any(g => g.Count() > 1))
         {
             throw new FeatureNameCollisionException("Feature names must be unique!");
         }
+
         _features = features;
         return this;
     }
-    
+
     public FeatureManagerBuilder AddHttpClientFactory(IHttpClientFactory clientFactory)
     {
-        if (clientFactory is null)
-        {
-            throw new ArgumentNullException(nameof(clientFactory));
-        }
-        _httpClientFactory = clientFactory;
+        _httpClientFactory = clientFactory ?? throw new ArgumentNullException(nameof(clientFactory));
         return this;
     }
 
@@ -62,16 +64,33 @@ public sealed class FeatureManagerBuilder
             applicationName: _basicConfiguration.ApplicationName,
             environmentName: _basicConfiguration.EnvironmentName,
             environmentNodeAddress: _basicConfiguration.EnvironmentNodeAddress,
-            features: _features,
-            httpClientFactory: _httpClientFactory);
+            features: _features ?? throw new InvalidOperationException(),
+            httpClientFactory: _httpClientFactory ?? throw new InvalidOperationException());
     }
-    
+
+    private bool ValidateProperties()
+    {
+        if (_features is null)
+        {
+            throw new MissingMemberException("Features must be set before build object");
+        }
+
+        if (_httpClientFactory is null)
+        {
+            throw new MissingMemberException("Http client factory must be set before build object");
+        }
+        return true;
+    }
+
     public async Task<FeatureManager> BuildAsync()
     {
-        //TODO check configuration
-        var fullConfig = PrepareFullConfiguration();
-        var featureManager = new FeatureManager(fullConfig);
-        await featureManager.RegisterFeaturesOnNode();
-        return featureManager;
+        if (ValidateProperties())
+        {
+            var fullConfig = PrepareFullConfiguration();
+            var featureManager = new FeatureManager(fullConfig);
+            await featureManager.RegisterFeaturesOnNode();
+            return featureManager;
+        }
+        throw new Exception("Cannot build object!");
     }
 }

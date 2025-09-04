@@ -29,7 +29,7 @@ public class FeatureManager : IFeatureManager
     /// </summary>
     /// <param name="featureName">Feature Name</param>
     /// <returns>Feature state</returns>
-    /// <exception cref="FeatureNotRegisteredException">Thrown when feature wasn't registered on a strat of application</exception>
+    /// <exception cref="FeatureNotRegisteredException">Thrown when feature wasn't registered on a start of application</exception>
     public async Task<bool> IsFeatureEnabledAsync(string featureName)
     {
         var collectionFeature = _features.FirstOrDefault(feature => feature.Name == featureName);
