@@ -1,10 +1,9 @@
-using System.Text.Json;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.OpenApi.Models;
 using Wookashi.FeatureSwitcher.Node.Abstraction.Database.Dtos;
 using Wookashi.FeatureSwitcher.Node.Abstraction.Database.Repositories;
 using Wookashi.FeatureSwitcher.Node.Abstraction.Infrastructure.Exceptions;
-using Wookashi.FeatureSwitcher.Node.Api.CustomHealthChecks;
+using Wookashi.FeatureSwitcher.Node.Api.HealthChecks;
 using Wookashi.FeatureSwitcher.Node.Api.Models;
 using Wookashi.FeatureSwitcher.Node.Api.Services;
 using Wookashi.FeatureSwitcher.Node.Database.Extensions;
@@ -17,8 +16,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 var dbConnectionString = builder.Configuration["NodeConfiguration:ConnectionString"] ?? string.Empty;
 builder.Services.AddDatabase(dbConnectionString);
-builder.Services.AddHealthChecks()
-    .AddCheck<ManagerHealthCheck>("Manager Api");
+builder.Services.AddHealthCheckElements();
 
 var app = builder.Build();
 
@@ -38,25 +36,7 @@ app.UseHttpsRedirection();
 
 var environment = builder.Configuration["NodeConfiguration:Environment"] ?? "FailConfigurationSetting";
 
-app.MapHealthChecks("/health", new HealthCheckOptions
-{
-    ResponseWriter = async (context, report) =>
-    {
-        context.Response.ContentType = "application/json; charset=utf-8";
-        var result = new
-        {
-            status = report.Status.ToString(),
-            checks = report.Entries.Select(entry => new 
-            {
-                name = entry.Key,
-                status = entry.Value.Status.ToString(),
-                description = entry.Value.Description,
-                data = entry.Value.Data
-            })
-        };
-        await context.Response.WriteAsJsonAsync(result);
-    }
-});
+app.UseHealthCheck();
 
 app.MapPost("/applications", (ApplicationRegistrationRequestModel registerModel, IFeatureRepository featureRepository) =>
     {

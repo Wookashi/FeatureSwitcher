@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
-namespace Wookashi.FeatureSwitcher.Node.Api.CustomHealthChecks;
+namespace Wookashi.FeatureSwitcher.Node.Api.HealthChecks;
 
 internal sealed class ManagerHealthCheck : IHealthCheck
 {
