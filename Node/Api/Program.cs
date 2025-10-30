@@ -3,6 +3,7 @@ using Microsoft.OpenApi.Models;
 using Wookashi.FeatureSwitcher.Node.Abstraction.Database.Dtos;
 using Wookashi.FeatureSwitcher.Node.Abstraction.Database.Repositories;
 using Wookashi.FeatureSwitcher.Node.Abstraction.Infrastructure.Exceptions;
+using Wookashi.FeatureSwitcher.Node.Api.Configuration;
 using Wookashi.FeatureSwitcher.Node.Api.HealthChecks;
 using Wookashi.FeatureSwitcher.Node.Api.Models;
 using Wookashi.FeatureSwitcher.Node.Api.Services;
@@ -13,6 +14,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.Configure<ManagerSettings>(
+    builder.Configuration.GetSection("ManagerSettings"));
 builder.Services.AddSwaggerGen();
 var dbConnectionString = builder.Configuration["NodeConfiguration:ConnectionString"] ?? string.Empty;
 builder.Services.AddDatabase(dbConnectionString);

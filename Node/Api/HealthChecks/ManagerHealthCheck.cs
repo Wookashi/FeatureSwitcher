@@ -1,35 +1,38 @@
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Options;
+using Wookashi.FeatureSwitcher.Node.Api.Configuration;
 
 namespace Wookashi.FeatureSwitcher.Node.Api.HealthChecks;
 
-internal sealed class ManagerHealthCheck : IHealthCheck
+internal sealed class ManagerHealthCheck(IOptions<ManagerSettings> options) : IHealthCheck
 {
-    public Task<HealthCheckResult> CheckHealthAsync(
+    private readonly ManagerSettings _options = options.Value;
+
+    public async Task<HealthCheckResult> CheckHealthAsync(
         HealthCheckContext context,
         CancellationToken cancellationToken = default)
     {
-        var isHealthy = true;
-        
-        // TODO check is configurator available
+        try
+        {
+            using var client = new HttpClient();
+            var response = await client.GetAsync(_options.Url, cancellationToken);
 
-        if (isHealthy)
-        {
-            var data = new Dictionary<string, object?>
+            if (response.IsSuccessStatusCode)
             {
-                //TODO Check connection status
-                { "status", "Connected" },
-            };
-            return Task.FromResult(HealthCheckResult.Healthy("Healthy", data));
+                return HealthCheckResult.Healthy("Connected");
+            }
+            else
+            {
+                var data = new Dictionary<string, object?>
+                {
+                    { "Http Code", (int)response.StatusCode }
+                };
+                return HealthCheckResult.Degraded("Service returned error", data: data);
+            }
         }
-        else
+        catch (Exception ex)
         {
-            //TODO Set status
-            var data = new Dictionary<string, object?>
-            {
-                //TODO Check connection status
-                { "status", "Not Connected" }
-            };
-            return Task.FromResult(HealthCheckResult.Unhealthy("Unhealthy"));
+            return HealthCheckResult.Unhealthy($"Exception: {ex.Message}");
         }
     }
 }
