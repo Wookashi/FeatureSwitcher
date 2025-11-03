@@ -1,7 +1,7 @@
 services:
-  myapp:
+  manager:
     build: .
-    image: myapp:latest
+    image: manager:latest
     environment:
       ASPNETCORE_ENVIRONMENT: "Production"
     ports:

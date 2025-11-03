@@ -11,7 +11,7 @@ npm run dev (in web folder)
    - **Web**: npm run config → `dev` in `Manager/Web`.
 ## Docker (prod-like, 1 container):
    ```bash
-   docker build -t myapp:latest .
-   docker run --rm -p 8080:8080 myapp:latest
+   docker build -t manager:latest .
+   docker run --rm -p 8080:8080 manager:latest
    # Front: http://localhost:8080  |  API: /api/hello  |  /health
    ```
