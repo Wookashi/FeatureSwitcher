@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk/0.4.0-alpha">
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>9b164506-1b35-417a-8a06-22b18aad74c7</ProjectGuid>
+        <Configurations>Debug;Release</Configurations>
+        <Platforms>AnyCPU</Platforms>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+        <StartupCommand>set BROWSER=none&amp;&amp;npm start</StartupCommand>
+        <JavaScriptTestRoot>Src\</JavaScriptTestRoot>
+        <JavaScriptTestFramework>Jest</JavaScriptTestFramework>
+    </PropertyGroup>
+    <ItemGroup>
+        <Script Include="**" Exclude="*.esproj;**\node_modules\**" />
+    </ItemGroup>
+    <ItemGroup>
+        <TypeScriptCompile Include="Src\App.tsx" />
+    </ItemGroup>
+</Project>

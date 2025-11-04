@@ -22,8 +22,16 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client.Abstraction", "Client\Abstraction\Client.Abstraction.csproj", "{57328C0D-07C7-48E5-875B-2651666100F4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Manager", "Manager", "{5299C23C-BB4C-4C33-9001-0A544923E98F}"
+	ProjectSection(SolutionItems) = preProject
+		Manager\docker-compose.yml = Manager\docker-compose.yml
+		Manager\Dockerfile = Manager\Dockerfile
+		Manager\.dockerignore = Manager\.dockerignore
+		Manager\readme.md = Manager\readme.md
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Manager.Api", "Manager\Manager.Api\Manager.Api.csproj", "{62F07885-249F-4B80-BD0D-8040AD2F6627}"
+EndProject
+Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "Manager.Web", "Manager\Manager.Web\Manager.Web.esproj", "{9B164506-1B35-417A-8A06-22B18AAD74C7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -63,6 +71,10 @@ Global
 		{62F07885-249F-4B80-BD0D-8040AD2F6627}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{62F07885-249F-4B80-BD0D-8040AD2F6627}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{62F07885-249F-4B80-BD0D-8040AD2F6627}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9B164506-1B35-417A-8A06-22B18AAD74C7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9B164506-1B35-417A-8A06-22B18AAD74C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9B164506-1B35-417A-8A06-22B18AAD74C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9B164506-1B35-417A-8A06-22B18AAD74C7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{C73349CA-DC08-4B67-9981-4EA0AFAD335C} = {2DBF43F1-72BC-4DF7-A240-681626C71471}
@@ -72,5 +84,6 @@ Global
 		{F1CAC923-496D-480C-831F-96E505845660} = {7AA29B48-E847-4495-AF5D-21F39432DD90}
 		{57328C0D-07C7-48E5-875B-2651666100F4} = {2DBF43F1-72BC-4DF7-A240-681626C71471}
 		{62F07885-249F-4B80-BD0D-8040AD2F6627} = {5299C23C-BB4C-4C33-9001-0A544923E98F}
+		{9B164506-1B35-417A-8A06-22B18AAD74C7} = {5299C23C-BB4C-4C33-9001-0A544923E98F}
 	EndGlobalSection
 EndGlobal
