@@ -22,4 +22,4 @@ RUN apt-get update && apt-get install -y tzdata && rm -rf /var/lib/apt/lists/*
 COPY --from=webbuild /web/dist ./wwwroot
 COPY --from=build /app/publish .
 EXPOSE 8080
-ENTRYPOINT ["dotnet", "Manager.Api.dll"]
+ENTRYPOINT ["dotnet", "Wookashi.FeatureSwitcher.Manager.Api.dll"]
