@@ -30,9 +30,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Manager", "Manager", "{5299
 		Manager\readme.md = Manager\readme.md
 	EndProjectSection
 EndProject
-Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "Manager.Web", "Manager\Manager.Web\Manager.Web.esproj", "{9B164506-1B35-417A-8A06-22B18AAD74C7}"
+Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "Manager.Web", "Manager\Web\Manager.Web.esproj", "{9B164506-1B35-417A-8A06-22B18AAD74C7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Manager.Api", "Manager\Manager.Api\Manager.Api.csproj", "{A77B954E-37A3-455D-B060-5D09ABC69415}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Manager.Api", "Manager\Api\Manager.Api.csproj", "{A77B954E-37A3-455D-B060-5D09ABC69415}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

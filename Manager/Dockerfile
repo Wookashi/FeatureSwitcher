@@ -1,18 +1,18 @@
 # --- FRONT BUILD ---
 FROM node:22-alpine AS webbuild
 WORKDIR /web
-COPY Manager.Web/package*.json ./
+COPY Web/package*.json ./
 RUN npm ci
-COPY Manager.Web .
+COPY Web .
 RUN npm run build
 
 # --- API BUILD & PUBLISH ---
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
-COPY Manager.Api/*.csproj ./Manager.Api/
-RUN dotnet restore ./Manager.Api/Manager.Api.csproj
-COPY Manager.Api ./Manager.Api
-RUN dotnet publish ./Manager.Api/Manager.Api.csproj -c Release -o /app/publish /p:UseAppHost=false
+COPY Api/*.csproj ./Api/
+RUN dotnet restore ./Api/Manager.Api.csproj
+COPY Api ./Api
+RUN dotnet publish ./Api/Manager.Api.csproj -c Release -o /app/publish /p:UseAppHost=false
 
 # --- RUNTIME ---
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
