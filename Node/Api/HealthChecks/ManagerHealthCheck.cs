@@ -23,7 +23,7 @@ internal sealed class ManagerHealthCheck(IOptions<ManagerSettings> options) : IH
             }
             else
             {
-                var data = new Dictionary<string, object?>
+                var data = new Dictionary<string, object>
                 {
                     { "Http Code", (int)response.StatusCode }
                 };
