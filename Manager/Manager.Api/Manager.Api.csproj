@@ -8,6 +8,6 @@
         <RootNamespace>Wookashi.FeatureSwitcher.Manager.Api</RootNamespace>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />
+        <PackageReference Include="Swashbuckle.AspNetCore" />
     </ItemGroup>
 </Project>
