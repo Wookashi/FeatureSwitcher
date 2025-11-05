@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AssemblyName>Wookashi.FeatureSwitcher.Manager.Abstraction</AssemblyName>
+        <RootNamespace>Wookashi.FeatureSwitcher.Manager.Abstraction</RootNamespace>
+        <LangVersion>default</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Folder Include="Database\Dtos\" />
+      <Folder Include="Infrastructure\" />
+    </ItemGroup>
+
+</Project>
