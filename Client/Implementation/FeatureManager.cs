@@ -56,7 +56,7 @@ public class FeatureManager : IFeatureManager
         return collectionFeature.CurrentLocalState;
     }
 
-    internal async Task RegisterFeaturesOnNode()
+    internal async Task RegisterFeaturesOnNodeAsync()
     {
         try
         {

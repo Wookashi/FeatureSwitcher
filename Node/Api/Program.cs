@@ -1,5 +1,4 @@
-using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Wookashi.FeatureSwitcher.Node.Abstraction.Database.Dtos;
 using Wookashi.FeatureSwitcher.Node.Abstraction.Database.Repositories;
 using Wookashi.FeatureSwitcher.Node.Abstraction.Infrastructure.Exceptions;
@@ -41,32 +40,29 @@ var environment = builder.Configuration["NodeConfiguration:Environment"] ?? "Fai
 
 app.UseHealthCheck();
 
-app.MapPost("/applications", (ApplicationRegistrationRequestModel registerModel, IFeatureRepository featureRepository) =>
-    {
-        if (registerModel.Environment != environment)
+app.MapPost("/applications",
+        (ApplicationRegistrationRequestModel registerModel, IFeatureRepository featureRepository) =>
         {
-            return Results.BadRequest(new BadHttpRequestException("Environment does not match"));
-        }
+            if (registerModel.Environment != environment)
+            {
+                return Results.BadRequest(new BadHttpRequestException("Environment does not match"));
+            }
 
-        var featureService = new FeatureService(featureRepository);
+            var featureService = new FeatureService(featureRepository);
 
-        try
-        {
-            featureService.RegisterApplication(new ApplicationDto(registerModel.AppName, registerModel.Environment), registerModel.Features);           
-        }
-        catch (IncorrectEnvironmentException exception)
-        {
-            return Results.BadRequest(new BadHttpRequestException(exception.Message));
-        }
+            try
+            {
+                featureService.RegisterApplication(new ApplicationDto(registerModel.AppName, registerModel.Environment),
+                    registerModel.Features);
+            }
+            catch (IncorrectEnvironmentException exception)
+            {
+                return Results.BadRequest(new BadHttpRequestException(exception.Message));
+            }
 
-        return Results.Created();
-    })
-    .WithName("Register Application and Features")
-    .WithOpenApi(operation => new OpenApiOperation(operation)
-    {
-        Summary = "Allow register current used features in specific app",
-        Description = "Client can provide all possible features it can serve"
-    });
+            return Results.Created();
+        })
+    .WithName("Register Application and Features");
     
 app.MapGet("/applications", (IFeatureRepository featureRepository) =>
     {
@@ -81,12 +77,7 @@ app.MapGet("/applications", (IFeatureRepository featureRepository) =>
             return Results.BadRequest(new BadHttpRequestException(exception.Message));
         }
     })
-    .WithName("Applications")
-    .WithOpenApi(operation => new OpenApiOperation(operation)
-    {
-        Summary = "List all registered apps",
-        Description = "List all registered apps"
-    });
+    .WithName("Applications");
 
 app.MapGet("/applications/{applicationName}/features/", (string applicationName, IFeatureRepository featureRepository) =>
 {
@@ -101,12 +92,7 @@ app.MapGet("/applications/{applicationName}/features/", (string applicationName,
         return Results.BadRequest(new BadHttpRequestException(exception.Message));
     }
 })
-.WithName("Features")
-.WithOpenApi(operation => new OpenApiOperation(operation)
-{
-    Summary = "List all features",
-    Description = "List all features with states for application"
-});
+.WithName("Features");
 
 app.MapGet("/applications/{applicationName}/features/{featureName}/state/", (string applicationName, string featureName, IFeatureRepository featureRepository) =>
     {
@@ -120,12 +106,7 @@ app.MapGet("/applications/{applicationName}/features/{featureName}/state/", (str
             return Results.NotFound();
         }
     })
-    .WithName("GetFeatureState")
-    .WithOpenApi(operation => new OpenApiOperation(operation)
-    {
-        Summary = "Allow checking feature state in real time",
-        Description = "Client can provide feature name and in response is feature state information"
-    });
+    .WithName("GetFeatureState");
 
 app.MapPut("/applications/{applicationName}/features/{featureName}", (string applicationName, string featureName, FeatureStateDto featureState, IFeatureRepository featureRepository) =>
     {
@@ -142,11 +123,6 @@ app.MapPut("/applications/{applicationName}/features/{featureName}", (string app
             return Results.NotFound();
         }
     })
-    .WithName("SetFeatureState")
-    .WithOpenApi(operation => new OpenApiOperation(operation)
-    {
-        Summary = "Allow setting feature state",
-        Description = "Client can provide app, feature name and state"
-    });
+    .WithName("SetFeatureState");
 
 app.Run();

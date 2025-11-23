@@ -12,19 +12,19 @@ public static class ConfigureServices
     {
         if (string.IsNullOrEmpty(connectionString))
         {
-            return services.AddScoped<IFeatureRepository, FeatureInMemoryRepository>();
+            return services.AddScoped<IFeatureStatesRepository, FeatureStatesInMemoryRepository>();
         }
         
-        services.AddDbContext<FeaturesDataContext>(options =>
+        services.AddDbContext<FeatureStatesDataContext>(options =>
             options.UseSqlite(connectionString));
-        return services.AddScoped<IFeatureRepository, FeatureRepository>();
+        return services.AddScoped<IFeatureStatesRepository, FeatureStatesRepository>();
     }
     
     public static IApplicationBuilder MigrateDatabase(this IApplicationBuilder app)
     {
         using (var scope = app.ApplicationServices.CreateScope())
         {
-            var db = scope.ServiceProvider.GetRequiredService<FeaturesDataContext>();
+            var db = scope.ServiceProvider.GetRequiredService<FeatureStatesDataContext>();
             db.Database.Migrate();
         }
         return app;

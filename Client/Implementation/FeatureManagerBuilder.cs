@@ -88,7 +88,7 @@ public sealed class FeatureManagerBuilder
         {
             var fullConfig = PrepareFullConfiguration();
             var featureManager = new FeatureManager(fullConfig);
-            await featureManager.RegisterFeaturesOnNode();
+            await featureManager.RegisterFeaturesOnNodeAsync();
             return featureManager;
         }
         throw new Exception("Cannot build object!");

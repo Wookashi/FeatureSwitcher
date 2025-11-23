@@ -6,16 +6,15 @@ namespace Wookashi.FeatureSwitcher.Manager.Database.Entities;
 [Index(nameof(Name), IsUnique = true)]
 public class ApplicationEntity
 {
-    [Key] 
+    [Key]
     public int Id { get; set; }
 
     [Required]
-    [MaxLength(100)]
-    public string Name { get; set; } = null!;
+    [MaxLength(64)]
+    public required string Name { get; set; }
 
-    [Required]
-    [MaxLength(100)]
-    public string Environment { get; set; } = null!;
-    
-    public IEnumerable<FeatureEntity> Features { get; set; }  = new List<FeatureEntity>();
+    [MaxLength(256)]
+    public string Description { get; set; } = null!;
+
+    public ICollection<FeatureStateEntity> FeatureStates { get; set; } = new List<FeatureStateEntity>();
 }

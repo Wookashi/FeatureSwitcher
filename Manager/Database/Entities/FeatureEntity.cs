@@ -10,12 +10,13 @@ public sealed class FeatureEntity
     public int Id { get; set; }
     
     [Required]
-    [MaxLength(100)]
+    [MaxLength(64)]
     public string Name { get; set; } = null!;
     
-    public required ApplicationEntity Application { get; set; }
+    [MaxLength(256)]
+    public string Description { get; set; } = null!;
+
+    public bool IsArchived { get; set; }
     
-    [Required]
-    public bool IsEnabled { get; set; }
-    
+    public ICollection<FeatureStateEntity> FeatureStates { get; set; } = new List<FeatureStateEntity>();
 }

@@ -5,9 +5,9 @@ using Microsoft.Extensions.Configuration;
 namespace Wookashi.FeatureSwitcher.Manager.Database
 {
     // ReSharper disable once UnusedType.Global
-    public class FeaturesDataContextFactory : IDesignTimeDbContextFactory<FeaturesDataContext>
+    public class FeatureStatesDataContextFactory : IDesignTimeDbContextFactory<FeatureStatesDataContext>
     {
-        public FeaturesDataContext CreateDbContext(string[] args)
+        public FeatureStatesDataContext CreateDbContext(string[] args)
         {
             var apiProjectPath = Path.Combine(Directory.GetCurrentDirectory());
 
@@ -18,13 +18,13 @@ namespace Wookashi.FeatureSwitcher.Manager.Database
                 .AddEnvironmentVariables()
                 .Build();
 
-            var connectionString = configuration["NodeConfiguration:ConnectionString"] 
-                ?? "Data Source=featureSwitcher.db"; // fallback gdy brak connection string
+            var connectionString = configuration["ManagerConfiguration:ConnectionString"] 
+                ?? "Data Source=Data/featureSwitcher.db"; // fallback value used when cs is empty
 
-            var optionsBuilder = new DbContextOptionsBuilder<FeaturesDataContext>();
+            var optionsBuilder = new DbContextOptionsBuilder<FeatureStatesDataContext>();
             optionsBuilder.UseSqlite(connectionString);
 
-            return new FeaturesDataContext(optionsBuilder.Options);
+            return new FeatureStatesDataContext(optionsBuilder.Options);
         }
     }
 }

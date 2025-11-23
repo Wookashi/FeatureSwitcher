@@ -1,5 +1,5 @@
-# Create migrations for Node.Api
+# Create migrations for Manager.Api
 ### In FeatureSwitcher catalog
 ```
-dotnet ef migrations add InitialCreate --project Node/Database --startup-project Node/Api --context FeaturesDataContext
+dotnet ef migrations add InitialCreate --project Manager/Database --startup-project Manager/Api --context FeatureStatesDataContext
 ```
