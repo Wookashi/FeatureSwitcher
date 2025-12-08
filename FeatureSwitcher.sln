@@ -14,7 +14,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Client", "Client", "{2DBF43
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Node", "Node", "{7AA29B48-E847-4495-AF5D-21F39432DD90}"
 	ProjectSection(SolutionItems) = preProject
-		Node\node-compose.yml = Node\node-compose.yml
 		Node\EF mirations.md = Node\EF mirations.md
 	EndProjectSection
 EndProject
