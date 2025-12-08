@@ -1,7 +1,7 @@
 using System.IO.Compression;
 using Microsoft.AspNetCore.ResponseCompression;
-using Microsoft.OpenApi;
 using Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Repositories;
+using Wookashi.FeatureSwitcher.Manager.Database.Extensions;
 using Wookashi.FeatureSwitcher.Shared.Abstraction.Dtos;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +10,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+var dbConnectionString = builder.Configuration["NodeConfiguration:ConnectionString"] ?? string.Empty;
+builder.Services.AddDatabase(dbConnectionString);
 
 builder.Services.AddResponseCompression(opts =>
 {
@@ -37,7 +39,7 @@ app.UseStaticFiles();
 app.MapGet("/api/hello", () => Results.Ok(new { message = "Hello from .NET 9" }));
 app.MapGet("/health", () => Results.Ok(new { ok = true, ts = DateTimeOffset.UtcNow }));
 
-app.MapPost("/nodes", (NodeRegistrationModel registerModel, IFeatureStatesRepository featureRepository) =>
+app.MapPost("/nodes", (NodeRegistrationModel registerModel, IFeatureStatesRepository featureStateRepository) =>
     {
         // var featureService = new FeatureService(featureRepository);
         //
