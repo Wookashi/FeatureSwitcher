@@ -42,6 +42,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{9EC9AE
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Abstraction", "Shared\Abstraction\Abstraction.csproj", "{382302D3-7CA2-4C59-8940-7A0CF386ED02}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{749845AA-CF56-49A2-AC32-B444BA778143}"
+	ProjectSection(SolutionItems) = preProject
+		Shared\Docs\Infrastructure.drawio = Shared\Docs\Infrastructure.drawio
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -109,5 +114,6 @@ Global
 		{32072CB0-9EEB-47D7-85B5-6AC3E25C163B} = {5299C23C-BB4C-4C33-9001-0A544923E98F}
 		{490FF6CC-5A9D-45CC-AF0E-1D504AEF9E7F} = {5299C23C-BB4C-4C33-9001-0A544923E98F}
 		{382302D3-7CA2-4C59-8940-7A0CF386ED02} = {9EC9AED7-9D44-4934-BCB5-12B89DC99D05}
+		{749845AA-CF56-49A2-AC32-B444BA778143} = {9EC9AED7-9D44-4934-BCB5-12B89DC99D05}
 	EndGlobalSection
 EndGlobal

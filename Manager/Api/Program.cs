@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.ResponseCompression;
 using Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Repositories;
 using Wookashi.FeatureSwitcher.Manager.Api.Services;
 using Wookashi.FeatureSwitcher.Manager.Database.Extensions;
-using Wookashi.FeatureSwitcher.Shared.Abstraction.Dtos;
+using Wookashi.FeatureSwitcher.Shared.Abstraction.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,10 +40,10 @@ app.UseStaticFiles();
 app.MapGet("/api/hello", () => Results.Ok(new { message = "Hello from .NET 9" }));
 app.MapGet("/health", () => Results.Ok(new { ok = true, ts = DateTimeOffset.UtcNow }));
 
-app.MapPost("/nodes", (NodeRegistrationModel nodeRegistrationModel, INodeRepository nodeRepository) =>
+app.MapPut("/nodes", (NodeRegistrationModel nodeRegistrationModel, INodeRepository nodeRepository) =>
     {
         var nodeService = new NodeService(nodeRepository);
-        nodeService.RegisterNode(nodeRegistrationModel);
+        nodeService.CreateOrReplaceNode(nodeRegistrationModel);
 
         return Results.Created();
     })

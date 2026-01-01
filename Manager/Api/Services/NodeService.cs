@@ -1,5 +1,5 @@
 using Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Repositories;
-using Wookashi.FeatureSwitcher.Shared.Abstraction.Dtos;
+using Wookashi.FeatureSwitcher.Shared.Abstraction.Models;
 
 namespace Wookashi.FeatureSwitcher.Manager.Api.Services;
 
@@ -12,7 +12,7 @@ internal sealed class NodeService
         _nodeRepository = nodeRepository;
     }
 
-    public void RegisterNode(NodeRegistrationModel nodeRegistrationModel)
+    public void CreateOrReplaceNode(NodeRegistrationModel nodeRegistrationModel)
     {
         //TODO Implement node registation.
     }

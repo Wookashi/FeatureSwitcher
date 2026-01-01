@@ -1,0 +1,142 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15" version="29.2.9">
+  <diagram name="Strona-1" id="Rb0WrQ43sG0upQbEwDIL">
+    <mxGraphModel dx="1234" dy="826" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="FxWk3nlg0W9HGIVEOy0n-7" edge="1" parent="1" source="FxWk3nlg0W9HGIVEOy0n-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" target="FxWk3nlg0W9HGIVEOy0n-5" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="130" y="240" />
+              <mxPoint x="430" y="240" />
+            </Array>
+            <mxPoint x="390" y="230" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="FxWk3nlg0W9HGIVEOy0n-8" connectable="0" parent="FxWk3nlg0W9HGIVEOy0n-7" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="IsFeatureEnable(Async+Sync)" vertex="1">
+          <mxGeometry relative="1" x="-0.0621" y="2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="FxWk3nlg0W9HGIVEOy0n-10" connectable="0" parent="FxWk3nlg0W9HGIVEOy0n-7" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="GET" vertex="1">
+          <mxGeometry relative="1" x="0.2919" y="1" as="geometry">
+            <mxPoint x="-179" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="FxWk3nlg0W9HGIVEOy0n-11" edge="1" parent="1" source="FxWk3nlg0W9HGIVEOy0n-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.25;entryY=1;entryDx=0;entryDy=0;" target="FxWk3nlg0W9HGIVEOy0n-5" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="130" y="430" />
+              <mxPoint x="430" y="430" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="FxWk3nlg0W9HGIVEOy0n-12" connectable="0" parent="FxWk3nlg0W9HGIVEOy0n-11" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="POST" vertex="1">
+          <mxGeometry relative="1" x="-0.6769" y="-3" as="geometry">
+            <mxPoint x="17" y="-3" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="FxWk3nlg0W9HGIVEOy0n-13" connectable="0" parent="FxWk3nlg0W9HGIVEOy0n-11" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="RegisterFeaturesOnNodeAsync" vertex="1">
+          <mxGeometry relative="1" x="-0.0923" y="-3" as="geometry">
+            <mxPoint x="33" y="-3" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="FxWk3nlg0W9HGIVEOy0n-1" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;" value="Application 1" vertex="1">
+          <mxGeometry height="120" width="120" x="70" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="FxWk3nlg0W9HGIVEOy0n-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Nuget&lt;div&gt;Client&lt;/div&gt;" vertex="1">
+          <mxGeometry height="40" width="80" x="110" y="350" as="geometry" />
+        </mxCell>
+        <mxCell id="FxWk3nlg0W9HGIVEOy0n-17" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.75;exitDx=0;exitDy=0;entryX=-0.025;entryY=0.91;entryDx=0;entryDy=0;entryPerimeter=0;" target="FxWk3nlg0W9HGIVEOy0n-26" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="520" y="371" />
+            </Array>
+            <mxPoint x="520" y="370" as="sourcePoint" />
+            <mxPoint x="590" y="310" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="FxWk3nlg0W9HGIVEOy0n-18" connectable="0" parent="FxWk3nlg0W9HGIVEOy0n-17" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Nodes" vertex="1">
+          <mxGeometry relative="1" x="0.125" y="4" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="FxWk3nlg0W9HGIVEOy0n-19" connectable="0" parent="FxWk3nlg0W9HGIVEOy0n-17" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="PUT" vertex="1">
+          <mxGeometry relative="1" x="-0.7294" as="geometry">
+            <mxPoint x="24" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="FxWk3nlg0W9HGIVEOy0n-5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Node 1&lt;div&gt;(Env? Dev)&lt;/div&gt;" vertex="1">
+          <mxGeometry height="100" width="120" x="400" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="FxWk3nlg0W9HGIVEOy0n-21" edge="1" parent="1" source="FxWk3nlg0W9HGIVEOy0n-26" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.75;entryY=1;entryDx=0;entryDy=0;exitX=0.25;exitY=1;exitDx=0;exitDy=0;" target="FxWk3nlg0W9HGIVEOy0n-5" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="770" y="420" />
+              <mxPoint x="490" y="420" />
+            </Array>
+            <mxPoint x="810" y="430" as="sourcePoint" />
+            <mxPoint x="640" y="330" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="FxWk3nlg0W9HGIVEOy0n-22" connectable="0" parent="FxWk3nlg0W9HGIVEOy0n-21" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Applications/features/states" vertex="1">
+          <mxGeometry relative="1" x="0.1978" y="-2" as="geometry">
+            <mxPoint x="17" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="FxWk3nlg0W9HGIVEOy0n-23" connectable="0" parent="FxWk3nlg0W9HGIVEOy0n-21" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="GET" vertex="1">
+          <mxGeometry relative="1" x="-0.8564" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="FxWk3nlg0W9HGIVEOy0n-25" edge="1" parent="1" source="FxWk3nlg0W9HGIVEOy0n-26" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.75;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="FxWk3nlg0W9HGIVEOy0n-5" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="830" y="240" />
+              <mxPoint x="460" y="240" />
+            </Array>
+            <mxPoint x="860" y="265" as="sourcePoint" />
+            <mxPoint x="930" y="330" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="FxWk3nlg0W9HGIVEOy0n-27" connectable="0" parent="FxWk3nlg0W9HGIVEOy0n-25" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="/applications/{applicationName}/features/{featureName}" vertex="1">
+          <mxGeometry relative="1" x="0.1156" y="-2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="FxWk3nlg0W9HGIVEOy0n-28" connectable="0" parent="FxWk3nlg0W9HGIVEOy0n-25" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="PUT" vertex="1">
+          <mxGeometry relative="1" x="-0.6756" y="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="FxWk3nlg0W9HGIVEOy0n-26" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Manager" vertex="1">
+          <mxGeometry height="100" width="120" x="740" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="FxWk3nlg0W9HGIVEOy0n-29" parent="1" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" value="Client Data" vertex="1">
+          <mxGeometry height="90" width="140" x="60" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="FxWk3nlg0W9HGIVEOy0n-30" parent="FxWk3nlg0W9HGIVEOy0n-29" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" value="App flag list" vertex="1">
+          <mxGeometry height="30" width="140" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="FxWk3nlg0W9HGIVEOy0n-31" parent="FxWk3nlg0W9HGIVEOy0n-29" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" value="Additional data" vertex="1">
+          <mxGeometry height="30" width="140" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="FxWk3nlg0W9HGIVEOy0n-33" parent="1" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" value="Node data:" vertex="1">
+          <mxGeometry height="90" width="140" x="390" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="FxWk3nlg0W9HGIVEOy0n-34" parent="FxWk3nlg0W9HGIVEOy0n-33" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" value="Application List" vertex="1">
+          <mxGeometry height="30" width="140" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="FxWk3nlg0W9HGIVEOy0n-35" parent="FxWk3nlg0W9HGIVEOy0n-33" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" value="Feature States" vertex="1">
+          <mxGeometry height="30" width="140" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="FxWk3nlg0W9HGIVEOy0n-37" parent="1" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" value="Manager Data" vertex="1">
+          <mxGeometry height="60" width="140" x="730" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="FxWk3nlg0W9HGIVEOy0n-38" parent="FxWk3nlg0W9HGIVEOy0n-37" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" value="History" vertex="1">
+          <mxGeometry height="30" width="140" y="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

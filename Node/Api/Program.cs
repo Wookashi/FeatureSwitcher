@@ -1,4 +1,3 @@
-using Microsoft.OpenApi;
 using Wookashi.FeatureSwitcher.Node.Abstraction.Database.Dtos;
 using Wookashi.FeatureSwitcher.Node.Abstraction.Database.Repositories;
 using Wookashi.FeatureSwitcher.Node.Abstraction.Infrastructure.Exceptions;

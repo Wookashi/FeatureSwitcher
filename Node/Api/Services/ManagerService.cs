@@ -2,7 +2,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using Wookashi.FeatureSwitcher.Node.Api.Configuration;
-using Wookashi.FeatureSwitcher.Shared.Abstraction.Dtos;
+using Wookashi.FeatureSwitcher.Shared.Abstraction.Models;
 
 namespace Wookashi.FeatureSwitcher.Node.Api.Services;
 
