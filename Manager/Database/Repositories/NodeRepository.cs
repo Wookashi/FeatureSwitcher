@@ -2,7 +2,7 @@ using Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Repositories;
 
 namespace Wookashi.FeatureSwitcher.Manager.Database.Repositories;
 
-internal sealed class FeatureStatesRepository : IFeatureStatesRepository
+internal sealed class NodeRepository : INodeRepository
 {
     public void NodeRegistration()
     {

@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using Microsoft.AspNetCore.ResponseCompression;
 using Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Repositories;
+using Wookashi.FeatureSwitcher.Manager.Api.Services;
 using Wookashi.FeatureSwitcher.Manager.Database.Extensions;
 using Wookashi.FeatureSwitcher.Shared.Abstraction.Dtos;
 
@@ -39,22 +40,14 @@ app.UseStaticFiles();
 app.MapGet("/api/hello", () => Results.Ok(new { message = "Hello from .NET 9" }));
 app.MapGet("/health", () => Results.Ok(new { ok = true, ts = DateTimeOffset.UtcNow }));
 
-app.MapPost("/nodes", (NodeRegistrationModel registerModel, IFeatureStatesRepository featureStateRepository) =>
+app.MapPost("/nodes", (NodeRegistrationModel nodeRegistrationModel, INodeRepository nodeRepository) =>
     {
-        // var featureService = new FeatureService(featureRepository);
-        //
-        // try
-        // {
-        //     featureService.RegisterApplication(new ApplicationDto(registerModel.AppName, registerModel.Environment), registerModel.Features);           
-        // }
-        // catch (IncorrectEnvironmentException exception)
-        // {
-        //     return Results.BadRequest(new BadHttpRequestException(exception.Message));
-        // }
+        var nodeService = new NodeService(nodeRepository);
+        nodeService.RegisterNode(nodeRegistrationModel);
 
         return Results.Created();
     })
-    .WithName("Register Application and Features");
+    .WithName("Register Node on Manager");
 
 
 app.MapFallbackToFile("index.html");

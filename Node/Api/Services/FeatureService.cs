@@ -12,7 +12,6 @@ internal sealed class FeatureService
     public FeatureService(IFeatureRepository featuresRepository)
     {
         _featureRepository = featuresRepository;
-     //   _environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
     }
 
     /// <summary>

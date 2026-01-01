@@ -2,7 +2,7 @@
 
 namespace Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Repositories;
 
-public interface IFeatureStatesRepository
+public interface INodeRepository
 {
     public void NodeRegistration();
     public void UpdateFeatureState();

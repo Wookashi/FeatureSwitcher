@@ -12,12 +12,12 @@ public static class ConfigureServices
     {
         if (string.IsNullOrEmpty(connectionString))
         {
-            return services.AddScoped<IFeatureStatesRepository, FeatureStatesInMemoryRepository>();
+            return services.AddScoped<INodeRepository, NodeInMemoryRepository>();
         }
         
         services.AddDbContext<FeatureStatesDataContext>(options =>
             options.UseSqlite(connectionString));
-        return services.AddScoped<IFeatureStatesRepository, FeatureStatesRepository>();
+        return services.AddScoped<INodeRepository, NodeRepository>();
     }
     
     public static IApplicationBuilder MigrateDatabase(this IApplicationBuilder app)
