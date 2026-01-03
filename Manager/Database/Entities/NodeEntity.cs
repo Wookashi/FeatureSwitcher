@@ -13,8 +13,9 @@ public class NodeEntity
     [MaxLength(64)]
     public required string Name { get; set; }
     
+    [Required]
+    public required Uri Address { get; set; }
+    
     [MaxLength(256)]
     public string Description { get; set; } = null!;
-    
-    public ICollection<FeatureStateEntity> FeatureStates { get; set; } = new List<FeatureStateEntity>();
 }

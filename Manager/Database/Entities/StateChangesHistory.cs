@@ -1,6 +1,6 @@
 namespace Wookashi.FeatureSwitcher.Manager.Database.Entities;
 
-internal sealed class FeatureStateHistory
+public sealed class StateChangesHistory
 {
     public long Id { get; set; }
     public long ApplicationId { get; set; }

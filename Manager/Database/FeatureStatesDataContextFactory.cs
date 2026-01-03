@@ -18,7 +18,7 @@ namespace Wookashi.FeatureSwitcher.Manager.Database
                 .AddEnvironmentVariables()
                 .Build();
 
-            var connectionString = configuration["ManagerConfiguration:ConnectionString"] 
+            var connectionString = configuration["Database:ConnectionString"] 
                 ?? "Data Source=Data/featureSwitcher.db"; // fallback value used when cs is empty
 
             var optionsBuilder = new DbContextOptionsBuilder<FeatureStatesDataContext>();

@@ -10,18 +10,6 @@ public class FeatureStatesDataContext : DbContext
     {
     }
     
-    protected override void OnModelCreating(ModelBuilder builder)
-    {
-        // builder.Entity<ApplicationEntity>()
-        //     .HasIndex(entity => entity.Name)
-        //     .IsUnique();
-        // builder.Entity<FeatureEntity>()
-        //     .HasIndex(entity => entity.Name)
-        //     .IsUnique();
-    }
-        
-    public DbSet<ApplicationEntity> Applications { get; set; }
-    public DbSet<FeatureEntity> Features { get; set; }
-    public DbSet<FeatureStateEntity> FeatureStates { get; set; }
     public DbSet<NodeEntity> Nodes { get; set; }
+    public DbSet<StateChangesHistory> StateChanges { get; set; }
 }
