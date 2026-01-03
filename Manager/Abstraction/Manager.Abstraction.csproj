@@ -10,12 +10,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Database\Dtos\" />
       <Folder Include="Infrastructure\" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\..\Shared\Abstraction\Abstraction.csproj" />
     </ItemGroup>
 
 </Project>
