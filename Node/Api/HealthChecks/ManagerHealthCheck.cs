@@ -12,27 +12,25 @@ internal sealed class ManagerHealthCheck(IOptions<ManagerSettings> options) : IH
         HealthCheckContext context,
         CancellationToken cancellationToken = default)
     {
+        var data = new Dictionary<string, object>
+        {
+            { "Manager Url", _options.Url ?? string.Empty }
+        };
         try
         {
             using var client = new HttpClient();
-            var response = await client.GetAsync(_options.Url, cancellationToken);
+            var response = await client.GetAsync($"{_options.Url}/health", cancellationToken);
 
             if (response.IsSuccessStatusCode)
             {
                 return HealthCheckResult.Healthy("Connected");
             }
-            else
-            {
-                var data = new Dictionary<string, object>
-                {
-                    { "Http Code", (int)response.StatusCode }
-                };
-                return HealthCheckResult.Degraded("Service returned error", data: data);
-            }
+            data.Add("Http Code", (int)response.StatusCode);
+            return HealthCheckResult.Degraded("Service returned error", data: data);
         }
         catch (Exception ex)
         {
-            return HealthCheckResult.Unhealthy($"Exception: {ex.Message}");
+            return HealthCheckResult.Degraded($"Exception: {ex.Message}", data: data);
         }
     }
 }
