@@ -1,3 +1,4 @@
+using Microsoft.OpenApi;
 using Wookashi.FeatureSwitcher.Node.Abstraction.Database.Dtos;
 using Wookashi.FeatureSwitcher.Node.Abstraction.Database.Repositories;
 using Wookashi.FeatureSwitcher.Node.Abstraction.Infrastructure.Exceptions;
@@ -14,7 +15,14 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.Configure<ManagerSettings>(
     builder.Configuration.GetSection("ManagerSettings"));
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Wookashi Feature Switcher Node API",
+        Version = "v1"
+    });
+});
 var dbConnectionString = builder.Configuration["NodeConfiguration:ConnectionString"] ?? string.Empty;
 builder.Services.AddDatabase(dbConnectionString);
 builder.Services.AddHealthCheckElements();
@@ -61,7 +69,8 @@ app.MapPost("/applications",
 
             return Results.Created();
         })
-    .WithName("Register Application and Features");
+    .WithDescription("Used to register application by app client. Adds or updates app data in node database.")
+    .WithTags("Client");
     
 app.MapGet("/applications", (IFeatureRepository featureRepository) =>
     {
@@ -105,7 +114,8 @@ app.MapGet("/applications/{applicationName}/features/{featureName}/state/", (str
             return Results.NotFound();
         }
     })
-    .WithName("GetFeatureState");
+    .WithDescription("Used to check flag state on client.")
+    .WithTags("Client");
 
 app.MapPut("/applications/{applicationName}/features/{featureName}", (string applicationName, string featureName, FeatureStateDto featureState, IFeatureRepository featureRepository) =>
     {
