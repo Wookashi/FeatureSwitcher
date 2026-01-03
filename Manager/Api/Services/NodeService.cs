@@ -1,3 +1,4 @@
+using Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Dtos;
 using Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Repositories;
 using Wookashi.FeatureSwitcher.Shared.Abstraction.Models;
 
@@ -14,6 +15,10 @@ internal sealed class NodeService
 
     public void CreateOrReplaceNode(NodeRegistrationModel nodeRegistrationModel)
     {
-        //TODO Implement node registation.
+        _nodeRepository.CreateOrUpdateNode(new NodeDto
+        {
+            Name = nodeRegistrationModel.NodeName,
+            Address = nodeRegistrationModel.NodeAddress
+        });
     }
 }

@@ -8,6 +8,7 @@ namespace Wookashi.FeatureSwitcher.Node.Database.Repositories;
 
 internal sealed class FeatureInMemoryRepository : IFeatureRepository
 {
+    
     public List<ApplicationDto> GetApplications()
     {
         using (var context = new FeaturesInMemoryDataContext())

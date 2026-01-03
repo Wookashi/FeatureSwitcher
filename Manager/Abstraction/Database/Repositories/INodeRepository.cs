@@ -1,10 +1,12 @@
 
 
+using Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Dtos;
+
 namespace Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Repositories;
 
 public interface INodeRepository
 {
-    public void NodeRegistration();
+    public void CreateOrUpdateNode(NodeDto nodeDto);
     public void UpdateFeatureState();
     
     //
