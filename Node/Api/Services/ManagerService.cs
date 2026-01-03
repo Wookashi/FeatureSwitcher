@@ -17,9 +17,9 @@ internal sealed class ManagerService
         _managerSettings = managerSettings.Value;
     }
 
-    internal async Task RegisterNodeToManagerAsync()
+    internal async Task RegisterNodeToManagerAsync(NodeRegistrationModel nodeRegistrationModel)
     {
-        var content = new StringContent(JsonSerializer.Serialize(new NodeRegistrationModel()), Encoding.UTF8, "application/json");
+        var content = new StringContent(JsonSerializer.Serialize(nodeRegistrationModel), Encoding.UTF8, "application/json");
         var response = await _httpClient.PostAsync($"{_managerSettings.Url}/nodes", content);
         //TODO Implement register method
     }
