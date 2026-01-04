@@ -1,13 +1,35 @@
 using Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Dtos;
 using Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Repositories;
+using Wookashi.FeatureSwitcher.Manager.Database.Entities;
 
 namespace Wookashi.FeatureSwitcher.Manager.Database.Repositories;
 
-internal sealed class NodeRepository : INodeRepository
+internal class NodeRepository : INodeRepository
 {
+    private readonly INodeDataContext _context;
+
+    public NodeRepository(INodeDataContext context)
+    {
+        _context = context;
+    }
+    
     public void CreateOrUpdateNode(NodeDto nodeDto)
     {
-        throw new NotImplementedException();
+        var existingNode = _context.Nodes.SingleOrDefault(node => node.Name == nodeDto.Name);
+        if (existingNode is not null)
+        {
+            existingNode.Address = nodeDto.Address;
+        }
+        else
+        {
+            var noteEntity = new NodeEntity
+            {
+                Name = nodeDto.Name,
+                Address = nodeDto.Address,
+            };
+            _context.Nodes.Add(noteEntity);
+        }
+        _context.SaveChanges();
     }
 
     public void UpdateFeatureState()

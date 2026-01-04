@@ -12,11 +12,17 @@ public static class ConfigureServices
     {
         if (string.IsNullOrEmpty(connectionString))
         {
-            return services.AddScoped<INodeRepository, NodeInMemoryRepository>();
+            services.AddDbContext<NodesInMemoryDataContext>(options =>
+                options.UseInMemoryDatabase(databaseName: "Test_db"));
+            services.AddScoped<INodeDataContext, NodesInMemoryDataContext>();
         }
-        
-        services.AddDbContext<FeatureStatesDataContext>(options =>
-            options.UseSqlite(connectionString));
+        else
+        {
+            services.AddDbContext<NodesDataContext>(options =>
+                options.UseSqlite(connectionString));
+            services.AddScoped<INodeDataContext, NodesDataContext>();
+        }
+
         return services.AddScoped<INodeRepository, NodeRepository>();
     }
     
@@ -24,7 +30,7 @@ public static class ConfigureServices
     {
         using (var scope = app.ApplicationServices.CreateScope())
         {
-            var db = scope.ServiceProvider.GetRequiredService<FeatureStatesDataContext>();
+            var db = scope.ServiceProvider.GetRequiredService<NodesDataContext>();
             db.Database.Migrate();
         }
         return app;

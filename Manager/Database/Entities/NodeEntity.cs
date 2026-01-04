@@ -17,5 +17,5 @@ public class NodeEntity
     public required Uri Address { get; set; }
     
     [MaxLength(256)]
-    public string Description { get; set; } = null!;
+    public string? Description { get; set; }
 }

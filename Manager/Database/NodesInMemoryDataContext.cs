@@ -3,13 +3,13 @@ using Wookashi.FeatureSwitcher.Manager.Database.Entities;
 
 namespace Wookashi.FeatureSwitcher.Manager.Database;
 
-public class FeatureStatesDataContext : DbContext
+internal sealed class NodesInMemoryDataContext : DbContext, INodeDataContext
 {
-    public FeatureStatesDataContext(DbContextOptions<FeatureStatesDataContext> options)
+    public NodesInMemoryDataContext(DbContextOptions<NodesInMemoryDataContext> options)
         : base(options)
     {
     }
     
     public DbSet<NodeEntity> Nodes { get; set; }
-    public DbSet<StateChangesHistory> StateChanges { get; set; }
+    public DbSet<StateChangesHistory> StateChangesHistory { get; set; }
 }

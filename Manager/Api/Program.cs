@@ -27,6 +27,11 @@ builder.Services.Configure<GzipCompressionProviderOptions>(o => o.Level = Compre
 
 var app = builder.Build();
 
+if (dbConnectionString != string.Empty)
+{
+    app.MigrateDatabase();
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
