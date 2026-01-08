@@ -7,7 +7,7 @@ namespace Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Repositories;
 public interface INodeRepository
 {
     public void CreateOrUpdateNode(NodeDto nodeDto);
-    public void UpdateFeatureState();
+    public List<NodeDto> GetAllNodes();
     
     //
     // public List<ApplicationDto> GetApplications();

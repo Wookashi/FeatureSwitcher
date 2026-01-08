@@ -15,10 +15,12 @@ internal sealed class NodeService
 
     public void CreateOrReplaceNode(NodeRegistrationModel nodeRegistrationModel)
     {
-        _nodeRepository.CreateOrUpdateNode(new NodeDto
-        {
-            Name = nodeRegistrationModel.NodeName,
-            Address = nodeRegistrationModel.NodeAddress
-        });
+        _nodeRepository
+            .CreateOrUpdateNode(new NodeDto(nodeRegistrationModel.NodeName, nodeRegistrationModel.NodeAddress));
+    }
+    
+    public List<NodeDto> GetAllNodes()
+    {
+        return _nodeRepository.GetAllNodes();
     }
 }

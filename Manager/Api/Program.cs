@@ -47,13 +47,19 @@ app.UseStaticFiles();
 app.MapGet("/api/hello", () => Results.Ok(new { message = "Hello from .NET 9" }));
 app.MapGet("/health", () => Results.Ok(new { ok = true, ts = DateTimeOffset.UtcNow })).ExcludeFromDescription();
 
+app.MapGet("/api/nodes", (INodeRepository nodeRepository) =>
+    {
+        var nodeService = new NodeService(nodeRepository);
+        return Results.Ok(nodeService.GetAllNodes());
+    })
+    .WithDescription("Used to list nodes.");
 app.MapPut("/api/nodes", (NodeRegistrationModel nodeRegistrationModel, INodeRepository nodeRepository) =>
     {
         var nodeService = new NodeService(nodeRepository);
         nodeService.CreateOrReplaceNode(nodeRegistrationModel);
         return Results.Created();
     })
-    .WithName("Register Node on Manager");
+    .WithDescription("Used to register node. Adds or updates node data in manager database.");
 
 
 app.MapFallbackToFile("index.html");

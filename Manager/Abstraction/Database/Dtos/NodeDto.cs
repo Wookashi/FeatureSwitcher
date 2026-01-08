@@ -1,7 +1,7 @@
 namespace Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Dtos;
 
-public sealed class NodeDto
+public sealed class NodeDto(string name, Uri address)
 {
-    public required string Name { get; set; }
-    public required Uri Address { get; set; }
+    public string Name { get; set; } = name;
+    public Uri Address { get; set; } = address;
 }
