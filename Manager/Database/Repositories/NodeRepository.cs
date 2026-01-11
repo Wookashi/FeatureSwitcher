@@ -14,19 +14,19 @@ internal class NodeRepository : INodeRepository
         _context = context;
     }
     
-    public void CreateOrUpdateNode(NodeDto nodeDto)
+    public void CreateOrUpdateNode(string name, Uri address)
     {
-        var existingNode = _context.Nodes.SingleOrDefault(node => node.Name == nodeDto.Name);
+        var existingNode = _context.Nodes.SingleOrDefault(node => node.Name == name);
         if (existingNode is not null)
         {
-            existingNode.Address = nodeDto.Address;
+            existingNode.Address = address;
         }
         else
         {
             var noteEntity = new NodeEntity
             {
-                Name = nodeDto.Name,
-                Address = nodeDto.Address,
+                Name = name,
+                Address = address,
             };
             _context.Nodes.Add(noteEntity);
         }
@@ -36,7 +36,7 @@ internal class NodeRepository : INodeRepository
     public List<NodeDto> GetAllNodes()
     {
         return _context.Nodes
-            .Select(node => new NodeDto(node.Name, node.Address))
+            .Select(node => new NodeDto(node.Id, node.Name, node.Address))
             .ToList();
     }
 }
