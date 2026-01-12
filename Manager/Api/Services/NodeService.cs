@@ -13,6 +13,7 @@ internal sealed class NodeService
     {
         _nodeRepository = nodeRepository;
         _httpClient = httpClientFactory.CreateClient();
+        _httpClient.Timeout = TimeSpan.FromSeconds(5);
     }
 
     public void CreateOrReplaceNode(NodeRegistrationModel nodeRegistrationModel)
@@ -26,13 +27,46 @@ internal sealed class NodeService
         return _nodeRepository.GetAllNodes();
     }
     
-    public List<ApplicationDto> GetApplications(int NodeId)
+   public async Task<List<ApplicationDto>> GetApplications(int nodeId, CancellationToken ct = default)
     {
-        return _nodeRepository.GetAllNodes();
+        var node = _nodeRepository.GetNodeById(nodeId);
+        if (node is null)
+            throw new KeyNotFoundException($"Node with id={nodeId} not found.");
+
+        var url = JoinUrl(node.Address, "/applications");
+
+        var apps = await _httpClient.GetFromJsonAsync<List<ApplicationDto>>(url, ct);
+        return apps ?? new List<ApplicationDto>();
     }
-    
-    public List<ApplicationDto> GetFeaturesForApplication(int NodeId, int appId)
+
+    public async Task<List<FeatureDto>> GetFeaturesForApplication(int nodeId, string appName, CancellationToken ct = default)
     {
-        return _nodeRepository.GetAllNodes();
+        var node = _nodeRepository.GetNodeById(nodeId);
+        if (node is null)
+            throw new KeyNotFoundException($"Node with id={nodeId} not found.");
+        
+        var appNameEncoded = Uri.EscapeDataString(appName);
+
+        var url = JoinUrl(node.Address, $"/applications/{appNameEncoded}/features");
+
+        var features = await _httpClient.GetFromJsonAsync<List<FeatureDto>>(url, ct);
+        return features ?? new List<FeatureDto>();
+    }
+
+    private static string JoinUrl(string baseAddress, string path)
+    {
+        if (string.IsNullOrWhiteSpace(baseAddress))
+            throw new ArgumentException("Base address is empty.", nameof(baseAddress));
+
+        // Upewniamy się, że base ma schemat http/https
+        if (!baseAddress.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+            !baseAddress.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException($"Invalid node address (missing scheme): {baseAddress}", nameof(baseAddress));
+        }
+
+        var baseUri = baseAddress.EndsWith("/") ? new Uri(baseAddress) : new Uri(baseAddress + "/");
+        var rel = path.StartsWith("/") ? path.Substring(1) : path;
+        return new Uri(baseUri, rel).ToString();
     }
 }

@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.AspNetCore.ResponseCompression;
 using Swashbuckle.AspNetCore.SwaggerUI;
@@ -25,6 +26,8 @@ builder.Services.AddResponseCompression(opts =>
 builder.Services.Configure<BrotliCompressionProviderOptions>(o => o.Level = CompressionLevel.Fastest);
 builder.Services.Configure<GzipCompressionProviderOptions>(o => o.Level = CompressionLevel.Fastest);
 
+builder.Services.AddHttpClient();
+
 var app = builder.Build();
 
 if (dbConnectionString != string.Empty)
@@ -47,14 +50,14 @@ app.UseStaticFiles();
 app.MapGet("/api/hello", () => Results.Ok(new { message = "Hello from .NET 9" }));
 app.MapGet("/health", () => Results.Ok(new { ok = true, ts = DateTimeOffset.UtcNow })).ExcludeFromDescription();
 
-app.MapGet("/api/nodes", (INodeRepository nodeRepository, IHttpClientFactory httpClientFactory) =>
+app.MapGet("/api/nodes", (INodeRepository nodeRepository, [FromServices] IHttpClientFactory httpClientFactory) =>
     {
         var nodeService = new NodeService(nodeRepository, httpClientFactory);
         return Results.Ok(nodeService.GetAllNodes());
     })
     .WithDescription("Used to list nodes.");
 app.MapPut("/api/nodes", (NodeRegistrationModel nodeRegistrationModel, 
-                                    INodeRepository nodeRepository, IHttpClientFactory httpClientFactory) =>
+                                    INodeRepository nodeRepository, [FromServices] IHttpClientFactory httpClientFactory) =>
     {
         var nodeService = new NodeService(nodeRepository, httpClientFactory);
         nodeService.CreateOrReplaceNode(nodeRegistrationModel);
@@ -63,18 +66,18 @@ app.MapPut("/api/nodes", (NodeRegistrationModel nodeRegistrationModel,
     .WithDescription("Used to register node. Adds or updates node data in manager database.");
 
 app.MapGet("/api/nodes/{nodeId}/applications", (int nodeId, INodeRepository nodeRepository,
-                                                                        IHttpClientFactory httpClientFactory) =>
+        [FromServices] IHttpClientFactory httpClientFactory) =>
     {
         var nodeService = new NodeService(nodeRepository, httpClientFactory);
         return Results.Ok(nodeService.GetApplications(nodeId));
     })
     .WithDescription("Used to list application on node.");
 
-app.MapGet("/api/nodes/{nodeId}/applications/{appId}/features", (int nodeId, int appId,
-                                INodeRepository nodeRepository, IHttpClientFactory httpClientFactory) =>
+app.MapGet("/api/nodes/{nodeId}/applications/{appId}/features", (int nodeId, string appName,
+                                INodeRepository nodeRepository, [FromServices] IHttpClientFactory httpClientFactory) =>
     {
         var nodeService = new NodeService(nodeRepository, httpClientFactory);
-        return Results.Ok(nodeService.GetFeaturesForApplication(nodeId, appId));
+        return Results.Ok(nodeService.GetFeaturesForApplication(nodeId, appName));
     })
     .WithDescription("Used to list features for application on node.");
 

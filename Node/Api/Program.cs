@@ -85,7 +85,8 @@ app.MapGet("/applications", (IFeatureRepository featureRepository) =>
             return Results.BadRequest(new BadHttpRequestException(exception.Message));
         }
     })
-    .WithName("Applications");
+    .WithDescription("Used by manager to list applications.")
+    .WithTags("Manager");
 
 app.MapGet("/applications/{applicationName}/features/", (string applicationName, IFeatureRepository featureRepository) =>
 {
@@ -100,7 +101,8 @@ app.MapGet("/applications/{applicationName}/features/", (string applicationName,
         return Results.BadRequest(new BadHttpRequestException(exception.Message));
     }
 })
-.WithName("Features");
+.WithDescription("Used by manager to list application features.")
+.WithTags("Manager");
 
 app.MapGet("/applications/{applicationName}/features/{featureName}/state/", (string applicationName, string featureName, IFeatureRepository featureRepository) =>
     {

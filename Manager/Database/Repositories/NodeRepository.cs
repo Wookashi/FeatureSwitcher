@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Dtos;
 using Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Repositories;
 using Wookashi.FeatureSwitcher.Manager.Database.Entities;
@@ -36,7 +35,19 @@ internal class NodeRepository : INodeRepository
     public List<NodeDto> GetAllNodes()
     {
         return _context.Nodes
-            .Select(node => new NodeDto(node.Id, node.Name, node.Address))
+            .Select(node => new NodeDto(node.Id, node.Name, node.Address.ToString()))
             .ToList();
+    }
+
+    public NodeDto GetNodeById(int nodeId)
+    {
+        return _context.Nodes
+            .Where(entity => entity.Id == nodeId)
+            .Select(node => new NodeDto(
+                node.Id,
+                node.Name,
+                node.Address.ToString()
+            ))
+            .Single();
     }
 }
