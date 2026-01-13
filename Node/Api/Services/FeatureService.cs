@@ -19,7 +19,6 @@ internal sealed class FeatureService
     /// </summary>
     /// <param name="application">Application to register</param>
     /// <param name="featureModels">Features to register</param>
-    /// <exception cref="IncorrectEnvironmentException"></exception>
     internal void RegisterApplication(ApplicationDto application, List<RegisterFeatureStateModel> featureModels)
     {
         var appFeatures = _featureRepository.GetFeaturesForApplication(application).ToList();

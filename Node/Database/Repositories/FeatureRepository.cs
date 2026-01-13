@@ -18,15 +18,14 @@ internal sealed class FeatureRepository : IFeatureRepository
     public List<ApplicationDto> GetApplications()
     {
         return _context.Applications
-            .Select(application => new ApplicationDto(application.Name, application.Environment))
+            .Select(application => new ApplicationDto(application.Name))
             .ToList();
     }
 
     public List<FeatureDto> GetFeaturesForApplication(ApplicationDto application)
     {
         var list = _context.Features
-            .Where(feature => feature.Application.Name == application.Name
-                              && feature.Application.Environment == application.Environment)
+            .Where(feature => feature.Application.Name == application.Name)
             .Select(feature => new FeatureDto(
                 feature.Name,
                 feature.IsEnabled))
@@ -38,7 +37,6 @@ internal sealed class FeatureRepository : IFeatureRepository
     {
         var featureEntity = _context.Features
             .FirstOrDefault(feature => feature.Application.Name == application.Name
-                                       && feature.Application.Environment == application.Environment
                                        && feature.Name == featureName);
 
         return featureEntity?.IsEnabled ?? throw new FeatureNotFoundException("Feature not found");
@@ -48,7 +46,6 @@ internal sealed class FeatureRepository : IFeatureRepository
     {
         var featureEntity = _context.Features
             .FirstOrDefault(feature => feature.Application.Name == application.Name
-                                       && feature.Application.Environment == application.Environment
                                        && feature.Name == featureDto.Name);
 
         if (featureEntity is null)
@@ -68,19 +65,16 @@ internal sealed class FeatureRepository : IFeatureRepository
         }
 
         var applicationEntity = _context.Applications
-            .FirstOrDefault(app => app.Name == application.Name
-                                   && app.Environment == application.Environment);
+            .FirstOrDefault(app => app.Name == application.Name);
         if (applicationEntity is null)
         {
             _context.Applications.Add(new ApplicationEntity
             {
                 Name = application.Name,
-                Environment = application.Environment,
             });
             _context.SaveChanges();
             applicationEntity = _context.Applications
-                .FirstOrDefault(app => app.Name == application.Name
-                                       && app.Environment == application.Environment);
+                .FirstOrDefault(app => app.Name == application.Name);
         }
 
         var featureEntities = featuresList.Select(feature => new FeatureEntity
@@ -103,8 +97,7 @@ internal sealed class FeatureRepository : IFeatureRepository
 
         var applicationEntity = _context.Applications
             .Include(applicationEntity => applicationEntity.Features)
-            .FirstOrDefault(app => app.Name == application.Name
-                                   && app.Environment == application.Environment);
+            .FirstOrDefault(app => app.Name == application.Name);
 
         if (applicationEntity is null)
         {

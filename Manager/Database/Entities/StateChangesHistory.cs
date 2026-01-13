@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Wookashi.FeatureSwitcher.Manager.Database.Entities;
 
 public sealed class StateChangesHistory
@@ -11,5 +13,6 @@ public sealed class StateChangesHistory
     public bool? NewValue { get; init; }
 
     public DateTime ChangedAt { get; init; }
+    [MaxLength(256)]
     public string? ChangedBy { get; init; }
 }

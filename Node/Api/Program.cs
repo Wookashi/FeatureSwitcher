@@ -57,21 +57,15 @@ app.MapPost("/applications",
 
             var featureService = new FeatureService(featureRepository);
 
-            try
-            {
-                featureService.RegisterApplication(new ApplicationDto(registerModel.AppName, registerModel.Environment),
-                    registerModel.Features);
-            }
-            catch (IncorrectEnvironmentException exception)
-            {
-                return Results.BadRequest(new BadHttpRequestException(exception.Message));
-            }
+            featureService.RegisterApplication(new ApplicationDto(registerModel.AppName),
+                registerModel.Features);
+
 
             return Results.Created();
         })
     .WithDescription("Used to register application by app client. Adds or updates app data in node database.")
     .WithTags("Client");
-    
+
 app.MapGet("/applications", (IFeatureRepository featureRepository) =>
     {
         var featureService = new FeatureService(featureRepository);
@@ -89,27 +83,27 @@ app.MapGet("/applications", (IFeatureRepository featureRepository) =>
     .WithTags("Manager");
 
 app.MapGet("/applications/{applicationName}/features/", (string applicationName, IFeatureRepository featureRepository) =>
-{
-    var featureService = new FeatureService(featureRepository);
+    {
+        var featureService = new FeatureService(featureRepository);
 
-    try
-    {
-        return Results.Ok(featureService.GetFeaturesForApplication(new ApplicationDto(applicationName, environment)));
-    }
-    catch (ApplicationNotFoundException exception)
-    {
-        return Results.BadRequest(new BadHttpRequestException(exception.Message));
-    }
-})
-.WithDescription("Used by manager to list application features.")
-.WithTags("Manager");
+        try
+        {
+            return Results.Ok(featureService.GetFeaturesForApplication(new ApplicationDto(applicationName)));
+        }
+        catch (ApplicationNotFoundException exception)
+        {
+            return Results.BadRequest(new BadHttpRequestException(exception.Message));
+        }
+    })
+    .WithDescription("Used by manager to list application features.")
+    .WithTags("Manager");
 
 app.MapGet("/applications/{applicationName}/features/{featureName}/state/", (string applicationName, string featureName, IFeatureRepository featureRepository) =>
     {
         var featureService = new FeatureService(featureRepository);
         try
         {
-            return Results.Ok(featureService.GetFeatureState(new ApplicationDto(applicationName, environment), featureName));           
+            return Results.Ok(featureService.GetFeatureState(new ApplicationDto(applicationName), featureName));
         }
         catch (FeatureNotFoundException)
         {
@@ -119,21 +113,22 @@ app.MapGet("/applications/{applicationName}/features/{featureName}/state/", (str
     .WithDescription("Used to check flag state on client.")
     .WithTags("Client");
 
-app.MapPut("/applications/{applicationName}/features/{featureName}", (string applicationName, string featureName, FeatureStateDto featureState, IFeatureRepository featureRepository) =>
-    {
-        var featureService = new FeatureService(featureRepository);
-        try
+app.MapPut("/applications/{applicationName}/features/{featureName}",
+        (string applicationName, string featureName, FeatureStateDto featureState, IFeatureRepository featureRepository) =>
         {
-            var enabled = featureState.State;
-            var feature = new FeatureDto(featureName, enabled);
-            featureService.UpdateFeature(new ApplicationDto(applicationName, environment), feature);
-            return Results.Ok();           
-        }
-        catch (FeatureNotFoundException)
-        {
-            return Results.NotFound();
-        }
-    })
+            var featureService = new FeatureService(featureRepository);
+            try
+            {
+                var enabled = featureState.State;
+                var feature = new FeatureDto(featureName, enabled);
+                featureService.UpdateFeature(new ApplicationDto(applicationName), feature);
+                return Results.Ok();
+            }
+            catch (FeatureNotFoundException)
+            {
+                return Results.NotFound();
+            }
+        })
     .WithName("SetFeatureState");
 
 app.Run();
