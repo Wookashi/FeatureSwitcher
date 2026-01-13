@@ -1,31 +1,54 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Bogus;
+using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console;
 using Wookashi.FeatureSwitcher.Client.Abstraction;
 using Wookashi.FeatureSwitcher.Client.Abstraction.Exceptions;
 using Wookashi.FeatureSwitcher.Client.Implementation;
 using Wookashi.FeatureSwitcher.Console;
 
-
-var featureCollection = new List<IFeatureStateModel>
-{
-    new ApplicationFeature("Foo", true, new Uri("https://www.wp.pl")),
-    new ApplicationFeature("Bar", false, new Uri("https://www.wp.pl")),
-    new ApplicationFeature("Baz", true, new Uri("https://www.wp.pl")),
-    new ApplicationFeature("Qux", false, new Uri("https://www.wp.pl")),
-    new ApplicationFeature("Quu1", true, new Uri("https://www.wp.pl")),
-    new ApplicationFeature("Quu3", false, new Uri("https://www.wp.pl")),
-    new ApplicationFeature("Qux2", true, new Uri("https://www.wp.pl")),
-    new ApplicationFeature("Quu4", false, new Uri("https://www.wp.pl")),
-};
+var featureCollection = new Faker<ApplicationFeature>()
+        .CustomInstantiator(f => new ApplicationFeature(
+            $"{f.Hacker.Noun()}{f.Random.Number(1, 50)}",
+            f.Random.Bool(),
+            new Uri(f.Internet.Url())
+        ))
+        .Generate(10)
+        .Cast<IFeatureStateModel>()
+        .ToList();
 
 var serviceProvider = new ServiceCollection().AddHttpClient().BuildServiceProvider();
 
-var httpClientFactory = serviceProvider.GetService<IHttpClientFactory>();
+static string Prompt(string label, string defaultValue)
+{
+    Console.Write($"{label} [{defaultValue}]: ");
+    var input = Console.ReadLine();
+    return string.IsNullOrWhiteSpace(input) ? defaultValue : input;
+}
 
+static Uri PromptUri(string label, Uri defaultValue)
+{
+    while (true)
+    {
+        var input = Prompt(label, defaultValue.ToString());
+
+        if (Uri.TryCreate(input, UriKind.Absolute, out var uri))
+            return uri;
+
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine("Invalid URI, try again.");
+        Console.ResetColor();
+    }
+}
+
+var applicationName = Prompt("Application name", "Console");
+var environmentName = Prompt("Environment name", "testEnv");
+var environmentNodeAddress = PromptUri("Node address", new Uri("http://localhost:5216"));
+
+var httpClientFactory = serviceProvider.GetService<IHttpClientFactory>();
 var featureManagerBuilder = new FeatureManagerBuilder(new FeatureSwitcherBasicClientConfiguration(
-        applicationName: "Console",
-        environmentName: "testEnv",
-        environmentNodeAddress: new Uri("http://localhost:5216")))
+        applicationName: applicationName,
+        environmentName: environmentName,
+        environmentNodeAddress: environmentNodeAddress))
     .AddFeatures(featureCollection)
     .AddHttpClientFactory(httpClientFactory!);
 
