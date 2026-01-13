@@ -7,6 +7,7 @@ using Wookashi.FeatureSwitcher.Node.Api.HealthChecks;
 using Wookashi.FeatureSwitcher.Node.Api.Models;
 using Wookashi.FeatureSwitcher.Node.Api.Services;
 using Wookashi.FeatureSwitcher.Node.Database.Extensions;
+using Wookashi.FeatureSwitcher.Shared.Abstraction.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -114,7 +115,7 @@ app.MapGet("/applications/{applicationName}/features/{featureName}/state/", (str
     .WithTags("Client");
 
 app.MapPut("/applications/{applicationName}/features/{featureName}",
-        (string applicationName, string featureName, FeatureStateDto featureState, IFeatureRepository featureRepository) =>
+        (string applicationName, string featureName, FeatureStateModel featureState, IFeatureRepository featureRepository) =>
         {
             var featureService = new FeatureService(featureRepository);
             try
@@ -129,6 +130,9 @@ app.MapPut("/applications/{applicationName}/features/{featureName}",
                 return Results.NotFound();
             }
         })
-    .WithName("SetFeatureState");
+    .WithDescription("Used by manager to set flag state.")
+    .WithTags("Manager")
+    .Produces(StatusCodes.Status200OK)
+    .ProducesProblem(StatusCodes.Status404NotFound);
 
 app.Run();

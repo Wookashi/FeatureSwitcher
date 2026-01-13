@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.ResponseCompression;
 using Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Repositories;
@@ -80,6 +81,21 @@ app.MapGet("/api/nodes/{nodeId:int}/applications/{appName}/features", async (int
         return Results.Ok(features);
     })
     .WithDescription("Used to list features for application on node.");
+
+app.MapPut("/api/nodes/{nodeId:int}/applications/{appName}/features/{featureName}", async (int nodeId, string appName,
+string featureName, FeatureStateModel featureState, INodeRepository nodeRepository, [FromServices] IHttpClientFactory httpClientFactory) =>
+    {
+        var nodeService = new NodeService(nodeRepository, httpClientFactory);
+        
+        var response = await nodeService.SetFeatureStateAsync(nodeId, appName, featureName, featureState);
+        return response.StatusCode switch
+        {
+            HttpStatusCode.OK => Results.Ok(),
+            HttpStatusCode.BadRequest => Results.BadRequest(),
+            _ => Results.InternalServerError()
+        };
+    })
+    .WithDescription("Used to change feature state on node.");
 
 
 app.MapFallbackToFile("index.html");
