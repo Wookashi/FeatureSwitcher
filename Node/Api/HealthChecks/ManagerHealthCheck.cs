@@ -14,7 +14,7 @@ internal sealed class ManagerHealthCheck(IOptions<ManagerSettings> options) : IH
     {
         var data = new Dictionary<string, object>
         {
-            { "Manager Url", _options.Url ?? string.Empty }
+            { "Manager Url", _options.Url ?? string.Empty },
         };
         try
         {

@@ -36,7 +36,7 @@ internal sealed class NodeService
         var url = JoinUrl(node.Address, "/applications");
 
         var apps = await _httpClient.GetFromJsonAsync<List<ApplicationDto>>(url, ct);
-        return apps ?? new List<ApplicationDto>();
+        return apps ?? [];
     }
 
     public async Task<List<FeatureDto>> GetFeaturesForApplicationAsync(int nodeId, string appName, CancellationToken ct = default)
@@ -50,7 +50,7 @@ internal sealed class NodeService
         var url = JoinUrl(node.Address, $"/applications/{appNameEncoded}/features");
 
         var features = await _httpClient.GetFromJsonAsync<List<FeatureDto>>(url, ct);
-        return features ?? new List<FeatureDto>();
+        return features ?? [];
     }
 
     private static string JoinUrl(string baseAddress, string path)
@@ -65,8 +65,8 @@ internal sealed class NodeService
             throw new ArgumentException($"Invalid node address (missing scheme): {baseAddress}", nameof(baseAddress));
         }
 
-        var baseUri = baseAddress.EndsWith("/") ? new Uri(baseAddress) : new Uri(baseAddress + "/");
-        var rel = path.StartsWith("/") ? path.Substring(1) : path;
+        var baseUri = baseAddress.EndsWith('/') ? new Uri(baseAddress) : new Uri($"{baseAddress}/");
+        var rel = path.StartsWith('/') ? path.Substring(1) : path;
         return new Uri(baseUri, rel).ToString();
     }
 }

@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Wookashi.FeatureSwitcher.Node.Database.Entities;
 
 namespace Wookashi.FeatureSwitcher.Node.Database;

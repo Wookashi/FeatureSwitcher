@@ -79,18 +79,19 @@ public sealed class FeatureManagerBuilder
         {
             throw new MissingMemberException("Http client factory must be set before build object");
         }
+
         return true;
     }
 
     public async Task<FeatureManager> BuildAsync()
     {
-        if (ValidateProperties())
+        if (!ValidateProperties())
         {
-            var fullConfig = PrepareFullConfiguration();
-            var featureManager = new FeatureManager(fullConfig);
-            await featureManager.RegisterFeaturesOnNodeAsync();
-            return featureManager;
+            throw new Exception("Cannot build object!");
         }
-        throw new Exception("Cannot build object!");
+        var fullConfig = PrepareFullConfiguration();
+        var featureManager = new FeatureManager(fullConfig);
+        await featureManager.RegisterFeaturesOnNodeAsync();
+        return featureManager;
     }
 }

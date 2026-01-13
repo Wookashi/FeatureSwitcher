@@ -20,7 +20,7 @@ builder.Services.AddSwaggerGen(options =>
     options.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "Wookashi Feature Switcher Node API",
-        Version = "v1"
+        Version = "v1",
     });
 });
 var dbConnectionString = builder.Configuration["NodeConfiguration:ConnectionString"] ?? string.Empty;

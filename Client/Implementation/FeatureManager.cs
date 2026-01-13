@@ -70,7 +70,7 @@ public class FeatureManager : IFeatureManager
                             featureName: feature.Name,
                             initialState: feature.InitialState)
                     )
-                    .ToList()
+                    .ToList(),
             };
             var content = new StringContent(JsonSerializer.Serialize(applicationPackage), Encoding.UTF8, "application/json");
 

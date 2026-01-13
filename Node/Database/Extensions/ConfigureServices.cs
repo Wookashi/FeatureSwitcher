@@ -8,22 +8,25 @@ namespace Wookashi.FeatureSwitcher.Node.Database.Extensions;
 
 public static class ConfigureServices
 {
-    public static IServiceCollection AddDatabase(this IServiceCollection services, string connectionString)
+    extension(IServiceCollection services)
     {
-        if (string.IsNullOrEmpty(connectionString))
+        public IServiceCollection AddDatabase(string connectionString)
         {
-            services.AddDbContext<FeaturesInMemoryDataContext>(options =>
-                options.UseInMemoryDatabase(databaseName: "Test_db"));
-            services.AddScoped<IFeaturesDataContext, FeaturesInMemoryDataContext>();
-        }
-        else
-        {
-            services.AddDbContext<FeaturesDataContext>(options =>
-                options.UseSqlite(connectionString));
-            services.AddScoped<IFeaturesDataContext, FeaturesDataContext>();
-        }
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                services.AddDbContext<FeaturesInMemoryDataContext>(options =>
+                    options.UseInMemoryDatabase(databaseName: "Test_db"));
+                services.AddScoped<IFeaturesDataContext, FeaturesInMemoryDataContext>();
+            }
+            else
+            {
+                services.AddDbContext<FeaturesDataContext>(options =>
+                    options.UseSqlite(connectionString));
+                services.AddScoped<IFeaturesDataContext, FeaturesDataContext>();
+            }
 
-        return services.AddScoped<IFeatureRepository, FeatureRepository>();
+            return services.AddScoped<IFeatureRepository, FeatureRepository>();
+        }
     }
 
     public static IApplicationBuilder MigrateDatabase(this IApplicationBuilder app)

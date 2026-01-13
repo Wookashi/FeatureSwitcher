@@ -2,14 +2,14 @@ namespace Wookashi.FeatureSwitcher.Manager.Database.Entities;
 
 public sealed class StateChangesHistory
 {
-    public long Id { get; set; }
-    public long ApplicationId { get; set; }
-    public long FlagId { get; set; }
-    public long NodeId { get; set; }
+    public long Id { get; init; }
+    public long ApplicationId { get; init; }
+    public long FlagId { get; init; }
+    public long NodeId { get; init; }
 
-    public bool? OldValue { get; set; }
-    public bool? NewValue { get; set; }
+    public bool? OldValue { get; init; }
+    public bool? NewValue { get; init; }
 
-    public DateTime ChangedAt { get; set; }
-    public string? ChangedBy { get; set; }
+    public DateTime ChangedAt { get; init; }
+    public string? ChangedBy { get; init; }
 }

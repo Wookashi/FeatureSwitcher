@@ -26,11 +26,11 @@ internal static class ConfigurationExtensions
                         name = entry.Key,
                         status = entry.Value.Status.ToString(),
                         description = entry.Value.Description,
-                        data = entry.Value.Data
-                    })
+                        data = entry.Value.Data,
+                    }),
                 };
                 await context.Response.WriteAsJsonAsync(result);
-            }
+            },
         });
         return endpoints;
     }

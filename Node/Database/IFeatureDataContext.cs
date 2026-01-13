@@ -7,4 +7,6 @@ public interface IFeaturesDataContext
 {
     DbSet<FeatureEntity> Features { get; set; }
     DbSet<ApplicationEntity> Applications { get; set; }
+    
+    public int SaveChanges();
 }

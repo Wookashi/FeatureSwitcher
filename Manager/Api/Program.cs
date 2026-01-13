@@ -1,8 +1,6 @@
 using System.IO.Compression;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.OpenApi;
 using Microsoft.AspNetCore.ResponseCompression;
-using Swashbuckle.AspNetCore.SwaggerUI;
 using Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Repositories;
 using Wookashi.FeatureSwitcher.Manager.Api.Services;
 using Wookashi.FeatureSwitcher.Manager.Database.Extensions;
@@ -65,7 +63,7 @@ app.MapPut("/api/nodes", (NodeRegistrationModel nodeRegistrationModel,
     })
     .WithDescription("Used to register node. Adds or updates node data in manager database.");
 
-app.MapGet("/api/nodes/{nodeId}/applications", async (int nodeId, INodeRepository nodeRepository,
+app.MapGet("/api/nodes/{nodeId:int}/applications", async (int nodeId, INodeRepository nodeRepository,
         [FromServices] IHttpClientFactory httpClientFactory) =>
     {
         var nodeService = new NodeService(nodeRepository, httpClientFactory);
@@ -74,7 +72,7 @@ app.MapGet("/api/nodes/{nodeId}/applications", async (int nodeId, INodeRepositor
     })
     .WithDescription("Used to list application on node.");
 
-app.MapGet("/api/nodes/{nodeId}/applications/{appName}/features", async (int nodeId, string appName,
+app.MapGet("/api/nodes/{nodeId:int}/applications/{appName}/features", async (int nodeId, string appName,
                                 INodeRepository nodeRepository, [FromServices] IHttpClientFactory httpClientFactory) =>
     {
         var nodeService = new NodeService(nodeRepository, httpClientFactory);

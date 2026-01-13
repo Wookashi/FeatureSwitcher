@@ -8,9 +8,9 @@ namespace Wookashi.FeatureSwitcher.Node.Database.Repositories;
 
 internal sealed class FeatureRepository : IFeatureRepository
 {
-    private readonly FeaturesDataContext _context;
+    private readonly IFeaturesDataContext _context;
 
-    public FeatureRepository(FeaturesDataContext dbContext)
+    public FeatureRepository(IFeaturesDataContext dbContext)
     {
         _context = dbContext;
     }
@@ -41,12 +41,7 @@ internal sealed class FeatureRepository : IFeatureRepository
                                        && feature.Application.Environment == application.Environment
                                        && feature.Name == featureName);
 
-        if (featureEntity is null)
-        {
-            throw new FeatureNotFoundException("Feature not found");
-        }
-
-        return featureEntity.IsEnabled;
+        return featureEntity?.IsEnabled ?? throw new FeatureNotFoundException("Feature not found");
     }
 
     public void UpdateFeature(ApplicationDto application, FeatureDto featureDto)
@@ -92,7 +87,7 @@ internal sealed class FeatureRepository : IFeatureRepository
         {
             Name = feature.Name,
             IsEnabled = feature.State,
-            Application = applicationEntity ?? throw new InvalidOperationException()
+            Application = applicationEntity ?? throw new InvalidOperationException(),
         });
         _context.Features.AddRange(featureEntities);
         _context.SaveChanges();

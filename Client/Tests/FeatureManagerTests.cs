@@ -10,7 +10,8 @@ namespace Client.Implementation.Tests;
 
 public class FeatureManagerTests
 {
-    private static readonly string NodeAddress = "http://localhost:5000";
+    private const string NodeAddress = "http://localhost:5000";
+
     private readonly FeatureSwitcherBasicClientConfiguration _basicConfig = new(
         applicationName: "TestApp",
         environmentName: "TestEnv",
@@ -31,7 +32,7 @@ public class FeatureManagerTests
             )
             .ReturnsAsync(new HttpResponseMessage
             {
-                StatusCode = HttpStatusCode.Created
+                StatusCode = HttpStatusCode.Created,
             });
     }
     
@@ -45,10 +46,10 @@ public class FeatureManagerTests
         var httpClient = new HttpClient(handlerMock.Object);
 
         var factoryMock = new Mock<IHttpClientFactory>();
-        factoryMock.Setup(_ => _.CreateClient(It.IsAny<string>())).Returns(httpClient);
+        factoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
         
         
-        List<IFeatureStateModel> features = new List<IFeatureStateModel>();
+        var features = new List<IFeatureStateModel>();
         var manager = await new FeatureManagerBuilder(_basicConfig)
             .AddFeatures(features: features).AddHttpClientFactory(clientFactory: factoryMock.Object).BuildAsync();
         
@@ -65,11 +66,11 @@ public class FeatureManagerTests
 
         var httpClient = new HttpClient(handlerMock.Object);
         var factoryMock = new Mock<IHttpClientFactory>();
-        factoryMock.Setup(_ => _.CreateClient(It.IsAny<string>())).Returns(httpClient);
+        factoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
         
         List<IFeatureStateModel> features =
         [
-            new FeatureStateTestModel(name: "TestFlag", initialState: false, currentLocalState: false)
+            new FeatureStateTestModel(name: "TestFlag", initialState: false, currentLocalState: false),
         ];
         
         //Act
@@ -94,10 +95,10 @@ public class FeatureManagerTests
         var httpClient = new HttpClient(handlerMock.Object);
 
         var factoryMock = new Mock<IHttpClientFactory>();
-        factoryMock.Setup(_ => _.CreateClient(It.IsAny<string>())).Returns(httpClient);
+        factoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
         List<IFeatureStateModel> features =
         [
-            new FeatureStateTestModel(name: "TestFlag", initialState: true, currentLocalState: true)
+            new FeatureStateTestModel(name: "TestFlag", initialState: true, currentLocalState: true),
         ];
         
         //Act

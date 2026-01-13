@@ -15,7 +15,7 @@ var featureCollection = new List<IFeatureStateModel>
     new ApplicationFeature("Quu1", true, new Uri("https://www.wp.pl")),
     new ApplicationFeature("Quu3", false, new Uri("https://www.wp.pl")),
     new ApplicationFeature("Qux2", true, new Uri("https://www.wp.pl")),
-    new ApplicationFeature("Quu4", false, new Uri("https://www.wp.pl"))
+    new ApplicationFeature("Quu4", false, new Uri("https://www.wp.pl")),
 };
 
 var serviceProvider = new ServiceCollection().AddHttpClient().BuildServiceProvider();
