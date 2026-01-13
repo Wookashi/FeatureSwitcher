@@ -27,7 +27,7 @@ internal sealed class NodeService
         return _nodeRepository.GetAllNodes();
     }
     
-   public async Task<List<ApplicationDto>> GetApplications(int nodeId, CancellationToken ct = default)
+   public async Task<List<ApplicationDto>> GetApplicationsAsync(int nodeId, CancellationToken ct = default)
     {
         var node = _nodeRepository.GetNodeById(nodeId);
         if (node is null)
@@ -39,7 +39,7 @@ internal sealed class NodeService
         return apps ?? new List<ApplicationDto>();
     }
 
-    public async Task<List<FeatureDto>> GetFeaturesForApplication(int nodeId, string appName, CancellationToken ct = default)
+    public async Task<List<FeatureDto>> GetFeaturesForApplicationAsync(int nodeId, string appName, CancellationToken ct = default)
     {
         var node = _nodeRepository.GetNodeById(nodeId);
         if (node is null)

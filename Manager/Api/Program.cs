@@ -65,19 +65,21 @@ app.MapPut("/api/nodes", (NodeRegistrationModel nodeRegistrationModel,
     })
     .WithDescription("Used to register node. Adds or updates node data in manager database.");
 
-app.MapGet("/api/nodes/{nodeId}/applications", (int nodeId, INodeRepository nodeRepository,
+app.MapGet("/api/nodes/{nodeId}/applications", async (int nodeId, INodeRepository nodeRepository,
         [FromServices] IHttpClientFactory httpClientFactory) =>
     {
         var nodeService = new NodeService(nodeRepository, httpClientFactory);
-        return Results.Ok(nodeService.GetApplications(nodeId));
+        var apps = await nodeService.GetApplicationsAsync(nodeId);
+        return Results.Ok(apps);
     })
     .WithDescription("Used to list application on node.");
 
-app.MapGet("/api/nodes/{nodeId}/applications/{appId}/features", (int nodeId, string appName,
+app.MapGet("/api/nodes/{nodeId}/applications/{appName}/features", async (int nodeId, string appName,
                                 INodeRepository nodeRepository, [FromServices] IHttpClientFactory httpClientFactory) =>
     {
         var nodeService = new NodeService(nodeRepository, httpClientFactory);
-        return Results.Ok(nodeService.GetFeaturesForApplication(nodeId, appName));
+        var features = await nodeService.GetFeaturesForApplicationAsync(nodeId, appName);
+        return Results.Ok(features);
     })
     .WithDescription("Used to list features for application on node.");
 

@@ -1,7 +1,7 @@
 namespace Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Dtos;
 
-public sealed class FeatureDto(string featureName, bool state)
+public sealed class FeatureDto(string name, bool state)
 {
-    public string Name { get; } = featureName;
+    public string Name { get; } = name;
     public bool State { get; } = state;
 }
