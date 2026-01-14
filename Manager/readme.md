@@ -10,8 +10,9 @@ npm run dev (in web folder)
    - **API**: .NET Project run config → `App.Api`.
    - **Web**: npm run config → `dev` in `Manager/Web`.
 ## Docker (prod-like, 1 container):
+run from folder FeatureSwitcher (main in repository)
    ```bash
-   docker build -t manager:latest .
-   docker run --rm -p 8080:8080 manager:latest
+   docker build -t manager:latest -f Manager\Dockerfile .
+   docker run --rm -p 8080:8080 manager:latest -f Manager\Dockerfile
    # Front: http://localhost:8080  |  API: /api/hello  |  /health
    ```

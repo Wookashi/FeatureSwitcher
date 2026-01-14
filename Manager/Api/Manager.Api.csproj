@@ -16,7 +16,6 @@
         <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.0" />
     </ItemGroup>
     <ItemGroup>
-      <ProjectReference Include="..\..\Shared\Abstraction\Abstraction.csproj" />
       <ProjectReference Include="..\Abstraction\Manager.Abstraction.csproj" />
       <ProjectReference Include="..\Database\Manager.Database.csproj" />
     </ItemGroup>
