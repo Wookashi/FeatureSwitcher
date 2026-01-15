@@ -15,6 +15,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Node", "Node", "{7AA29B48-E847-4495-AF5D-21F39432DD90}"
 	ProjectSection(SolutionItems) = preProject
 		Node\EF mirations.md = Node\EF mirations.md
+		Node\Dockerfile = Node\Dockerfile
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node.Abstraction", "Node\Abstraction\Node.Abstraction.csproj", "{F1CAC923-496D-480C-831F-96E505845660}"
@@ -23,7 +24,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client.Abstraction", "Clien
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Manager", "Manager", "{5299C23C-BB4C-4C33-9001-0A544923E98F}"
 	ProjectSection(SolutionItems) = preProject
-		Manager\docker-compose.yml = Manager\docker-compose.yml
 		Manager\Dockerfile = Manager\Dockerfile
 		Manager\.dockerignore = Manager\.dockerignore
 		Manager\readme.md = Manager\readme.md

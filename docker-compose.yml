@@ -1,0 +1,35 @@
+services:
+  manager:
+    build:
+      context: .
+      dockerfile: Manager/Dockerfile
+    image: feature-switcher-manager:latest
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Production"
+    ports:
+      - "8080:5033"
+    depends_on:
+      node:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5033/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  node:
+    build:
+      context: .
+      dockerfile: Node/Dockerfile
+    image: feature-switcher-node:latest
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Production"
+      NodeConfiguration__Environment: "docker"
+      NodeConfiguration__ConnectionString: ""
+    ports:
+      - "8081:5216"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5216/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5

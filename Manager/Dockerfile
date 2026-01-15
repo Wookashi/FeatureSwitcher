@@ -25,9 +25,9 @@ RUN dotnet publish Manager/Api/Manager.Api.csproj -c Release -o /app/publish /p:
 # --- RUNTIME ---
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
-ENV TZ=Europe/Warsaw ASPNETCORE_URLS=http://+:8080 DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
-RUN apt-get update && apt-get install -y tzdata && rm -rf /var/lib/apt/lists/*
+ENV TZ=Europe/Warsaw ASPNETCORE_URLS=http://+:5033 DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+RUN apt-get update && apt-get install -y tzdata wget && rm -rf /var/lib/apt/lists/*
 COPY --from=webbuild /web/dist ./wwwroot
 COPY --from=build /app/publish .
-EXPOSE 8080
+EXPOSE 5033
 ENTRYPOINT ["dotnet", "Wookashi.FeatureSwitcher.Manager.Api.dll"]
