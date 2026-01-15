@@ -53,7 +53,10 @@ app.MapPost("/applications",
         {
             if (registerModel.Environment != environment)
             {
-                return Results.BadRequest(new BadHttpRequestException("Environment does not match"));
+                return Results.Problem(
+                    title: "Environment mismatch",
+                    detail: $"Node environment is '{environment}', but request environment is '{registerModel.Environment}'.",
+                    statusCode: StatusCodes.Status422UnprocessableEntity);
             }
 
             var featureService = new FeatureService(featureRepository);
@@ -65,7 +68,9 @@ app.MapPost("/applications",
             return Results.Created();
         })
     .WithDescription("Used to register application by app client. Adds or updates app data in node database.")
-    .WithTags("Client");
+    .WithTags("Client")
+    .Produces(StatusCodes.Status201Created)
+    .ProducesProblem(StatusCodes.Status409Conflict);
 
 app.MapGet("/applications", (IFeatureRepository featureRepository) =>
     {
@@ -112,7 +117,9 @@ app.MapGet("/applications/{applicationName}/features/{featureName}/state/", (str
         }
     })
     .WithDescription("Used to check flag state on client.")
-    .WithTags("Client");
+    .WithTags("Client")
+    .Produces(StatusCodes.Status200OK)
+    .ProducesProblem(StatusCodes.Status400BadRequest);
 
 app.MapPut("/applications/{applicationName}/features/{featureName}",
         (string applicationName, string featureName, FeatureStateModel featureState, IFeatureRepository featureRepository) =>

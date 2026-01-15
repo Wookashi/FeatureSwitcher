@@ -1,4 +1,5 @@
-﻿using System.Net.Sockets;
+﻿using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using Wookashi.FeatureSwitcher.Client.Abstraction;
@@ -58,41 +59,42 @@ public class FeatureManager : IFeatureManager
 
     internal async Task RegisterFeaturesOnNodeAsync()
     {
+        var httpClient = _httpClientFactory.CreateClient();
+        var applicationPackage = new AppRegistrationModel
+        {
+            AppName = _appName,
+            Environment = _environmentName,
+            Features = _features.Select(feature =>
+                    new AppRegistrationModel.RegisterFeatureStateModel(
+                        featureName: feature.Name,
+                        initialState: feature.InitialState)
+                )
+                .ToList(),
+        };
+        var content = new StringContent(JsonSerializer.Serialize(applicationPackage), Encoding.UTF8, "application/json");
+        HttpResponseMessage response;
+        
         try
         {
-            var httpClient = _httpClientFactory.CreateClient();
-            var applicationPackage = new AppRegistrationModel
-            {
-                AppName = _appName,
-                Environment = _environmentName,
-                Features = _features.Select(feature =>
-                        new AppRegistrationModel.RegisterFeatureStateModel(
-                            featureName: feature.Name,
-                            initialState: feature.InitialState)
-                    )
-                    .ToList(),
-            };
-            var content = new StringContent(JsonSerializer.Serialize(applicationPackage), Encoding.UTF8, "application/json");
-
-            var response = await httpClient.PostAsync($"{_nodeAddress}applications", content);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new RegistrationException(response.ReasonPhrase ?? "Unknown error", (int)response.StatusCode);
-            }
+            response = await httpClient.PostAsync($"{_nodeAddress}applications", content);
         }
         catch (HttpRequestException requestException) when (requestException.InnerException is SocketException)
         {
             throw new NodeUnreachableException(requestException.Message,
                 ((SocketException)requestException.InnerException).ErrorCode);
         }
-        catch (Exception exc)
+
+        if (response.StatusCode == HttpStatusCode.UnprocessableContent)
         {
-            throw new NodeUnreachableException(exc.Message);
+            throw new EnvironmentMismatchException($"Node is set to environment other than {_environmentName}");
         }
 
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new RegistrationException(response.ReasonPhrase ?? "Unknown error", (int)response.StatusCode);
+        }
     }
-    
+
     // TODO Cache default 15s, maybe configurable?
     /// <summary>
     /// Checks is feature enable on node
