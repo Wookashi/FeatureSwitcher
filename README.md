@@ -14,6 +14,13 @@ Docker container should be placed very close to client apps.
 ### Manager
 User interface used to manipulate features.
 
+## How to run?
+
+run from folder FeatureSwitcher (main in repository)
+   ```bash
+   docker-compose up --build
+   ```
+
 ## 🤝 Contributing
 
 We welcome contributions! Check out the [Contributing Guide](CONTRIBUTING.md) to get started.
