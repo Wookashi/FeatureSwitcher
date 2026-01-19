@@ -8,6 +8,10 @@ services:
       ASPNETCORE_ENVIRONMENT: "Production"
     ports:
       - "8080:5033"
+    volumes:
+      - type: volume
+        source: fs_manager_data
+        target: /data
     depends_on:
       node:
         condition: service_healthy
@@ -25,11 +29,20 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: "Production"
       NodeConfiguration__Environment: "docker"
-      NodeConfiguration__ConnectionString: ""
     ports:
       - "8081:5216"
+    volumes:
+      - type: volume
+        source: fs_node_data
+        target: /data
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:5216/health || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 5
+
+volumes:
+  fs_manager_data:
+    name: fs_manager_data
+  fs_node_data:
+    name: fs_node_data
