@@ -46,7 +46,6 @@ app.UseResponseCompression();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
-app.MapGet("/api/hello", () => Results.Ok(new { message = "Hello from .NET 9" }));
 app.MapGet("/health", () => Results.Ok(new { ok = true, ts = DateTimeOffset.UtcNow })).ExcludeFromDescription();
 
 app.MapGet("/api/nodes", (INodeRepository nodeRepository, [FromServices] IHttpClientFactory httpClientFactory) =>
