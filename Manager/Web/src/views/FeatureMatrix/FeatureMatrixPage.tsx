@@ -18,7 +18,6 @@ import {
   Statistic,
   Divider,
   Flex,
-  Badge,
   theme as antTheme,
 } from 'antd';
 import {
@@ -43,6 +42,17 @@ import type { FeatureMatrixRow, CellState, NodeDto } from './types';
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
+
+// Tree data structure for the table
+interface TreeRow {
+  key: string;
+  name: string;
+  isApplication: boolean;
+  application: string;
+  feature: string;
+  cells: Record<string, CellState>;
+  children?: TreeRow[];
+}
 
 interface CellRendererProps {
   state: CellState | undefined;
@@ -161,45 +171,72 @@ export default function FeatureMatrixPage() {
     return result;
   }, [rows, searchText, showOnlyDifferences, nodeNames]);
 
-  const columns: ColumnsType<FeatureMatrixRow> = useMemo(() => {
+  // Convert flat rows to tree structure grouped by application
+  const treeData = useMemo(() => {
+    const appMap = new Map<string, TreeRow>();
+
+    filteredRows.forEach((row) => {
+      if (!appMap.has(row.application)) {
+        appMap.set(row.application, {
+          key: `app::${row.application}`,
+          name: row.application,
+          isApplication: true,
+          application: row.application,
+          feature: '',
+          cells: {},
+          children: [],
+        });
+      }
+
+      const appRow = appMap.get(row.application)!;
+      appRow.children!.push({
+        key: row.key,
+        name: row.feature,
+        isApplication: false,
+        application: row.application,
+        feature: row.feature,
+        cells: row.cells,
+      });
+    });
+
+    return Array.from(appMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [filteredRows]);
+
+  const columns: ColumnsType<TreeRow> = useMemo(() => {
     const nodeMap = new Map<string, NodeDto>(nodes.map((n) => [n.name, n]));
 
-    const baseColumns: ColumnsType<FeatureMatrixRow> = [
+    const baseColumns: ColumnsType<TreeRow> = [
       {
         title: (
           <Space>
             <AppstoreOutlined />
-            <span>Application</span>
+            <span>Application / Feature</span>
           </Space>
         ),
-        dataIndex: 'application',
-        key: 'application',
+        dataIndex: 'name',
+        key: 'name',
         fixed: 'left',
-        width: 200,
-        sorter: (a, b) => a.application.localeCompare(b.application),
-        render: (text: string) => (
-          <Text strong style={{ color: 'inherit' }}>{text}</Text>
-        ),
-      },
-      {
-        title: (
-          <Space>
-            <FlagOutlined />
-            <span>Feature</span>
-          </Space>
-        ),
-        dataIndex: 'feature',
-        key: 'feature',
-        fixed: 'left',
-        width: 200,
-        sorter: (a, b) => a.feature.localeCompare(b.feature),
-        render: (text: string) => (
-          <Text code style={{ fontSize: 13 }}>{text}</Text>
-        ),
+        width: 280,
+        render: (text: string, record: TreeRow) => {
+          if (record.isApplication) {
+            return (
+              <Space>
+                <AppstoreOutlined style={{ color: '#722ed1' }} />
+                <Text strong>{text}</Text>
+                <Tag color="purple" style={{ borderRadius: 10, marginLeft: 4 }}>
+                  {record.children?.length || 0}
+                </Tag>
+              </Space>
+            );
+          }
+          return (
+            <Text code style={{ fontSize: 13, marginLeft: 8 }}>{text}</Text>
+          );
+        },
       },
     ];
 
-    const nodeColumns: ColumnsType<FeatureMatrixRow> = nodes.map((node) => ({
+    const nodeColumns: ColumnsType<TreeRow> = nodes.map((node) => ({
       title: (
         <Tooltip title={`Address: ${nodeMap.get(node.name)?.address}`}>
           <Space>
@@ -211,7 +248,10 @@ export default function FeatureMatrixPage() {
       key: node.name,
       width: 140,
       align: 'center' as const,
-      render: (_: unknown, record: FeatureMatrixRow) => {
+      render: (_: unknown, record: TreeRow) => {
+        if (record.isApplication) {
+          return null; // No state shown for application rows
+        }
         const cellState = record.cells[node.name];
         const handleClick = cellState?.kind === 'value'
           ? () => toggleFeatureState(node.id, node.name, record.application, record.feature, cellState.value)
@@ -244,16 +284,17 @@ export default function FeatureMatrixPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '0 24px',
+            padding: '16px 24px',
             background: isDark ? '#141414' : '#fff',
             borderBottom: `1px solid ${isDark ? '#303030' : '#f0f0f0'}`,
-            height: 64,
+            height: 'auto',
+            lineHeight: 'normal',
           }}
         >
           <Flex align="center" gap={16}>
             <FlagOutlined style={{ fontSize: 24, color: token.colorPrimary }} />
             <div>
-              <Title level={4} style={{ margin: 0, lineHeight: 1.2 }}>
+              <Title level={4} style={{ margin: 0, marginTop: 4, lineHeight: 1.2 }}>
                 Feature States
               </Title>
               <Text type="secondary" style={{ fontSize: 12 }}>
@@ -275,7 +316,7 @@ export default function FeatureMatrixPage() {
 
         <Content
           style={{
-            padding: 24,
+            padding: '32px 24px 24px 24px',
             background: isDark ? '#000' : '#f5f5f5',
           }}
         >
@@ -356,7 +397,7 @@ export default function FeatureMatrixPage() {
               <Flex justify="space-between" align="center" wrap="wrap" gap={12}>
                 <Space size="middle">
                   <Text strong style={{ fontSize: 16 }}>Features</Text>
-                  <Tag color="blue" style={{ borderRadius: 10, marginLeft: 4 }}>{filteredRows.length}</Tag>
+                  <Tag color="blue" style={{ borderRadius: 10, marginLeft: 4 }}>{rows.length}</Tag>
                 </Space>
                 <Flex gap={12} wrap="wrap">
                   <Input
@@ -410,25 +451,19 @@ export default function FeatureMatrixPage() {
             <Divider style={{ margin: '0 0 16px 0' }} />
 
             {/* Table */}
-            <Table<FeatureMatrixRow>
+            <Table<TreeRow>
               columns={columns}
-              dataSource={filteredRows}
+              dataSource={treeData}
               rowKey="key"
               loading={isLoadingNodes}
               size="middle"
               sticky
               scroll={{ x: 'max-content' }}
-              pagination={{
-                defaultPageSize: 25,
-                showSizeChanger: true,
-                pageSizeOptions: ['10', '25', '50', '100'],
-                showTotal: (total, range) => (
-                  <Text type="secondary">
-                    Showing {range[0]}-{range[1]} of {total} features
-                  </Text>
-                ),
-                style: { marginBottom: 0 },
+              expandable={{
+                defaultExpandAllRows: true,
+                indentSize: 24,
               }}
+              pagination={false}
               locale={{
                 emptyText: isLoading ? (
                   <Flex vertical align="center" gap={16} style={{ padding: 48 }}>
@@ -445,17 +480,21 @@ export default function FeatureMatrixPage() {
                   </Flex>
                 ),
               }}
-              rowClassName={(_, index) => index % 2 === 0 ? '' : 'ant-table-row-alt'}
+              rowClassName={(record) => record.isApplication ? 'app-row' : 'feature-row'}
             />
           </Card>
         </Content>
       </Layout>
 
       <style>{`
-        .ant-table-row-alt > td {
-          background: ${isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.015)'} !important;
+        .app-row > td {
+          background: ${isDark ? 'rgba(114, 46, 209, 0.08)' : 'rgba(114, 46, 209, 0.04)'} !important;
+          font-weight: 500;
         }
-        .ant-table-row:hover > td {
+        .app-row:hover > td {
+          background: ${isDark ? 'rgba(114, 46, 209, 0.15)' : 'rgba(114, 46, 209, 0.08)'} !important;
+        }
+        .feature-row:hover > td {
           background: ${isDark ? 'rgba(22, 119, 255, 0.15)' : 'rgba(22, 119, 255, 0.08)'} !important;
         }
         .ant-table-row:hover > td .ant-typography {
@@ -470,6 +509,9 @@ export default function FeatureMatrixPage() {
         }
         .ant-table-thead > tr > th {
           background: ${isDark ? '#1f1f1f' : '#fafafa'} !important;
+        }
+        .ant-table-row-expand-icon {
+          margin-right: 8px !important;
         }
       `}</style>
     </ConfigProvider>
