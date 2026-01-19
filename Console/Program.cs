@@ -40,9 +40,9 @@ static Uri PromptUri(string label, Uri defaultValue)
     }
 }
 
-var applicationName = Prompt("Application name", "Console");
-var environmentName = Prompt("Environment name", "testEnv");
-var environmentNodeAddress = PromptUri("Node address", new Uri("http://localhost:5216"));
+var applicationName = Prompt("Application name", "TestApp");
+var environmentName = Prompt("Environment name", "docker");
+var environmentNodeAddress = PromptUri("Node address", new Uri("http://localhost:8081"));
 
 var httpClientFactory = serviceProvider.GetService<IHttpClientFactory>();
 var featureManagerBuilder = new FeatureManagerBuilder(new FeatureSwitcherBasicClientConfiguration(

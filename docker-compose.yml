@@ -13,8 +13,7 @@ services:
         source: fs_manager_data
         target: /data
     depends_on:
-      node:
-        condition: service_healthy
+      - node
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:5033/health || exit 1"]
       interval: 10s
@@ -29,6 +28,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: "Production"
       NodeConfiguration__Environment: "docker"
+      ManagerSettings__Url: "http://manager:5033"
     ports:
       - "8081:5216"
     volumes:
