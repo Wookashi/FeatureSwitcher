@@ -1,5 +1,6 @@
 services:
   manager:
+    container_name: manager
     build:
       context: .
       dockerfile: Manager/Dockerfile
@@ -12,28 +13,71 @@ services:
       - type: volume
         source: fs_manager_data
         target: /data
-    depends_on:
-      - node
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:5033/health || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 5
 
-  node:
+  node-dev:
+    container_name: node-dev
     build:
       context: .
       dockerfile: Node/Dockerfile
     image: feature-switcher-node:latest
     environment:
       ASPNETCORE_ENVIRONMENT: "Production"
-      NodeConfiguration__Environment: "docker"
+      NodeConfiguration__Environment: "development"
       ManagerSettings__Url: "http://manager:5033"
     ports:
       - "8081:5216"
     volumes:
       - type: volume
-        source: fs_node_data
+        source: fs_node_dev_data
+        target: /data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5216/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+  
+  node-uat:
+    container_name: node-uat
+    build:
+      context: .
+      dockerfile: Node/Dockerfile
+    image: feature-switcher-node:latest
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Production"
+      NodeConfiguration__Environment: "uat"
+      ManagerSettings__Url: "http://manager:5033"
+    ports:
+      - "8082:5216"
+    volumes:
+      - type: volume
+        source: fs_node_uat_data
+        target: /data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5216/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+  
+  node-prod:
+    container_name: node-prod
+    build:
+      context: .
+      dockerfile: Node/Dockerfile
+    image: feature-switcher-node:latest
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Production"
+      NodeConfiguration__Environment: "production"
+      ManagerSettings__Url: "http://manager:5033"
+    ports:
+      - "8083:5216"
+    volumes:
+      - type: volume
+        source: fs_node_prod_data
         target: /data
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:5216/health || exit 1"]
@@ -44,5 +88,9 @@ services:
 volumes:
   fs_manager_data:
     name: fs_manager_data
-  fs_node_data:
-    name: fs_node_data
+  fs_node_dev_data:
+    name: fs_node_dev_data
+  fs_node_uat_data:
+    name: fs_node_uat_data
+  fs_node_prod_data:
+    name: fs_node_prod_data
