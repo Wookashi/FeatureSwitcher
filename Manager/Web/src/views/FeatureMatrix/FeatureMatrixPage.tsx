@@ -33,6 +33,7 @@ import {
   CloudServerOutlined,
   SearchOutlined,
   FilterOutlined,
+  DisconnectOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 
@@ -122,7 +123,7 @@ function hasDifferences(row: FeatureMatrixRow, nodeNames: string[]): boolean {
 
 export default function FeatureMatrixPage() {
   const [themeMode, toggleTheme] = useTheme();
-  const { nodes, rows, errors, isLoadingNodes, isLoading, refresh, toggleFeatureState } = useFeatureMatrix();
+  const { nodes, rows, errors, unreachableNodes, isLoadingNodes, isLoading, refresh, toggleFeatureState } = useFeatureMatrix();
 
   const [searchText, setSearchText] = useState('');
   const [showOnlyDifferences, setShowOnlyDifferences] = useState(false);
@@ -237,14 +238,27 @@ export default function FeatureMatrixPage() {
     ];
 
     const nodeColumns: ColumnsType<TreeRow> = nodes.map((node) => ({
-      title: (
-        <Tooltip title={`Address: ${nodeMap.get(node.name)?.address}`}>
-          <Space>
-            <CloudServerOutlined />
-            <span>{node.name}</span>
-          </Space>
-        </Tooltip>
-      ),
+      title: (() => {
+        const errorMsg = unreachableNodes.get(node.name);
+        if (errorMsg) {
+          return (
+            <Tooltip title={`Unreachable: ${errorMsg}`}>
+              <Space>
+                <DisconnectOutlined style={{ color: '#ff4d4f' }} />
+                <span style={{ color: '#ff4d4f' }}>{node.name}</span>
+              </Space>
+            </Tooltip>
+          );
+        }
+        return (
+          <Tooltip title={`Address: ${nodeMap.get(node.name)?.address}`}>
+            <Space>
+              <CloudServerOutlined />
+              <span>{node.name}</span>
+            </Space>
+          </Tooltip>
+        );
+      })(),
       key: node.name,
       width: 140,
       align: 'center' as const,
@@ -261,7 +275,7 @@ export default function FeatureMatrixPage() {
     }));
 
     return [...baseColumns, ...nodeColumns];
-  }, [nodes, toggleFeatureState]);
+  }, [nodes, unreachableNodes, toggleFeatureState]);
 
   const isDark = themeMode === 'dark';
 

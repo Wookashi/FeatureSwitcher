@@ -13,6 +13,7 @@ interface UseFeatureMatrixResult {
   nodes: NodeDto[];
   rows: FeatureMatrixRow[];
   errors: FetchError[];
+  unreachableNodes: Map<string, string>; // nodeName -> error message
   isLoadingNodes: boolean;
   isLoading: boolean;
   refresh: () => void;
@@ -31,6 +32,7 @@ export function useFeatureMatrix(): UseFeatureMatrixResult {
   const [nodes, setNodes] = useState<NodeDto[]>([]);
   const [rows, setRows] = useState<FeatureMatrixRow[]>([]);
   const [errors, setErrors] = useState<FetchError[]>([]);
+  const [unreachableNodes, setUnreachableNodes] = useState<Map<string, string>>(new Map());
   const [isLoadingNodes, setIsLoadingNodes] = useState(true);
   const [pendingRequests, setPendingRequests] = useState(0);
 
@@ -167,6 +169,14 @@ export function useFeatureMatrix(): UseFeatureMatrixResult {
 
         const applications: ApplicationDto[] = await response.json();
 
+        // Node responded successfully - mark as reachable
+        setUnreachableNodes((prev) => {
+          if (!prev.has(node.name)) return prev;
+          const next = new Map(prev);
+          next.delete(node.name);
+          return next;
+        });
+
         // Queue feature fetches for each application
         applications.forEach((app) => {
           limiterRef.current.run(() => fetchFeatures(node.id, node.name, app.name, signal));
@@ -175,6 +185,13 @@ export function useFeatureMatrix(): UseFeatureMatrixResult {
         if (signal.aborted) return;
         const message = err instanceof Error ? err.message : 'Unknown error';
         addError(endpoint, message);
+
+        // Mark node as unreachable
+        setUnreachableNodes((prev) => {
+          const next = new Map(prev);
+          next.set(node.name, message);
+          return next;
+        });
       }
     },
     [addError, fetchFeatures]
@@ -223,6 +240,7 @@ export function useFeatureMatrix(): UseFeatureMatrixResult {
     setNodes([]);
     setRows([]);
     setErrors([]);
+    setUnreachableNodes(new Map());
     setIsLoadingNodes(true);
     setPendingRequests(0);
 
@@ -289,6 +307,7 @@ export function useFeatureMatrix(): UseFeatureMatrixResult {
     nodes,
     rows,
     errors,
+    unreachableNodes,
     isLoadingNodes,
     isLoading: isLoadingNodes || pendingRequests > 0,
     refresh,
