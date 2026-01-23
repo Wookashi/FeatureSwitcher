@@ -6,15 +6,27 @@ using Wookashi.FeatureSwitcher.Client.Abstraction.Exceptions;
 using Wookashi.FeatureSwitcher.Client.Implementation;
 using Wookashi.FeatureSwitcher.Console;
 
-var featureCollection = new Faker<ApplicationFeature>()
-        .CustomInstantiator(f => new ApplicationFeature(
-            $"{f.Hacker.Noun()}{f.Random.Number(1, 50)}",
-            f.Random.Bool(),
-            new Uri(f.Internet.Url())
-        ))
-        .Generate(10)
-        .Cast<IFeatureStateModel>()
-        .ToList();
+// var featureCollection = new Faker<ApplicationFeature>()
+//         .CustomInstantiator(f => new ApplicationFeature(
+//             $"{f.Hacker.Noun()}{f.Random.Number(1, 50)}",
+//             f.Random.Bool(),
+//             new Uri(f.Internet.Url())
+//         ))
+//         .Generate(10)
+//         .Cast<IFeatureStateModel>()
+//         .ToList();
+
+var featureCollection = new List<IFeatureStateModel>
+{
+    new ApplicationFeature("Foo", true, new Uri("https://www.foo.pl")),
+    new ApplicationFeature("Bar", false, new Uri("https://www.bar.pl")),
+    new ApplicationFeature("Test", true, new Uri("https://www.test.pl")),
+    new ApplicationFeature("Function one", false, new Uri("https://www.functionone.pl")),
+    new ApplicationFeature("Function two", true, new Uri("https://www.functiontwo.pl")),
+    new ApplicationFeature("Some other function", false, new Uri("https://www.sof.pl")),
+    new ApplicationFeature("Another test", true, new Uri("https://www.at.pl")),
+    new ApplicationFeature("last function", false, new Uri("https://www.lf.pl")),
+};
 
 var serviceProvider = new ServiceCollection().AddHttpClient().BuildServiceProvider();
 
