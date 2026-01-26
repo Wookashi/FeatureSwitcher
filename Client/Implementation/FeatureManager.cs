@@ -84,7 +84,7 @@ public class FeatureManager : IFeatureManager
                 ((SocketException)requestException.InnerException).ErrorCode);
         }
 
-        if (response.StatusCode == HttpStatusCode.UnprocessableContent)
+        if (response.StatusCode == (HttpStatusCode)422)
         {
             throw new EnvironmentMismatchException($"Node is set to environment other than {_environmentName}");
         }
