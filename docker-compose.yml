@@ -29,7 +29,7 @@ services:
       ASPNETCORE_ENVIRONMENT: "Production"
       NodeConfiguration__Environment: "development"
       ManagerSettings__Url: "http://manager:5033"
-      ManagerSettings__NodeName: "development"
+      ManagerSettings__NodeName: "Development"
       ManagerSettings__NodeAddress: "http://node-dev:5216"
     ports:
       - "8081:5216"
@@ -56,7 +56,7 @@ services:
       ASPNETCORE_ENVIRONMENT: "Production"
       NodeConfiguration__Environment: "uat"
       ManagerSettings__Url: "http://manager:5033"
-      ManagerSettings__NodeName: "uat"
+      ManagerSettings__NodeName: "UAT"
       ManagerSettings__NodeAddress: "http://node-uat:5216"
     ports:
       - "8082:5216"
@@ -83,7 +83,7 @@ services:
       ASPNETCORE_ENVIRONMENT: "Production"
       NodeConfiguration__Environment: "production"
       ManagerSettings__Url: "http://manager:5033"
-      ManagerSettings__NodeName: "production"
+      ManagerSettings__NodeName: "Production"
       ManagerSettings__NodeAddress: "http://node-prod:5216"
     ports:
       - "8083:5216"
