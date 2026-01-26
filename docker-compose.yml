@@ -29,12 +29,17 @@ services:
       ASPNETCORE_ENVIRONMENT: "Production"
       NodeConfiguration__Environment: "development"
       ManagerSettings__Url: "http://manager:5033"
+      ManagerSettings__NodeName: "development"
+      ManagerSettings__NodeAddress: "http://node-dev:5216"
     ports:
       - "8081:5216"
     volumes:
       - type: volume
         source: fs_node_dev_data
         target: /data
+    depends_on:
+      manager:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:5216/health || exit 1"]
       interval: 10s
@@ -51,12 +56,17 @@ services:
       ASPNETCORE_ENVIRONMENT: "Production"
       NodeConfiguration__Environment: "uat"
       ManagerSettings__Url: "http://manager:5033"
+      ManagerSettings__NodeName: "uat"
+      ManagerSettings__NodeAddress: "http://node-uat:5216"
     ports:
       - "8082:5216"
     volumes:
       - type: volume
         source: fs_node_uat_data
         target: /data
+    depends_on:
+      manager:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:5216/health || exit 1"]
       interval: 10s
@@ -73,12 +83,17 @@ services:
       ASPNETCORE_ENVIRONMENT: "Production"
       NodeConfiguration__Environment: "production"
       ManagerSettings__Url: "http://manager:5033"
+      ManagerSettings__NodeName: "production"
+      ManagerSettings__NodeAddress: "http://node-prod:5216"
     ports:
       - "8083:5216"
     volumes:
       - type: volume
         source: fs_node_prod_data
         target: /data
+    depends_on:
+      manager:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:5216/health || exit 1"]
       interval: 10s

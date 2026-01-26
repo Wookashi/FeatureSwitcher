@@ -27,6 +27,8 @@ builder.Services.AddSwaggerGen(options =>
 var dbConnectionString = builder.Configuration["NodeConfiguration:ConnectionString"] ?? string.Empty;
 builder.Services.AddDatabase(dbConnectionString);
 builder.Services.AddHealthCheckElements();
+builder.Services.AddHttpClient();
+builder.Services.AddHostedService<ManagerRegistrationHostedService>();
 
 var app = builder.Build();
 
