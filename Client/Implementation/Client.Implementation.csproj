@@ -6,7 +6,7 @@
         <Nullable>enable</Nullable>
         <AssemblyName>Wookashi.FeatureSwitcher.Client.Implementation</AssemblyName>
         <RootNamespace>Wookashi.FeatureSwitcher.Client.Implementation</RootNamespace>
-        <Version>0.6.3-dev</Version>
+        <Version>0.7.0</Version>
         <Title>Feature Switcher Client Implementation</Title>
         <Authors>Wookashi</Authors>
         <Description>Nuget client for wookashi Feature Switcher tool</Description>

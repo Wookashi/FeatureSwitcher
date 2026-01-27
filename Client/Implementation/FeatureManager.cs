@@ -62,10 +62,14 @@ public class FeatureManager : IFeatureManager
     /// Queries the node first; falls back to cached state if unreachable.
     /// </summary>
     /// <param name="featureName">Name of the feature to check.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
     /// <returns>True if the feature is enabled, false otherwise.</returns>
     /// <exception cref="FeatureNotRegisteredException">Thrown when the feature was not registered.</exception>
-    public async Task<bool> IsFeatureEnabledAsync(string featureName)
+    /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled.</exception>
+    public async Task<bool> IsFeatureEnabledAsync(string featureName, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var feature = _features.FirstOrDefault(f => f.Name == featureName);
         if (feature is null)
         {
@@ -74,7 +78,7 @@ public class FeatureManager : IFeatureManager
 
         try
         {
-            var nodeState = await GetFeatureStateFromNodeAsync(featureName);
+            var nodeState = await GetFeatureStateFromNodeAsync(featureName, cancellationToken);
             feature.CurrentLocalState = nodeState;
         }
         catch (NodeUnreachableException)
@@ -89,11 +93,15 @@ public class FeatureManager : IFeatureManager
     /// Registers all features with the node.
     /// Call this once during application startup.
     /// </summary>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
     /// <exception cref="NodeUnreachableException">Thrown when the node cannot be reached.</exception>
     /// <exception cref="EnvironmentMismatchException">Thrown when environments don't match.</exception>
     /// <exception cref="RegistrationException">Thrown when registration fails.</exception>
-    public async Task RegisterFeaturesOnNodeAsync()
+    /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled.</exception>
+    public async Task RegisterFeaturesOnNodeAsync(CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var httpClient = _httpClientFactory.CreateClient();
         var registrationModel = new AppRegistrationModel
         {
@@ -112,7 +120,7 @@ public class FeatureManager : IFeatureManager
         HttpResponseMessage response;
         try
         {
-            response = await httpClient.PostAsync($"{_nodeAddress}applications", content);
+            response = await httpClient.PostAsync($"{_nodeAddress}applications", content, cancellationToken);
         }
         catch (HttpRequestException ex) when (ex.InnerException is SocketException socketEx)
         {
@@ -132,13 +140,14 @@ public class FeatureManager : IFeatureManager
         }
     }
 
-    private async Task<bool> GetFeatureStateFromNodeAsync(string featureName)
+    private async Task<bool> GetFeatureStateFromNodeAsync(string featureName, CancellationToken cancellationToken)
     {
         try
         {
             var httpClient = _httpClientFactory.CreateClient();
             var response = await httpClient.GetAsync(
-                $"{_nodeAddress}applications/{_appName}/features/{featureName}/state/");
+                $"{_nodeAddress}applications/{_appName}/features/{featureName}/state/",
+                cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -153,6 +162,10 @@ public class FeatureManager : IFeatureManager
             throw new NodeUnreachableException(ex.Message, socketEx.ErrorCode);
         }
         catch (NodeUnreachableException)
+        {
+            throw;
+        }
+        catch (OperationCanceledException)
         {
             throw;
         }

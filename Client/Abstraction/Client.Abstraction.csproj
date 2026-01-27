@@ -7,7 +7,7 @@
         <AssemblyName>Wookashi.FeatureSwitcher.Client.Abstraction</AssemblyName>
         <RootNamespace>Wookashi.FeatureSwitcher.Client.Abstraction</RootNamespace>
         <LangVersion>default</LangVersion>
-        <Version>0.6.3-dev</Version>
+        <Version>0.7.0</Version>
         <Title>Feature Switcher Client Abstraction</Title>
         <Description>Abstraction for feature switcher nuget client</Description>
         <Copyright>Copyright ©2026 Wookashi</Copyright>

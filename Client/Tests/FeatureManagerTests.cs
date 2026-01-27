@@ -411,4 +411,86 @@ public class FeatureManagerTests
     }
 
     #endregion
+
+    #region CancellationToken Tests
+
+    [Fact]
+    public async Task IsFeatureEnabledAsync_ThrowsOperationCanceledException_WhenCancelled()
+    {
+        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+        SetupRegistrationEndpoint(handlerMock);
+        var factoryMock = CreateMockHttpClientFactory(handlerMock);
+
+        var features = new List<IFeatureStateModel>
+        {
+            new FeatureStateModel("TestFlag", initialState: false),
+        };
+        var manager = CreateFeatureManager(features, factoryMock);
+        await manager.RegisterFeaturesOnNodeAsync();
+
+        var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(
+            () => manager.IsFeatureEnabledAsync("TestFlag", cts.Token));
+    }
+
+    [Fact]
+    public async Task RegisterFeaturesOnNodeAsync_ThrowsOperationCanceledException_WhenCancelled()
+    {
+        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+        var factoryMock = CreateMockHttpClientFactory(handlerMock);
+
+        var manager = CreateFeatureManager(new List<IFeatureStateModel>(), factoryMock);
+
+        var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(
+            () => manager.RegisterFeaturesOnNodeAsync(cts.Token));
+    }
+
+    [Fact]
+    public async Task IsFeatureEnabledAsync_WorksWithCancellationToken()
+    {
+        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+        SetupRegistrationEndpoint(handlerMock);
+        SetupFeatureStateEndpoint(handlerMock, "TestFlag", featureState: true);
+
+        var factoryMock = CreateMockHttpClientFactory(handlerMock);
+
+        var features = new List<IFeatureStateModel>
+        {
+            new FeatureStateModel("TestFlag", initialState: false),
+        };
+        var manager = CreateFeatureManager(features, factoryMock);
+        await manager.RegisterFeaturesOnNodeAsync();
+
+        using var cts = new CancellationTokenSource();
+        var result = await manager.IsFeatureEnabledAsync("TestFlag", cts.Token);
+
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task RegisterFeaturesOnNodeAsync_WorksWithCancellationToken()
+    {
+        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+        SetupRegistrationEndpoint(handlerMock);
+
+        var factoryMock = CreateMockHttpClientFactory(handlerMock);
+
+        var manager = CreateFeatureManager(new List<IFeatureStateModel>(), factoryMock);
+
+        using var cts = new CancellationTokenSource();
+        await manager.RegisterFeaturesOnNodeAsync(cts.Token);
+
+        handlerMock.Protected().Verify(
+            "SendAsync",
+            Times.Once(),
+            ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Post),
+            ItExpr.IsAny<CancellationToken>());
+    }
+
+    #endregion
 }

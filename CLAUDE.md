@@ -122,6 +122,14 @@ if (await featureManager.IsFeatureEnabledAsync("DarkMode"))
 }
 ```
 
+**CancellationToken Support:**
+All async methods support `CancellationToken` for cooperative cancellation:
+```csharp
+using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+await featureManager.RegisterFeaturesOnNodeAsync(cts.Token);
+var isEnabled = await featureManager.IsFeatureEnabledAsync("DarkMode", cts.Token);
+```
+
 ### Node (Docker Container - per environment)
 - `Node/Api/` - Minimal API endpoints for client registration and feature state queries
 - `Node/Database/` - EF Core with `FeaturesDataContext`, stores `ApplicationEntity` and `FeatureEntity`
@@ -195,11 +203,11 @@ Features:
 
 ## Client Test Coverage
 
-Tests are located in `Client/Tests/` with 74 tests covering:
+Tests are located in `Client/Tests/` with 78 tests covering:
 
 | Test File | Tests | Coverage |
 |-----------|-------|----------|
-| `FeatureManagerTests.cs` | 22 | Constructor validation, IsFeatureEnabledAsync, RegisterFeaturesOnNodeAsync |
+| `FeatureManagerTests.cs` | 26 | Constructor validation, IsFeatureEnabledAsync, RegisterFeaturesOnNodeAsync, CancellationToken |
 | `FeatureStateModelTests.cs` | 14 | Property initialization, mutation, null handling |
 | `FeatureSwitcherBasicClientConfigurationTests.cs` | 12 | Property initialization, null URI validation |
 | `ConfigureServicesExtensionsTests.cs` | 9 | DI registration, singleton lifetime, method chaining |
@@ -209,6 +217,7 @@ Tests are located in `Client/Tests/` with 74 tests covering:
 
 - **Direct Construction**: `FeatureManager` has a public constructor for simple instantiation
 - **DI Extension Methods**: `AddFeatureFlags()` for easy service registration
+- **CancellationToken Support**: All async methods accept optional `CancellationToken` for cooperative cancellation
 - **Minimal APIs**: Both Node and Manager use .NET minimal API style
 - **In-Memory Option**: Both databases support in-memory mode for testing
 - **Resilient Client**: Falls back to cached feature states when Node is unreachable
