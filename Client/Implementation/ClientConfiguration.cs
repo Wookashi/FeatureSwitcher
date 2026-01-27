@@ -5,10 +5,10 @@ namespace Wookashi.FeatureSwitcher.Client.Implementation;
 public sealed class FeatureSwitcherBasicClientConfiguration(
     string applicationName,
     string environmentName,
-    Uri? environmentNodeAddress)
+    Uri? nodeAddress)
     : IFeatureSwitcherBasicClientConfiguration
 {
     public string ApplicationName { get; } = applicationName;
     public string EnvironmentName { get; } = environmentName;
-    public Uri NodeAddress { get; } = environmentNodeAddress ?? throw new ArgumentNullException(nameof(environmentNodeAddress));
+    public Uri NodeAddress { get; } = nodeAddress ?? throw new ArgumentNullException(nameof(nodeAddress));
 }

@@ -6,7 +6,7 @@
         <Nullable>enable</Nullable>
         <AssemblyName>Wookashi.FeatureSwitcher.Client.Implementation</AssemblyName>
         <RootNamespace>Wookashi.FeatureSwitcher.Client.Implementation</RootNamespace>
-        <Version>0.6.2-dev</Version>
+        <Version>0.6.3-dev</Version>
         <Title>Feature Switcher Client Implementation</Title>
         <Authors>Wookashi</Authors>
         <Description>Nuget client for wookashi Feature Switcher tool</Description>
@@ -33,6 +33,10 @@
 
     <ItemGroup>
         <None Include="Images\nuget.png">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
+        <None Include="..\..\LICENSE.txt">
             <Pack>True</Pack>
             <PackagePath>\</PackagePath>
         </None>

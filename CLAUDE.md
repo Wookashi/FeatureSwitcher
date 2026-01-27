@@ -83,9 +83,44 @@ Client Apps ──HTTP──> Node Service ──HTTP──> Manager Service
 ```
 
 ### Client (NuGet Package)
-- `Client/Abstraction/` - `IFeatureManager` interface and contracts
-- `Client/Implementation/` - `FeatureManager` with local caching, `FeatureManagerBuilder` for fluent configuration
-- Clients register features on Node during initialization and cache states locally for resilience
+
+**Key Classes:**
+- `Client/Abstraction/IFeatureManager` - Interface for checking feature states
+- `Client/Abstraction/IFeatureStateModel` - Interface for feature state data
+- `Client/Implementation/FeatureManager` - Main implementation with HTTP communication and caching
+- `Client/Implementation/FeatureStateModel` - Default implementation of `IFeatureStateModel`
+- `Client/Implementation/FeatureSwitcherBasicClientConfiguration` - Configuration class
+- `Client/Implementation/ConfigureServicesExtensions` - DI registration extension methods
+
+**Usage with Dependency Injection:**
+```csharp
+services.AddFeatureFlags(
+    applicationName: "MyApp",
+    environmentName: "Production",
+    nodeAddress: new Uri("http://localhost:8081/"),
+    features: new List<FeatureStateModel>
+    {
+        new("DarkMode", initialState: false),
+        new("NewCheckout", initialState: true),
+    });
+```
+
+**Manual Usage:**
+```csharp
+var featureManager = new FeatureManager(
+    applicationName: "MyApp",
+    environmentName: "Production",
+    nodeAddress: new Uri("http://localhost:8081/"),
+    features: features,
+    httpClientFactory: httpClientFactory);
+
+await featureManager.RegisterFeaturesOnNodeAsync();
+
+if (await featureManager.IsFeatureEnabledAsync("DarkMode"))
+{
+    // Feature is enabled
+}
+```
 
 ### Node (Docker Container - per environment)
 - `Node/Api/` - Minimal API endpoints for client registration and feature state queries
@@ -99,6 +134,19 @@ Client Apps ──HTTP──> Node Service ──HTTP──> Manager Service
 
 ### Shared
 - `Shared/Abstraction/` - Common models like `FeatureStateModel` and `NodeRegistrationModel`
+
+## Client Exception Hierarchy
+
+All client exceptions inherit from `FeatureSwitcherException`:
+
+| Exception | Code | Description |
+|-----------|------|-------------|
+| `FeatureSwitcherException` | configurable | Base exception class |
+| `FeatureNotRegisteredException` | 1 | Feature was not registered during initialization |
+| `EnvironmentMismatchException` | 2 | Application environment doesn't match node environment |
+| `NodeUnreachableException` | configurable | Node service cannot be reached |
+| `FeatureNameCollisionException` | configurable | Duplicate feature names detected |
+| `RegistrationException` | HTTP status code | Registration with node failed |
 
 ## API Endpoints
 
@@ -145,9 +193,22 @@ Features:
 - AbortController for cleanup on refresh/unmount
 - Non-blocking error panel
 
+## Client Test Coverage
+
+Tests are located in `Client/Tests/` with 74 tests covering:
+
+| Test File | Tests | Coverage |
+|-----------|-------|----------|
+| `FeatureManagerTests.cs` | 22 | Constructor validation, IsFeatureEnabledAsync, RegisterFeaturesOnNodeAsync |
+| `FeatureStateModelTests.cs` | 14 | Property initialization, mutation, null handling |
+| `FeatureSwitcherBasicClientConfigurationTests.cs` | 12 | Property initialization, null URI validation |
+| `ConfigureServicesExtensionsTests.cs` | 9 | DI registration, singleton lifetime, method chaining |
+| `ExceptionTests.cs` | 17 | All exception types: message, code, inheritance |
+
 ## Key Patterns
 
-- **Builder Pattern**: `FeatureManagerBuilder` for client SDK configuration
+- **Direct Construction**: `FeatureManager` has a public constructor for simple instantiation
+- **DI Extension Methods**: `AddFeatureFlags()` for easy service registration
 - **Minimal APIs**: Both Node and Manager use .NET minimal API style
 - **In-Memory Option**: Both databases support in-memory mode for testing
 - **Resilient Client**: Falls back to cached feature states when Node is unreachable
