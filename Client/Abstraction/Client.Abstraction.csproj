@@ -7,10 +7,42 @@
         <AssemblyName>Wookashi.FeatureSwitcher.Client.Abstraction</AssemblyName>
         <RootNamespace>Wookashi.FeatureSwitcher.Client.Abstraction</RootNamespace>
         <LangVersion>default</LangVersion>
+        <Version>0.6.1-dev</Version>
+        <Title>Feature Switcher Client Abstraction</Title>
+        <Description>Abstraction for feature switcher nuget client</Description>
+        <Copyright>Copyright ©2026 Wookashi</Copyright>
+        <RepositoryUrl>https://github.com/Wookashi/FeatureSwitcher.git</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageTags>#featureflags</PackageTags>
+        <PackageIcon>nuget.png</PackageIcon>
+        <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 
+    <Target Name="PostPackNugetDeploy" AfterTargets="Pack" Condition="'$(Configuration)' == 'Release'">
+        <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+            <NuGetSourceRelease>https://api.nuget.org/v3/index.json</NuGetSourceRelease>
+        </PropertyGroup>
+        <Exec Command="nuget push &quot;$(OutputPath)..\$(PackageId).$(PackageVersion).nupkg&quot; -Source &quot;$(NuGetSourceRelease)&quot; -Verbosity Detailed" />
+    </Target>
+    
     <ItemGroup>
       <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.2" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <None Include="Images\nuget.png">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
+        <None Include="..\..\LICENSE.txt">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
+        <None Include="..\README.md">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
     </ItemGroup>
 
 </Project>

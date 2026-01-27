@@ -6,25 +6,50 @@
         <Nullable>enable</Nullable>
         <AssemblyName>Wookashi.FeatureSwitcher.Client.Implementation</AssemblyName>
         <RootNamespace>Wookashi.FeatureSwitcher.Client.Implementation</RootNamespace>
-        <Version>0.6.0-dev</Version>
+        <Version>0.6.1-dev</Version>
         <Title>Feature Switcher Client Implementation</Title>
         <Authors>Wookashi</Authors>
         <Description>Nuget client for wookashi Feature Switcher tool</Description>
         <LangVersion>default</LangVersion>
         <Copyright>Copyright ©2026 Wookashi</Copyright>
-        <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-        <PackageIcon>icon.png</PackageIcon>
+        <PackageIcon>nuget.png</PackageIcon>
         <RepositoryUrl>https://github.com/Wookashi/FeatureSwitcher.git</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <PackageTags>#featureflags</PackageTags>
+        <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 
+    <Target Name="PostPackNugetDeploy" AfterTargets="Pack" Condition="'$(Configuration)' == 'Release'">
+        <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+            <NuGetSourceRelease>https://api.nuget.org/v3/index.json</NuGetSourceRelease>
+        </PropertyGroup>
+        <Exec Command="nuget push &quot;$(OutputPath)..\$(PackageId).$(PackageVersion).nupkg&quot; -Source &quot;$(NuGetSourceRelease)&quot; -Verbosity Detailed" />
+    </Target>
+    
     <ItemGroup>
       <PackageReference Include="System.Text.Json" Version="8.0.5" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Abstraction\Client.Abstraction.csproj" />
+        <None Include="Images\nuget.png">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
+        <None Include="..\..\LICENSE.txt">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
+        <None Include="..\README.md">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
+    </ItemGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\Abstraction\Client.Abstraction.csproj">
+        <Version>[$(Version),)</Version>
+      </ProjectReference>
     </ItemGroup>
 
 </Project>

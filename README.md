@@ -21,14 +21,22 @@ run from folder FeatureSwitcher (main in repository)
    docker-compose up --build
    ```
 
-## 🤝 Contributing
+## Contributing
 
-We welcome contributions! Check out the [Contributing Guide](CONTRIBUTING.md) to get started.
+By submitting a pull request, you agree to the
+[Contributor License Agreement](./CLA.md).
+
+If you do not agree with the CLA, please open an issue instead of a PR.
+
 ## Authors
 * **Lukas Hryciuk** - [Wookashi](https://github.com/Wookashi)
 
 
-## License
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+## Licensing
 
-...to be continued ;)
+This project is licensed under **Wookashi.FeatureSwitcher – Community License v1.0**.
+
+It is free to use, including commercially, for the versions released under this license.
+The author may change licensing terms for **future versions**.
+
+For commercial licensing questions: lukasz.hr@outlook.com
