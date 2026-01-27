@@ -4,5 +4,5 @@ public interface IFeatureSwitcherBasicClientConfiguration
 {
     string ApplicationName { get; }
     string EnvironmentName { get; }
-    Uri EnvironmentNodeAddress { get; }
+    Uri NodeAddress { get; }
 }

@@ -8,7 +8,52 @@
 dotnet add package Wookashi.FeatureSwitcher.Client.Implementation
 ```
 
-## Quick Start
+## Quick Start with Dependency Injection
+
+```csharp
+using Wookashi.FeatureSwitcher.Client.Abstraction;
+using Wookashi.FeatureSwitcher.Client.Implementation;
+
+// 1. Define configuration
+var config = new FeatureSwitcherBasicClientConfiguration(
+    applicationName: "MyApp",
+    environmentName: "Production",
+    nodeAddress: new Uri("http://localhost:8081/"));
+
+// 2. Define your features
+var features = new List<IFeatureStateModel>
+{
+    new MyFeature("DarkMode", initialState: false),
+    new MyFeature("NewCheckout", initialState: true),
+};
+
+// 3. Register with DI container
+services.AddFeatureFlags(config, features);
+```
+
+Then inject `IFeatureManager` in your classes:
+
+```csharp
+public class MyService
+{
+    private readonly IFeatureManager _featureManager;
+
+    public MyService(IFeatureManager featureManager)
+    {
+        _featureManager = featureManager;
+    }
+
+    public async Task DoSomethingAsync()
+    {
+        if (await _featureManager.IsFeatureEnabledAsync("DarkMode"))
+        {
+            // Feature is enabled
+        }
+    }
+}
+```
+
+## Manual Initialization (without DI)
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
@@ -29,7 +74,7 @@ var httpClientFactory = serviceProvider.GetService<IHttpClientFactory>();
 var config = new FeatureSwitcherBasicClientConfiguration(
     applicationName: "MyApp",
     environmentName: "Production",
-    environmentNodeAddress: new Uri("http://localhost:8081"));
+    nodeAddress: new Uri("http://localhost:8081/"));
 
 // 3. Build and initialize
 var featureManager = await new FeatureManagerBuilder(config)
@@ -70,7 +115,7 @@ public class MyFeature : IFeatureStateModel
 |----------|-------------|
 | `ApplicationName` | Unique identifier for your application |
 | `EnvironmentName` | Environment name (e.g., Development, Production) |
-| `EnvironmentNodeAddress` | URI of the Feature Switcher Node service |
+| `NodeAddress` | URI of the Feature Switcher Node service |
 
 ## Resilience
 

@@ -10,5 +10,5 @@ public sealed class FeatureSwitcherBasicClientConfiguration(
 {
     public string ApplicationName { get; } = applicationName;
     public string EnvironmentName { get; } = environmentName;
-    public Uri EnvironmentNodeAddress { get; } = environmentNodeAddress ?? throw new ArgumentNullException(nameof(environmentNodeAddress));
+    public Uri NodeAddress { get; } = environmentNodeAddress ?? throw new ArgumentNullException(nameof(environmentNodeAddress));
 }

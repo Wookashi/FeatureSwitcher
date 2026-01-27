@@ -26,9 +26,9 @@ public sealed class FeatureManagerBuilder
             throw new ArgumentNullException(nameof(clientBasicConfiguration.EnvironmentName));
         }
 
-        if (clientBasicConfiguration.EnvironmentNodeAddress is null)
+        if (clientBasicConfiguration.NodeAddress is null)
         {
-            throw new ArgumentNullException(nameof(clientBasicConfiguration.EnvironmentNodeAddress));
+            throw new ArgumentNullException(nameof(clientBasicConfiguration.NodeAddress));
         }
 
         _basicConfiguration = clientBasicConfiguration;
@@ -63,7 +63,7 @@ public sealed class FeatureManagerBuilder
         return new FeatureSwitcherFullClientConfiguration(
             applicationName: _basicConfiguration.ApplicationName,
             environmentName: _basicConfiguration.EnvironmentName,
-            environmentNodeAddress: _basicConfiguration.EnvironmentNodeAddress,
+            environmentNodeAddress: _basicConfiguration.NodeAddress,
             features: _features ?? throw new InvalidOperationException(),
             httpClientFactory: _httpClientFactory ?? throw new InvalidOperationException());
     }
