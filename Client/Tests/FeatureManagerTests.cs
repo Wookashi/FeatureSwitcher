@@ -1,5 +1,4 @@
 using System.Net;
-using Client.Implementation.Tests.Models;
 using Moq;
 using Moq.Protected;
 using Wookashi.FeatureSwitcher.Client.Abstraction;
@@ -10,14 +9,19 @@ namespace Client.Implementation.Tests;
 
 public class FeatureManagerTests
 {
-    private const string NodeAddress = "http://localhost:5000";
+    private const string NodeAddress = "http://localhost:5000/";
+    private const string AppName = "TestApp";
+    private const string EnvironmentName = "TestEnv";
 
-    private readonly FeatureSwitcherBasicClientConfiguration _basicConfig = new(
-        applicationName: "TestApp",
-        environmentName: "TestEnv",
-        environmentNodeAddress: new Uri(NodeAddress));
+    private static Mock<IHttpClientFactory> CreateMockHttpClientFactory(Mock<HttpMessageHandler> handlerMock)
+    {
+        var httpClient = new HttpClient(handlerMock.Object);
+        var factoryMock = new Mock<IHttpClientFactory>();
+        factoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
+        return factoryMock;
+    }
 
-    private void PrepareRegisterFeaturesOnNodeSetup(Mock<HttpMessageHandler> handlerMock)
+    private static void SetupRegistrationEndpoint(Mock<HttpMessageHandler> handlerMock)
     {
         handlerMock
             .Protected()
@@ -26,7 +30,7 @@ public class FeatureManagerTests
                 ItExpr.Is<HttpRequestMessage>(req =>
                     req.Method == HttpMethod.Post &&
                     req.RequestUri != null &&
-                    req.RequestUri.ToString() == $"{NodeAddress}/applications"
+                    req.RequestUri.ToString() == $"{NodeAddress}applications"
                 ),
                 ItExpr.IsAny<CancellationToken>()
             )
@@ -35,81 +39,99 @@ public class FeatureManagerTests
                 StatusCode = HttpStatusCode.Created,
             });
     }
-    
-    [Fact]
-    public async Task FeatureManager_ThrowErrorWhenFeatureNotExists()
-    {
-        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
-        PrepareRegisterFeaturesOnNodeSetup(handlerMock);
-        
-        
-        var httpClient = new HttpClient(handlerMock.Object);
 
-        var factoryMock = new Mock<IHttpClientFactory>();
-        factoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
-        
-        
-        var features = new List<IFeatureStateModel>();
-        var manager = await new FeatureManagerBuilder(_basicConfig)
-            .AddFeatures(features: features).AddHttpClientFactory(clientFactory: factoryMock.Object).BuildAsync();
-        
-        await Assert.ThrowsAsync<FeatureNotRegisteredException>(
-            () => manager.IsFeatureEnabledAsync("fakeTestFlag"));
+    private static async Task<FeatureManager> CreateFeatureManagerAsync(
+        List<IFeatureStateModel> features,
+        Mock<IHttpClientFactory> factoryMock)
+    {
+        var manager = new FeatureManager(
+            AppName,
+            EnvironmentName,
+            new Uri(NodeAddress),
+            features,
+            factoryMock.Object);
+
+        await manager.RegisterFeaturesOnNodeAsync();
+        return manager;
     }
-    
-    [Fact]
-    public async Task FeatureManager_CheckFalseFeatureState_NodeUnreachable()
-    {
-        //Arrange
-        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
-        PrepareRegisterFeaturesOnNodeSetup(handlerMock);
 
-        var httpClient = new HttpClient(handlerMock.Object);
-        var factoryMock = new Mock<IHttpClientFactory>();
-        factoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
-        
-        List<IFeatureStateModel> features =
-        [
-            new FeatureStateTestModel(name: "TestFlag", initialState: false, currentLocalState: false),
-        ];
-        
-        //Act
-        var manager = await new FeatureManagerBuilder(_basicConfig)
-            .AddFeatures(features: features)
-            .AddHttpClientFactory(clientFactory: factoryMock.Object)
-            .BuildAsync();
-    
+    [Fact]
+    public async Task IsFeatureEnabledAsync_ThrowsWhenFeatureNotRegistered()
+    {
+        // Arrange
+        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+        SetupRegistrationEndpoint(handlerMock);
+        var factoryMock = CreateMockHttpClientFactory(handlerMock);
+
+        var features = new List<IFeatureStateModel>();
+        var manager = await CreateFeatureManagerAsync(features, factoryMock);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<FeatureNotRegisteredException>(
+            () => manager.IsFeatureEnabledAsync("nonExistentFeature"));
+    }
+
+    [Fact]
+    public async Task IsFeatureEnabledAsync_ReturnsFalse_WhenNodeUnreachableAndInitialStateIsFalse()
+    {
+        // Arrange
+        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+        SetupRegistrationEndpoint(handlerMock);
+        var factoryMock = CreateMockHttpClientFactory(handlerMock);
+
+        var features = new List<IFeatureStateModel>
+        {
+            new FeatureStateModel("TestFlag", initialState: false),
+        };
+        var manager = await CreateFeatureManagerAsync(features, factoryMock);
+
+        // Act
         var result = await manager.IsFeatureEnabledAsync("TestFlag");
-        
-        //Assert
+
+        // Assert
         Assert.False(result);
     }
-    
+
     [Fact]
-    public async Task FeatureManager_CheckTrueFeatureState_NodeUnreachable()
+    public async Task IsFeatureEnabledAsync_ReturnsTrue_WhenNodeUnreachableAndInitialStateIsTrue()
     {
-        //Arrange
+        // Arrange
         var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
-        PrepareRegisterFeaturesOnNodeSetup(handlerMock);
+        SetupRegistrationEndpoint(handlerMock);
+        var factoryMock = CreateMockHttpClientFactory(handlerMock);
 
-        var httpClient = new HttpClient(handlerMock.Object);
+        var features = new List<IFeatureStateModel>
+        {
+            new FeatureStateModel("TestFlag", initialState: true),
+        };
+        var manager = await CreateFeatureManagerAsync(features, factoryMock);
 
-        var factoryMock = new Mock<IHttpClientFactory>();
-        factoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
-        List<IFeatureStateModel> features =
-        [
-            new FeatureStateTestModel(name: "TestFlag", initialState: true, currentLocalState: true),
-        ];
-        
-        //Act
-        var manager = await new FeatureManagerBuilder(_basicConfig)
-            .AddFeatures(features: features)
-            .AddHttpClientFactory(clientFactory: factoryMock.Object)
-            .BuildAsync();
-    
+        // Act
         var result = await manager.IsFeatureEnabledAsync("TestFlag");
-        
-        //Assert
+
+        // Assert
         Assert.True(result);
+    }
+
+    [Fact]
+    public void Constructor_ThrowsWhenDuplicateFeatureNames()
+    {
+        // Arrange
+        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+        var factoryMock = CreateMockHttpClientFactory(handlerMock);
+
+        var features = new List<IFeatureStateModel>
+        {
+            new FeatureStateModel("DuplicateName", initialState: false),
+            new FeatureStateModel("DuplicateName", initialState: true),
+        };
+
+        // Act & Assert
+        Assert.Throws<FeatureNameCollisionException>(() => new FeatureManager(
+            AppName,
+            EnvironmentName,
+            new Uri(NodeAddress),
+            features,
+            factoryMock.Object));
     }
 }

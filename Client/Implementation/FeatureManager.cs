@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
@@ -8,6 +8,11 @@ using Wookashi.FeatureSwitcher.Client.Implementation.Models;
 
 namespace Wookashi.FeatureSwitcher.Client.Implementation;
 
+/// <summary>
+/// Manages feature flags for your application.
+/// Communicates with a Feature Switcher Node to get feature states.
+/// Falls back to cached local states when the node is unreachable.
+/// </summary>
 public class FeatureManager : IFeatureManager
 {
     private readonly List<IFeatureStateModel> _features;
@@ -16,120 +21,144 @@ public class FeatureManager : IFeatureManager
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly Uri _nodeAddress;
 
-    internal FeatureManager(FeatureSwitcherFullClientConfiguration configuration)
+    /// <summary>
+    /// Creates a new FeatureManager.
+    /// </summary>
+    /// <param name="applicationName">Unique name for your application.</param>
+    /// <param name="environmentName">Environment name (e.g., "Development", "Production").</param>
+    /// <param name="nodeAddress">URI of the Feature Switcher Node service.</param>
+    /// <param name="features">List of features to manage.</param>
+    /// <param name="httpClientFactory">HTTP client factory for making requests.</param>
+    /// <exception cref="ArgumentNullException">Thrown when required parameters are null.</exception>
+    /// <exception cref="FeatureNameCollisionException">Thrown when feature names are not unique.</exception>
+    public FeatureManager(
+        string applicationName,
+        string environmentName,
+        Uri nodeAddress,
+        List<IFeatureStateModel> features,
+        IHttpClientFactory httpClientFactory)
     {
-        _appName = configuration.ApplicationName;
-        _environmentName = configuration.EnvironmentName;
-        _features = configuration.Features;
-        _httpClientFactory = configuration.HttpClientFactory;
-        _nodeAddress = configuration.EnvironmentNodeAddress;
+        _appName = applicationName ?? throw new ArgumentNullException(nameof(applicationName));
+        _environmentName = environmentName ?? throw new ArgumentNullException(nameof(environmentName));
+        _nodeAddress = nodeAddress ?? throw new ArgumentNullException(nameof(nodeAddress));
+        _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+
+        if (features is null)
+        {
+            throw new ArgumentNullException(nameof(features));
+        }
+
+        // Validate feature names are unique
+        if (features.GroupBy(f => f.Name).Any(g => g.Count() > 1))
+        {
+            throw new FeatureNameCollisionException("Feature names must be unique.");
+        }
+
+        _features = features;
     }
 
     /// <summary>
-    /// Checks feature state on node or local storage
+    /// Checks if a feature is enabled.
+    /// Queries the node first; falls back to cached state if unreachable.
     /// </summary>
-    /// <param name="featureName">Feature Name</param>
-    /// <returns>Feature state</returns>
-    /// <exception cref="FeatureNotRegisteredException">Thrown when feature wasn't registered on a start of application</exception>
+    /// <param name="featureName">Name of the feature to check.</param>
+    /// <returns>True if the feature is enabled, false otherwise.</returns>
+    /// <exception cref="FeatureNotRegisteredException">Thrown when the feature was not registered.</exception>
     public async Task<bool> IsFeatureEnabledAsync(string featureName)
     {
-        var collectionFeature = _features.FirstOrDefault(feature => feature.Name == featureName);
-        if (collectionFeature is null)
+        var feature = _features.FirstOrDefault(f => f.Name == featureName);
+        if (feature is null)
         {
-            throw new FeatureNotRegisteredException("Feature is not registered yet!");
+            throw new FeatureNotRegisteredException($"Feature '{featureName}' is not registered.");
         }
 
-        bool? nodeState = null;
         try
         {
-            nodeState = await IsFeatureEnabledOnNode(featureName);
+            var nodeState = await GetFeatureStateFromNodeAsync(featureName);
+            feature.CurrentLocalState = nodeState;
         }
         catch (NodeUnreachableException)
         {
-            //TODO Maybe some alert when node is unreachable in some period of time (configurable??)
+            // Fall back to cached local state
         }
 
-        if (nodeState is not null)
-        {
-            collectionFeature.CurrentLocalState = nodeState.Value;
-        }
-
-        return collectionFeature.CurrentLocalState;
+        return feature.CurrentLocalState;
     }
 
-    internal async Task RegisterFeaturesOnNodeAsync()
+    /// <summary>
+    /// Registers all features with the node.
+    /// Call this once during application startup.
+    /// </summary>
+    /// <exception cref="NodeUnreachableException">Thrown when the node cannot be reached.</exception>
+    /// <exception cref="EnvironmentMismatchException">Thrown when environments don't match.</exception>
+    /// <exception cref="RegistrationException">Thrown when registration fails.</exception>
+    public async Task RegisterFeaturesOnNodeAsync()
     {
         var httpClient = _httpClientFactory.CreateClient();
-        var applicationPackage = new AppRegistrationModel
+        var registrationModel = new AppRegistrationModel
         {
             AppName = _appName,
             Environment = _environmentName,
-            Features = _features.Select(feature =>
-                    new AppRegistrationModel.RegisterFeatureStateModel(
-                        featureName: feature.Name,
-                        initialState: feature.InitialState)
-                )
+            Features = _features
+                .Select(f => new AppRegistrationModel.RegisterFeatureStateModel(f.Name, f.InitialState))
                 .ToList(),
         };
-        var content = new StringContent(JsonSerializer.Serialize(applicationPackage), Encoding.UTF8, "application/json");
+
+        var content = new StringContent(
+            JsonSerializer.Serialize(registrationModel),
+            Encoding.UTF8,
+            "application/json");
+
         HttpResponseMessage response;
-        
         try
         {
             response = await httpClient.PostAsync($"{_nodeAddress}applications", content);
         }
-        catch (HttpRequestException requestException) when (requestException.InnerException is SocketException)
+        catch (HttpRequestException ex) when (ex.InnerException is SocketException socketEx)
         {
-            throw new NodeUnreachableException(requestException.Message,
-                ((SocketException)requestException.InnerException).ErrorCode);
+            throw new NodeUnreachableException(ex.Message, socketEx.ErrorCode);
         }
 
         if (response.StatusCode == (HttpStatusCode)422)
         {
-            throw new EnvironmentMismatchException($"Node is set to environment other than {_environmentName}");
+            throw new EnvironmentMismatchException($"Node environment doesn't match '{_environmentName}'.");
         }
 
         if (!response.IsSuccessStatusCode)
         {
-            throw new RegistrationException(response.ReasonPhrase ?? "Unknown error", (int)response.StatusCode);
+            throw new RegistrationException(
+                response.ReasonPhrase ?? "Registration failed.",
+                (int)response.StatusCode);
         }
     }
 
-    // TODO Cache default 15s, maybe configurable?
-    /// <summary>
-    /// Checks is feature enable on node
-    /// </summary>
-    /// <param name="featureName">Feature Name</param>
-    /// <returns>Feature state or exception</returns>
-    /// <exception cref="NodeUnreachableException">Returned when node api is unreachable</exception>
-    private async Task<bool> IsFeatureEnabledOnNode(string featureName)
+    private async Task<bool> GetFeatureStateFromNodeAsync(string featureName)
     {
-        bool model;
         try
         {
             var httpClient = _httpClientFactory.CreateClient();
-            var response = await httpClient.GetAsync($"{_nodeAddress}applications/{_appName}/features/{featureName}/state/");
+            var response = await httpClient.GetAsync(
+                $"{_nodeAddress}applications/{_appName}/features/{featureName}/state/");
 
-            if (response.IsSuccessStatusCode)
+            if (!response.IsSuccessStatusCode)
             {
-                var res = response.Content.ReadAsStringAsync().Result;
-                model = JsonSerializer.Deserialize<bool>(res);
+                throw new NodeUnreachableException(response.ReasonPhrase ?? "Node request failed.");
             }
-            else
-            {
-                throw new NodeUnreachableException(response.ReasonPhrase ?? "Unknown error");
-            }
-        }
-        catch (HttpRequestException requestException) when (requestException.InnerException is SocketException)
-        {
-            throw new NodeUnreachableException(requestException.Message,
-                ((SocketException)requestException.InnerException).ErrorCode);
-        }
-        catch (Exception exc)
-        {
-            throw new NodeUnreachableException(exc.Message);
-        }
 
-        return model;
+            var responseBody = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<bool>(responseBody);
+        }
+        catch (HttpRequestException ex) when (ex.InnerException is SocketException socketEx)
+        {
+            throw new NodeUnreachableException(ex.Message, socketEx.ErrorCode);
+        }
+        catch (NodeUnreachableException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new NodeUnreachableException(ex.Message);
+        }
     }
 }

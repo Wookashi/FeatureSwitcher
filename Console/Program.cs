@@ -56,17 +56,17 @@ var applicationName = Prompt("Application name", "TestApp");
 var environmentName = Prompt("Environment name", "docker");
 var environmentNodeAddress = PromptUri("Node address", new Uri("http://localhost:8081"));
 
-var httpClientFactory = serviceProvider.GetService<IHttpClientFactory>();
-var featureManagerBuilder = new FeatureManagerBuilder(new FeatureSwitcherBasicClientConfiguration(
-        applicationName: applicationName,
-        environmentName: environmentName,
-        environmentNodeAddress: environmentNodeAddress))
-    .AddFeatures(featureCollection)
-    .AddHttpClientFactory(httpClientFactory!);
+var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
+var featureManager = new FeatureManager(
+    applicationName: applicationName,
+    environmentName: environmentName,
+    nodeAddress: environmentNodeAddress,
+    features: featureCollection,
+    httpClientFactory: httpClientFactory);
 
 try
 {
-    var featureManager = await featureManagerBuilder.BuildAsync();
+    await featureManager.RegisterFeaturesOnNodeAsync();
     while (true)
     {
         Thread.Sleep(1000);

@@ -11,24 +11,18 @@ dotnet add package Wookashi.FeatureSwitcher.Client.Implementation
 ## Quick Start with Dependency Injection
 
 ```csharp
-using Wookashi.FeatureSwitcher.Client.Abstraction;
 using Wookashi.FeatureSwitcher.Client.Implementation;
 
-// 1. Define configuration
-var config = new FeatureSwitcherBasicClientConfiguration(
+// Define your features and register with DI
+services.AddFeatureFlags(
     applicationName: "MyApp",
     environmentName: "Production",
-    nodeAddress: new Uri("http://localhost:8081/"));
-
-// 2. Define your features
-var features = new List<IFeatureStateModel>
-{
-    new MyFeature("DarkMode", initialState: false),
-    new MyFeature("NewCheckout", initialState: true),
-};
-
-// 3. Register with DI container
-services.AddFeatureFlags(config, features);
+    nodeAddress: new Uri("http://localhost:8081/"),
+    features: new List<FeatureStateModel>
+    {
+        new("DarkMode", initialState: false),
+        new("NewCheckout", initialState: true),
+    });
 ```
 
 Then inject `IFeatureManager` in your classes:
@@ -57,30 +51,28 @@ public class MyService
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
-using Wookashi.FeatureSwitcher.Client.Abstraction;
 using Wookashi.FeatureSwitcher.Client.Implementation;
 
-// 1. Define your features
-var features = new List<IFeatureStateModel>
+// 1. Set up HttpClientFactory
+var serviceProvider = new ServiceCollection().AddHttpClient().BuildServiceProvider();
+var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
+
+// 2. Define your features
+var features = new List<FeatureStateModel>
 {
-    new MyFeature("DarkMode", initialState: false),
-    new MyFeature("NewCheckout", initialState: true),
+    new("DarkMode", initialState: false),
+    new("NewCheckout", initialState: true),
 };
 
-// 2. Configure the client
-var serviceProvider = new ServiceCollection().AddHttpClient().BuildServiceProvider();
-var httpClientFactory = serviceProvider.GetService<IHttpClientFactory>();
-
-var config = new FeatureSwitcherBasicClientConfiguration(
+// 3. Create and initialize
+var featureManager = new FeatureManager(
     applicationName: "MyApp",
     environmentName: "Production",
-    nodeAddress: new Uri("http://localhost:8081/"));
+    nodeAddress: new Uri("http://localhost:8081/"),
+    features: features,
+    httpClientFactory: httpClientFactory);
 
-// 3. Build and initialize
-var featureManager = await new FeatureManagerBuilder(config)
-    .AddFeatures(features)
-    .AddHttpClientFactory(httpClientFactory!)
-    .BuildAsync();
+await featureManager.RegisterFeaturesOnNodeAsync();
 
 // 4. Check feature states
 if (await featureManager.IsFeatureEnabledAsync("DarkMode"))
@@ -89,33 +81,14 @@ if (await featureManager.IsFeatureEnabledAsync("DarkMode"))
 }
 ```
 
-## Implementing IFeatureStateModel
-
-Create a class that implements `IFeatureStateModel`:
-
-```csharp
-public class MyFeature : IFeatureStateModel
-{
-    public string Name { get; }
-    public bool InitialState { get; }
-    public bool CurrentLocalState { get; set; }
-
-    public MyFeature(string name, bool initialState)
-    {
-        Name = name;
-        InitialState = initialState;
-        CurrentLocalState = initialState;
-    }
-}
-```
-
 ## Configuration
 
-| Property | Description |
-|----------|-------------|
-| `ApplicationName` | Unique identifier for your application |
-| `EnvironmentName` | Environment name (e.g., Development, Production) |
-| `NodeAddress` | URI of the Feature Switcher Node service |
+| Parameter | Description |
+|-----------|-------------|
+| `applicationName` | Unique identifier for your application |
+| `environmentName` | Environment name (e.g., Development, Production) |
+| `nodeAddress` | URI of the Feature Switcher Node service |
+| `features` | List of features to manage |
 
 ## Resilience
 

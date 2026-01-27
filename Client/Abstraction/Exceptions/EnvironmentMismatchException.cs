@@ -1,3 +1,6 @@
 namespace Wookashi.FeatureSwitcher.Client.Abstraction.Exceptions;
 
-public sealed class EnvironmentMismatchException(string message) : ApplicationException(message, 2);
+/// <summary>
+/// Thrown when the application's environment doesn't match the node's environment.
+/// </summary>
+public sealed class EnvironmentMismatchException(string message) : FeatureSwitcherException(message, 2);

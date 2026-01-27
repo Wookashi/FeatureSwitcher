@@ -1,3 +1,6 @@
 namespace Wookashi.FeatureSwitcher.Client.Abstraction.Exceptions;
 
-public sealed class NodeUnreachableException(string message, int errorCode = 0) : ApplicationException(message, errorCode);
+/// <summary>
+/// Thrown when the Feature Switcher node service cannot be reached.
+/// </summary>
+public sealed class NodeUnreachableException(string message, int errorCode = 0) : FeatureSwitcherException(message, errorCode);
