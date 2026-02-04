@@ -36,8 +36,6 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/featureswitcher-node
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
-            type=sha,format=short
-            type=raw,value=build-{{run_number}},enable={{is_default_branch}}
             type=ref,event=tag
 
       - name: Build & push
