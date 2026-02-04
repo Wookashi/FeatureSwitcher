@@ -33,7 +33,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            wookashi/featureswitcher-manager
+            ${{ secrets.DOCKERHUB_USERNAME }}/featureswitcher-manager
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,format=short
