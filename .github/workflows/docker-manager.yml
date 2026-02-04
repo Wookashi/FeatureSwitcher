@@ -36,7 +36,7 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/featureswitcher-manager
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
-            type=ref,event=tag
+            type=semver,pattern={{version}}
 
       - name: Build & push
         uses: docker/build-push-action@v5
