@@ -16,6 +16,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Node", "Node", "{7AA29B48-E
 	ProjectSection(SolutionItems) = preProject
 		Node\EF mirations.md = Node\EF mirations.md
 		Node\Dockerfile = Node\Dockerfile
+		Node\.dockerignore = Node\.dockerignore
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Node.Abstraction", "Node\Abstraction\Node.Abstraction.csproj", "{F1CAC923-496D-480C-831F-96E505845660}"
