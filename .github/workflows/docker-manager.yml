@@ -3,12 +3,12 @@ name: Docker - Manager
 on:
   push:
     branches: ["main"]
+    tags: [ "v*"]
     paths:
       - "Manager/**"
       - "Shared/**"
       - ".github/workflows/docker-manager.yml"
-  push:
-    tags: ["v*"]
+  
   workflow_dispatch:
 
 jobs:

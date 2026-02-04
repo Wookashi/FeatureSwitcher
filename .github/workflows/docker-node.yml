@@ -3,12 +3,12 @@ name: Docker - Node
 on:
   push:
     branches: ["main"]
+    tags: [ "v*"]
     paths:
       - "Node/**"
       - "Shared/**"
       - ".github/workflows/docker-node.yml"
-  push:
-    tags: ["v*"]
+  
   workflow_dispatch:
 
 jobs:
