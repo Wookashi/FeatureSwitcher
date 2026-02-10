@@ -53,7 +53,7 @@ static Uri PromptUri(string label, Uri defaultValue)
 }
 
 var applicationName = Prompt("Application name", "TestApp");
-var environmentName = Prompt("Environment name", "docker");
+var environmentName = Prompt("Environment name", "Development");
 var environmentNodeAddress = PromptUri("Node address", new Uri("http://localhost:8081"));
 
 var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
@@ -85,6 +85,7 @@ try
         table.Title = new TableTitle("Feature toggles");
         table.Caption = new TableTitle($"Last updated {DateTime.Now.ToLongTimeString()}");
         Console.Clear();
+        AnsiConsole.Write(new Text($"env:{environmentName}, appName:{applicationName}, node:{environmentNodeAddress}").Centered());
         AnsiConsole.Write(table);
     }
 }
