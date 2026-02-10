@@ -95,7 +95,9 @@ export function useFeatureMatrix(): UseFeatureMatrixResult {
 
       try {
         setPendingRequests((n) => n + 1);
-        const response = await fetch(endpoint, { signal });
+        const timeoutSignal = AbortSignal.timeout(10000); // 10 second timeout
+        const combinedSignal = AbortSignal.any([signal, timeoutSignal]);
+        const response = await fetch(endpoint, { signal: combinedSignal });
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
@@ -161,7 +163,9 @@ export function useFeatureMatrix(): UseFeatureMatrixResult {
       const endpoint = `/api/nodes/${node.id}/applications`;
 
       try {
-        const response = await fetch(endpoint, { signal });
+        const timeoutSignal = AbortSignal.timeout(10000); // 10 second timeout
+        const combinedSignal = AbortSignal.any([signal, timeoutSignal]);
+        const response = await fetch(endpoint, { signal: combinedSignal });
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
@@ -202,7 +206,9 @@ export function useFeatureMatrix(): UseFeatureMatrixResult {
       const endpoint = '/api/nodes';
 
       try {
-        const response = await fetch(endpoint, { signal });
+        const timeoutSignal = AbortSignal.timeout(10000); // 10 second timeout
+        const combinedSignal = AbortSignal.any([signal, timeoutSignal]);
+        const response = await fetch(endpoint, { signal: combinedSignal });
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
@@ -264,6 +270,7 @@ export function useFeatureMatrix(): UseFeatureMatrixResult {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ state: newValue }),
+          signal: AbortSignal.timeout(10000), // 10 second timeout
         });
 
         if (!response.ok) {
@@ -284,8 +291,8 @@ export function useFeatureMatrix(): UseFeatureMatrixResult {
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
         addError(endpoint, message);
-        // Revert to previous value on error
-        updateRowCell(application, feature, nodeName, { kind: 'value', value: currentValue });
+        // Mark as unknown on error - we can't confirm the current state
+        updateRowCell(application, feature, nodeName, { kind: 'unknown', reason: message });
       }
     },
     [addError, updateRowCell]

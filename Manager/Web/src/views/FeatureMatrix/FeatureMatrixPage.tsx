@@ -267,6 +267,14 @@ export default function FeatureMatrixPage() {
           return null; // No state shown for application rows
         }
         const cellState = record.cells[node.name];
+        // If no cell state and loading is done, show N/A
+        if (!cellState && !isLoading) {
+          const errorMsg = unreachableNodes.get(node.name);
+          const reason = errorMsg
+            ? `Node unreachable: ${errorMsg}`
+            : 'Feature not present on this node';
+          return <CellRenderer state={{ kind: 'unknown', reason }} />;
+        }
         const handleClick = cellState?.kind === 'value'
           ? () => toggleFeatureState(node.id, node.name, record.application, record.feature, cellState.value)
           : undefined;
@@ -275,7 +283,7 @@ export default function FeatureMatrixPage() {
     }));
 
     return [...baseColumns, ...nodeColumns];
-  }, [nodes, unreachableNodes, toggleFeatureState]);
+  }, [nodes, unreachableNodes, isLoading, toggleFeatureState]);
 
   const isDark = themeMode === 'dark';
 
