@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Wookashi.FeatureSwitcher.Manager.Database.Entities;
+namespace Wookashi.FeatureSwitcher.Node.Database.Entities;
 
 public sealed class StateChangesHistory
 {

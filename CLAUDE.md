@@ -195,11 +195,36 @@ Located in `Manager/Web/src/views/FeatureMatrix/`:
 Features:
 - Progressive loading (nodes → apps → features)
 - Sticky columns (Application, Feature)
-- Cell states: loading, true (green), false (red), unknown (gray)
+- Cell states: loading, true (green), false (red), unknown/N/A (gray)
 - Search filter, "Show only differences" toggle
 - Day/Night theme (Ant Design ConfigProvider)
 - AbortController for cleanup on refresh/unmount
 - Non-blocking error panel
+
+### Cell State Types
+
+```typescript
+type CellState =
+  | { kind: 'loading' }
+  | { kind: 'value'; value: boolean }
+  | { kind: 'unknown'; reason?: string };
+```
+
+### Cell State Resolution
+
+Cells show "N/A" (unknown state) in these scenarios:
+- **Node unreachable**: Node failed to respond during fetch (tooltip: "Node unreachable: [error]")
+- **Feature not present**: Feature exists on other nodes but not on this node (tooltip: "Feature not present on this node")
+- **Toggle failed**: Feature state toggle request failed (tooltip: error message)
+- **Timeout**: Request exceeded 10-second timeout
+
+### Fetch Timeout Configuration
+
+All API fetch calls in `useFeatureMatrix.ts` have a 10-second timeout using `AbortSignal.timeout(10000)`:
+- `fetchNodes()` - fetching node list
+- `fetchApplications()` - fetching apps per node
+- `fetchFeatures()` - fetching features per app
+- `toggleFeatureState()` - toggling feature state
 
 ## Client Test Coverage
 

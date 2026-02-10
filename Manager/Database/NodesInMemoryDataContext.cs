@@ -11,5 +11,4 @@ internal sealed class NodesInMemoryDataContext : DbContext, INodeDataContext
     }
     
     public DbSet<NodeEntity> Nodes { get; set; }
-    public DbSet<StateChangesHistory> StateChangesHistory { get; set; }
 }

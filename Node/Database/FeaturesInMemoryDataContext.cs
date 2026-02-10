@@ -12,4 +12,5 @@ public class FeaturesInMemoryDataContext : DbContext, IFeaturesDataContext
         
     public DbSet<FeatureEntity> Features { get; set; }
     public DbSet<ApplicationEntity> Applications { get; set; }
+    public DbSet<StateChangesHistory> StateChangesHistory { get; set; }
 }

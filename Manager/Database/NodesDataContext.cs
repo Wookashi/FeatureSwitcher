@@ -11,5 +11,4 @@ public class NodesDataContext : DbContext, INodeDataContext
     }
     
     public DbSet<NodeEntity> Nodes { get; set; }
-    public DbSet<StateChangesHistory> StateChangesHistory { get; set; }
 }
