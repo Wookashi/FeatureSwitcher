@@ -28,7 +28,7 @@
     </Target>
     
     <ItemGroup>
-      <PackageReference Include="System.Text.Json" Version="8.0.5" />
+      <PackageReference Include="System.Text.Json" Version="10.0.3" />
     </ItemGroup>
 
     <ItemGroup>
