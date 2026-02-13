@@ -56,10 +56,17 @@ docker-compose down
 
 Manager connects to Node via internal Docker DNS: `http://node:5216`
 
-After starting containers, register the node:
+Nodes auto-register with the Manager on startup using configured credentials. Manual registration (requires JWT):
 ```bash
+# Get token
+TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin"}' | jq -r .token)
+
+# Register node
 curl -X PUT http://localhost:8080/api/nodes \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
   -d '{"nodeName": "DockerNode", "nodeAddress": "http://node:5216"}'
 ```
 
@@ -156,18 +163,56 @@ All client exceptions inherit from `FeatureSwitcherException`:
 | `FeatureNameCollisionException` | configurable | Duplicate feature names detected |
 | `RegistrationException` | HTTP status code | Registration with node failed |
 
+## Authentication (JWT)
+
+The Manager API uses JWT-based authorization. All `/api/*` endpoints require a valid Bearer token except `/api/auth/login` and `/health`.
+
+### Configuration
+
+- **Manager**: `Jwt` section (SecretKey, Issuer, Audience, ExpirationMinutes) and `AdminCredentials` section (Username, Password) in appsettings
+- **Node**: `ManagerSettings` section includes `Username` and `Password` for authenticating with Manager during self-registration
+- **Development defaults**: username `admin`, password `admin`, dev-only secret key in `appsettings.Development.json`
+
+### Key Files
+
+| File | Description |
+|------|-------------|
+| `Manager/Api/Configuration/JwtSettings.cs` | JWT configuration model |
+| `Manager/Api/Configuration/AdminCredentials.cs` | Admin credentials model |
+| `Manager/Api/Services/AuthService.cs` | Credential validation + JWT token generation (HMAC-SHA256) |
+| `Manager/Api/Models/LoginRequest.cs` | Login request DTO |
+| `Manager/Api/Models/LoginResponse.cs` | Login response DTO (Token, ExpiresAt) |
+| `Manager/Web/src/auth/authToken.ts` | Token storage in localStorage + expiration check |
+| `Manager/Web/src/auth/authFetch.ts` | Fetch wrapper adding Bearer header, redirects to `/login` on 401 |
+| `Manager/Web/src/auth/RequireAuth.tsx` | Route guard redirecting to `/login` if no valid token |
+| `Manager/Web/src/views/Login/LoginPage.tsx` | Login page (Ant Design form) |
+
+### Auth Flow
+
+1. User/Node calls `POST /api/auth/login` with `{ username, password }` to get a JWT
+2. Token is included as `Authorization: Bearer {token}` header on subsequent requests
+3. Frontend stores token in localStorage, `authFetch()` wrapper auto-attaches it
+4. On 401 response, frontend clears token and redirects to `/login`
+5. Nodes authenticate with Manager before self-registering (if credentials configured)
+
+### Docker Environment Variables
+
+- Manager: `Jwt__SecretKey`, `AdminCredentials__Username`, `AdminCredentials__Password`
+- Nodes: `ManagerSettings__Username`, `ManagerSettings__Password`
+
 ## API Endpoints
 
 ### Manager API (port 8080)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/nodes` | List all registered nodes |
-| PUT | `/api/nodes` | Register/update a node |
-| GET | `/api/nodes/{nodeId}/applications` | List applications on node |
-| GET | `/api/nodes/{nodeId}/applications/{appName}/features` | List features for app |
-| PUT | `/api/nodes/{nodeId}/applications/{appName}/features/{featureName}` | Set feature state |
-| GET | `/health` | Health check |
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/auth/login` | No | Authenticate and obtain JWT |
+| GET | `/api/nodes` | Yes | List all registered nodes |
+| PUT | `/api/nodes` | Yes | Register/update a node |
+| GET | `/api/nodes/{nodeId}/applications` | Yes | List applications on node |
+| GET | `/api/nodes/{nodeId}/applications/{appName}/features` | Yes | List features for app |
+| PUT | `/api/nodes/{nodeId}/applications/{appName}/features/{featureName}` | Yes | Set feature state |
+| GET | `/health` | No | Health check |
 
 ### Node API (port 8081)
 
@@ -180,14 +225,23 @@ All client exceptions inherit from `FeatureSwitcherException`:
 | PUT | `/applications/{appName}/features/{featureName}` | Update feature state |
 | GET | `/health` | Health check |
 
-## Frontend (Feature Matrix View)
+## Frontend (Manager Web)
+
+Uses React Router (`react-router-dom` v6) for client-side routing:
+- `/login` — Login page (public)
+- `/` — Feature Matrix page (requires valid JWT)
+- `*` — Redirects to `/`
+
+All API calls use `authFetch()` from `Manager/Web/src/auth/` which auto-attaches JWT and handles 401 redirects.
+
+### Feature Matrix View
 
 Located in `Manager/Web/src/views/FeatureMatrix/`:
 
 | File | Description |
 |------|-------------|
-| `FeatureMatrixPage.tsx` | Main page component with table, toolbar, theme toggle |
-| `useFeatureMatrix.ts` | Data fetching hook with progressive loading |
+| `FeatureMatrixPage.tsx` | Main page component with table, toolbar, theme toggle, logout button |
+| `useFeatureMatrix.ts` | Data fetching hook with progressive loading (uses `authFetch`) |
 | `types.ts` | TypeScript types (NodeDto, FeatureDto, CellState, etc.) |
 | `concurrency.ts` | Concurrency limiter for API calls (max 6 in-flight) |
 | `theme.ts` | Day/Night theme hook with localStorage persistence |
@@ -200,6 +254,7 @@ Features:
 - Day/Night theme (Ant Design ConfigProvider)
 - AbortController for cleanup on refresh/unmount
 - Non-blocking error panel
+- Logout button in header
 
 ### Cell State Types
 
@@ -247,11 +302,19 @@ Tests are located in `Client/Tests/` with 78 tests covering:
 - **In-Memory Option**: Both databases support in-memory mode for testing
 - **Resilient Client**: Falls back to cached feature states when Node is unreachable
 - **Progressive Loading**: Frontend fetches data incrementally with concurrency control
+- **JWT Authorization**: Manager API endpoints protected with Bearer tokens; frontend uses `authFetch()` wrapper
+- **Node Self-Registration**: Nodes authenticate with Manager and auto-register on startup via `ManagerRegistrationHostedService`
 
 ## Tech Stack
 
 - .NET 10.0 (APIs, Client SDK)
-- React 18 + Vite + TypeScript + Ant Design (Manager frontend)
+- React 18 + Vite + TypeScript + Ant Design + React Router (Manager frontend)
 - Entity Framework Core + SQLite
+- JWT (Microsoft.AspNetCore.Authentication.JwtBearer) for Manager API auth
 - XUnit + Moq (tests)
 - Docker multi-stage builds
+
+## Build Notes
+
+- NuGet restore may fail if private feed (`nuget.int.cuk.pl`) is unreachable. Use `dotnet restore -p:NuGetAudit=false` to skip vulnerability audit.
+- Microsoft.OpenApi v2.3.0 (transitive via Swashbuckle 10.1.0) uses root `Microsoft.OpenApi` namespace — not `Microsoft.OpenApi.Models`. Security scheme references use `OpenApiSecuritySchemeReference` class.

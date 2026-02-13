@@ -34,11 +34,13 @@ import {
   SearchOutlined,
   FilterOutlined,
   DisconnectOutlined,
+  LogoutOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 
 import { useFeatureMatrix } from './useFeatureMatrix';
 import { useTheme } from './theme';
+import { removeToken } from '../../auth';
 import type { FeatureMatrixRow, CellState, NodeDto } from './types';
 
 const { Header, Content } = Layout;
@@ -331,6 +333,16 @@ export default function FeatureMatrixPage() {
                 onChange={toggleTheme}
                 checkedChildren={<MoonOutlined />}
                 unCheckedChildren={<SunOutlined />}
+              />
+            </Tooltip>
+            <Tooltip title="Sign out">
+              <Button
+                type="text"
+                icon={<LogoutOutlined />}
+                onClick={() => {
+                  removeToken();
+                  window.location.href = '/login';
+                }}
               />
             </Tooltip>
           </Space>

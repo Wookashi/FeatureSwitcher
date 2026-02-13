@@ -8,6 +8,7 @@ import type {
   CellState,
 } from './types';
 import { ConcurrencyLimiter } from './concurrency';
+import { authFetch } from '../../auth';
 
 interface UseFeatureMatrixResult {
   nodes: NodeDto[];
@@ -97,7 +98,7 @@ export function useFeatureMatrix(): UseFeatureMatrixResult {
         setPendingRequests((n) => n + 1);
         const timeoutSignal = AbortSignal.timeout(10000); // 10 second timeout
         const combinedSignal = AbortSignal.any([signal, timeoutSignal]);
-        const response = await fetch(endpoint, { signal: combinedSignal });
+        const response = await authFetch(endpoint, { signal: combinedSignal });
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
@@ -165,7 +166,7 @@ export function useFeatureMatrix(): UseFeatureMatrixResult {
       try {
         const timeoutSignal = AbortSignal.timeout(10000); // 10 second timeout
         const combinedSignal = AbortSignal.any([signal, timeoutSignal]);
-        const response = await fetch(endpoint, { signal: combinedSignal });
+        const response = await authFetch(endpoint, { signal: combinedSignal });
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
@@ -208,7 +209,7 @@ export function useFeatureMatrix(): UseFeatureMatrixResult {
       try {
         const timeoutSignal = AbortSignal.timeout(10000); // 10 second timeout
         const combinedSignal = AbortSignal.any([signal, timeoutSignal]);
-        const response = await fetch(endpoint, { signal: combinedSignal });
+        const response = await authFetch(endpoint, { signal: combinedSignal });
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
@@ -266,7 +267,7 @@ export function useFeatureMatrix(): UseFeatureMatrixResult {
       updateRowCell(application, feature, nodeName, { kind: 'loading' });
 
       try {
-        const response = await fetch(endpoint, {
+        const response = await authFetch(endpoint, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ state: newValue }),
