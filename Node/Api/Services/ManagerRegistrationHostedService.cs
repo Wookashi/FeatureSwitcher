@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
@@ -25,6 +26,23 @@ internal sealed class ManagerRegistrationHostedService(
 
         try
         {
+            var httpClient = httpClientFactory.CreateClient();
+
+            // Authenticate with manager if credentials are configured
+            if (!string.IsNullOrEmpty(settings.Username) && !string.IsNullOrEmpty(settings.Password))
+            {
+                var loginPayload = JsonSerializer.Serialize(new { username = settings.Username, password = settings.Password });
+                var loginContent = new StringContent(loginPayload, Encoding.UTF8, "application/json");
+
+                var loginResponse = await httpClient.PostAsync($"{settings.Url}/api/auth/login", loginContent, cancellationToken);
+                loginResponse.EnsureSuccessStatusCode();
+
+                var loginJson = await loginResponse.Content.ReadAsStringAsync(cancellationToken);
+                var token = JsonDocument.Parse(loginJson).RootElement.GetProperty("token").GetString();
+
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
             var registrationModel = new NodeRegistrationModel
             {
                 NodeName = settings.NodeName,
@@ -36,7 +54,6 @@ internal sealed class ManagerRegistrationHostedService(
                 Encoding.UTF8,
                 "application/json");
 
-            var httpClient = httpClientFactory.CreateClient();
             await httpClient.PutAsync($"{settings.Url}/api/nodes", content, cancellationToken);
 
             logger.LogInformation("Node '{NodeName}' registered with manager at {ManagerUrl}", settings.NodeName, settings.Url);
