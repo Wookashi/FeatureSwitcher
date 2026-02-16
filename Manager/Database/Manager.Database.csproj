@@ -28,4 +28,8 @@
       <ProjectReference Include="..\Abstraction\Manager.Abstraction.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Migrations\" />
+    </ItemGroup>
+
 </Project>
