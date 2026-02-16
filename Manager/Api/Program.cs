@@ -105,16 +105,6 @@ app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 
-static UserResponse ToUserResponse(UserDto dto) => new()
-{
-    Id = dto.Id,
-    Username = dto.Username,
-    Role = dto.Role,
-    CreatedAt = dto.CreatedAt,
-    UpdatedAt = dto.UpdatedAt,
-    AccessibleNodeIds = dto.AccessibleNodeIds,
-};
-
 app.MapGet("/health", () => Results.Ok(new { ok = true, ts = DateTimeOffset.UtcNow })).ExcludeFromDescription();
 
 // --- Auth endpoints ---
@@ -163,7 +153,7 @@ app.MapGet("/api/auth/me", (ClaimsPrincipal user, IUserRepository userRepository
         var userId = user.GetUserId();
         var dto = userRepository.GetUserById(userId);
         if (dto is null) return Results.NotFound();
-        return Results.Ok(ToUserResponse(dto));
+        return Results.Ok(dto);
     })
     .RequireAuthorization()
     .WithDescription("Get current user info.");
@@ -194,7 +184,7 @@ app.MapPut("/api/auth/password", (ChangePasswordRequest request, ClaimsPrincipal
 
 app.MapGet("/api/users", (IUserRepository userRepository) =>
     {
-        return Results.Ok(userRepository.GetAllUsers().Select(ToUserResponse).ToList());
+        return Results.Ok(userRepository.GetAllUsers().ToList());
     })
     .RequireAuthorization("AdminOnly")
     .WithDescription("List all users.");
@@ -203,7 +193,7 @@ app.MapGet("/api/users/{id:int}", (int id, IUserRepository userRepository) =>
     {
         var dto = userRepository.GetUserById(id);
         if (dto is null) return Results.NotFound();
-        return Results.Ok(ToUserResponse(dto));
+        return Results.Ok(dto);
     })
     .RequireAuthorization("AdminOnly")
     .WithDescription("Get user by ID.");
@@ -228,7 +218,7 @@ app.MapPost("/api/users", (CreateUserRequest request, IUserRepository userReposi
         
         auditLog.AddEntry(adminUsername, "CreateUser", $"Created user '{dto.Username}' with role {dto.Role}");
 
-        return Results.Created($"/api/users/{dto.Id}", ToUserResponse(dto));
+        return Results.Created($"/api/users/{dto.Id}", dto);
     })
     .RequireAuthorization("AdminOnly")
     .WithDescription("Create a new user.");
@@ -247,7 +237,7 @@ app.MapPut("/api/users/{id:int}", (int id, UpdateUserRequest request, IUserRepos
         var adminUsername = user.GetUserName();
         auditLog.AddEntry(adminUsername, "UpdateUser", $"Updated user '{dto.Username}'");
 
-        return Results.Ok(ToUserResponse(dto));
+        return Results.Ok(dto);
     })
     .RequireAuthorization("AdminOnly")
     .WithDescription("Update user role and node access.");
