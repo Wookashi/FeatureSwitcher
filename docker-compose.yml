@@ -8,8 +8,6 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: "Production"
       Jwt__SecretKey: "DockerSecretKey_ChangeMeInProduction_AtLeast32Chars!!"
-      AdminCredentials__Username: "admin"
-      AdminCredentials__Password: "admin"
     ports:
       - "8080:5033"
     volumes:

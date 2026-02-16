@@ -3,31 +3,44 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Repositories;
 using Wookashi.FeatureSwitcher.Manager.Api.Configuration;
 
 namespace Wookashi.FeatureSwitcher.Manager.Api.Services;
 
-internal sealed class AuthService(IOptions<JwtSettings> jwtSettings, IOptions<AdminCredentials> adminCredentials)
+internal sealed class AuthService
 {
-    private readonly JwtSettings _jwtSettings = jwtSettings.Value;
-    private readonly AdminCredentials _adminCredentials = adminCredentials.Value;
+    private readonly JwtSettings _jwtSettings;
+    private readonly IUserRepository _userRepository;
+
+    public AuthService(IOptions<JwtSettings> jwtSettings, IUserRepository userRepository)
+    {
+        _jwtSettings = jwtSettings.Value;
+        _userRepository = userRepository;
+    }
 
     public bool ValidateCredentials(string username, string password)
     {
-        return string.Equals(username, _adminCredentials.Username, StringComparison.OrdinalIgnoreCase)
-               && string.Equals(password, _adminCredentials.Password, StringComparison.Ordinal);
+        var hash = _userRepository.GetPasswordHash(username);
+        if (hash is null) return false;
+        return BCrypt.Net.BCrypt.Verify(password, hash);
     }
 
-    public (string Token, DateTime ExpiresAt) GenerateToken()
+    public (string Token, DateTime ExpiresAt, string Role) GenerateToken(string username)
     {
+        var user = _userRepository.GetUserByUsername(username);
+        if (user is null)
+            throw new InvalidOperationException($"User '{username}' not found.");
+
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var expiresAt = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationMinutes);
 
         var claims = new[]
         {
-            new Claim(ClaimTypes.Name, _adminCredentials.Username),
-            new Claim(ClaimTypes.Role, "Admin")
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Name, user.Username),
+            new Claim(ClaimTypes.Role, user.Role)
         };
 
         var token = new JwtSecurityToken(
@@ -37,6 +50,6 @@ internal sealed class AuthService(IOptions<JwtSettings> jwtSettings, IOptions<Ad
             expires: expiresAt,
             signingCredentials: credentials);
 
-        return (new JwtSecurityTokenHandler().WriteToken(token), expiresAt);
+        return (new JwtSecurityTokenHandler().WriteToken(token), expiresAt, user.Role);
     }
 }
