@@ -11,7 +11,7 @@ export async function authFetch(input: RequestInfo | URL, init?: RequestInit): P
   const response = await fetch(input, { ...init, headers });
 
   if (response.status === 401) {
-    removeToken();
+    removeToken(); // also clears role
     window.location.href = '/login';
   }
 

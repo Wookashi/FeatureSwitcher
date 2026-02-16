@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ConfigProvider,
@@ -25,12 +25,13 @@ import { useTheme } from '../FeatureMatrix/theme';
 
 const { Title, Text } = Typography;
 
-interface LoginFormValues {
+interface SetupFormValues {
   username: string;
   password: string;
+  confirmPassword: string;
 }
 
-export default function LoginPage() {
+export default function SetupPage() {
   const [themeMode, toggleTheme] = useTheme();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -38,36 +39,28 @@ export default function LoginPage() {
 
   const isDark = themeMode === 'dark';
 
-  useEffect(() => {
-    fetch('/api/auth/setup-required')
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.required) {
-          navigate('/setup', { replace: true });
-        }
-      })
-      .catch(() => {
-        // ignore - if setup check fails, just show login
-      });
-  }, [navigate]);
+  const onFinish = async (values: SetupFormValues) => {
+    if (values.password !== values.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
 
-  const onFinish = async (values: LoginFormValues) => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch('/api/auth/setup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(values),
+        body: JSON.stringify({
+          username: values.username,
+          password: values.password,
+        }),
       });
 
       if (!response.ok) {
-        if (response.status === 401) {
-          setError('Invalid username or password');
-        } else {
-          setError(`Login failed (HTTP ${response.status})`);
-        }
+        const data = await response.json().catch(() => null);
+        setError(data?.error ?? `Setup failed (HTTP ${response.status})`);
         return;
       }
 
@@ -113,13 +106,13 @@ export default function LoginPage() {
         </div>
 
         <Card
-          style={{ width: 380, maxWidth: '90vw' }}
+          style={{ width: 420, maxWidth: '90vw' }}
           bordered={false}
         >
           <Flex vertical align="center" gap={8} style={{ marginBottom: 24 }}>
             <FlagOutlined style={{ fontSize: 32, color: '#1677ff' }} />
             <Title level={3} style={{ margin: 0 }}>Feature Switcher</Title>
-            <Text type="secondary">Sign in to manage feature flags</Text>
+            <Text type="secondary">Create your first admin account</Text>
           </Flex>
 
           {error && (
@@ -133,14 +126,14 @@ export default function LoginPage() {
             />
           )}
 
-          <Form<LoginFormValues>
+          <Form<SetupFormValues>
             onFinish={onFinish}
             layout="vertical"
             size="large"
           >
             <Form.Item
               name="username"
-              rules={[{ required: true, message: 'Please enter your username' }]}
+              rules={[{ required: true, message: 'Please enter a username' }]}
             >
               <Input
                 prefix={<UserOutlined />}
@@ -151,11 +144,21 @@ export default function LoginPage() {
 
             <Form.Item
               name="password"
-              rules={[{ required: true, message: 'Please enter your password' }]}
+              rules={[{ required: true, message: 'Please enter a password' }]}
             >
               <Input.Password
                 prefix={<LockOutlined />}
                 placeholder="Password"
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="confirmPassword"
+              rules={[{ required: true, message: 'Please confirm your password' }]}
+            >
+              <Input.Password
+                prefix={<LockOutlined />}
+                placeholder="Confirm password"
               />
             </Form.Item>
 
@@ -166,7 +169,7 @@ export default function LoginPage() {
                 loading={loading}
                 block
               >
-                Sign in
+                Create Admin Account
               </Button>
             </Form.Item>
           </Form>
