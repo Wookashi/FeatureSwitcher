@@ -1,0 +1,23 @@
+name: "Task"
+description: "Technical or operational task"
+title: "[Task]: "
+labels: ["type:task"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Task description
+      description: What needs to be done?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Implementation steps
+      description: Suggested steps or checklist.
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References / Links
