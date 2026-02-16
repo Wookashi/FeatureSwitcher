@@ -35,7 +35,18 @@ internal sealed class ManagerRegistrationHostedService(
                 var loginContent = new StringContent(loginPayload, Encoding.UTF8, "application/json");
 
                 var loginResponse = await httpClient.PostAsync($"{settings.Url}/api/auth/login", loginContent, cancellationToken);
-                loginResponse.EnsureSuccessStatusCode();
+
+                if (!loginResponse.IsSuccessStatusCode)
+                {
+                    logger.LogError(
+                        "Authentication with manager failed (HTTP {StatusCode}). " +
+                        "Make sure the initial admin setup has been completed at the Manager UI " +
+                        "and that the configured credentials (ManagerSettings__Username / ManagerSettings__Password) " +
+                        "match an existing Admin account. " +
+                        "Restart this node after completing setup.",
+                        (int)loginResponse.StatusCode);
+                    return;
+                }
 
                 var loginJson = await loginResponse.Content.ReadAsStringAsync(cancellationToken);
                 var token = JsonDocument.Parse(loginJson).RootElement.GetProperty("token").GetString();
