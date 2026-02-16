@@ -1,0 +1,32 @@
+name: "Feature"
+description: "Approved feature ready for implementation"
+title: "[Feature]: "
+labels: ["type:feature"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Feature summary
+      description: Short description of the feature.
+    validations:
+      required: true
+
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Functional requirements
+      description: List of requirements or expected behavior.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Conditions required to consider the feature complete.
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Technical notes
+      description: Architecture, integration or technical considerations.
