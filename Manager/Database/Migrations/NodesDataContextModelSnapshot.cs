@@ -14,7 +14,35 @@ namespace Wookashi.FeatureSwitcher.Manager.Database.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.2");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.3");
+
+            modelBuilder.Entity("Wookashi.FeatureSwitcher.Manager.Database.Entities.AuditLogEntity", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Details")
+                        .HasMaxLength(512)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AuditLogs");
+                });
 
             modelBuilder.Entity("Wookashi.FeatureSwitcher.Manager.Database.Entities.NodeEntity", b =>
                 {
@@ -41,6 +69,85 @@ namespace Wookashi.FeatureSwitcher.Manager.Database.Migrations
                         .IsUnique();
 
                     b.ToTable("Nodes");
+                });
+
+            modelBuilder.Entity("Wookashi.FeatureSwitcher.Manager.Database.Entities.UserEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("RoleEnum")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Username")
+                        .IsUnique();
+
+                    b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Wookashi.FeatureSwitcher.Manager.Database.Entities.UserNodeAccessEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("NodeId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NodeId");
+
+                    b.HasIndex("UserId", "NodeId")
+                        .IsUnique();
+
+                    b.ToTable("UserNodeAccess");
+                });
+
+            modelBuilder.Entity("Wookashi.FeatureSwitcher.Manager.Database.Entities.UserNodeAccessEntity", b =>
+                {
+                    b.HasOne("Wookashi.FeatureSwitcher.Manager.Database.Entities.NodeEntity", "Node")
+                        .WithMany()
+                        .HasForeignKey("NodeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Wookashi.FeatureSwitcher.Manager.Database.Entities.UserEntity", "User")
+                        .WithMany("NodeAccess")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Node");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Wookashi.FeatureSwitcher.Manager.Database.Entities.UserEntity", b =>
+                {
+                    b.Navigation("NodeAccess");
                 });
 #pragma warning restore 612, 618
         }

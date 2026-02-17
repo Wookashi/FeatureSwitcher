@@ -7,6 +7,7 @@ services:
     image: feature-switcher-manager:latest
     environment:
       ASPNETCORE_ENVIRONMENT: "Production"
+      Jwt__SecretKey: "DockerSecretKey_ChangeMeInProduction_AtLeast32Chars!!"
     ports:
       - "8080:5033"
     volumes:
@@ -31,6 +32,8 @@ services:
       ManagerSettings__Url: "http://manager:5033"
       ManagerSettings__NodeName: "Development"
       ManagerSettings__NodeAddress: "http://node-dev:5216"
+      ManagerSettings__Username: "admin"
+      ManagerSettings__Password: "admin"
     ports:
       - "8081:5216"
     volumes:
@@ -45,7 +48,7 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
-  
+
   node-uat:
     container_name: node-uat
     build:
@@ -58,6 +61,8 @@ services:
       ManagerSettings__Url: "http://manager:5033"
       ManagerSettings__NodeName: "UAT"
       ManagerSettings__NodeAddress: "http://node-uat:5216"
+      ManagerSettings__Username: "admin"
+      ManagerSettings__Password: "admin"
     ports:
       - "8082:5216"
     volumes:
@@ -72,7 +77,7 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
-  
+
   node-prod:
     container_name: node-prod
     build:
@@ -85,6 +90,8 @@ services:
       ManagerSettings__Url: "http://manager:5033"
       ManagerSettings__NodeName: "Production"
       ManagerSettings__NodeAddress: "http://node-prod:5216"
+      ManagerSettings__Username: "admin"
+      ManagerSettings__Password: "admin"
     ports:
       - "8083:5216"
     volumes:

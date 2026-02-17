@@ -14,7 +14,7 @@ namespace Wookashi.FeatureSwitcher.Node.Database.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.2");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.3");
 
             modelBuilder.Entity("Wookashi.FeatureSwitcher.Node.Database.Entities.ApplicationEntity", b =>
                 {
@@ -60,6 +60,39 @@ namespace Wookashi.FeatureSwitcher.Node.Database.Migrations
                         .IsUnique();
 
                     b.ToTable("Features");
+                });
+
+            modelBuilder.Entity("Wookashi.FeatureSwitcher.Node.Database.Entities.StateChangesHistory", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("ApplicationId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ChangedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("FlagId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool?>("NewValue")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("NodeId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool?>("OldValue")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("StateChangesHistory");
                 });
 
             modelBuilder.Entity("Wookashi.FeatureSwitcher.Node.Database.Entities.FeatureEntity", b =>

@@ -1,0 +1,180 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  ConfigProvider,
+  Card,
+  Form,
+  Input,
+  Button,
+  Typography,
+  Alert,
+  Flex,
+  Switch,
+  Tooltip,
+  theme as antTheme,
+} from 'antd';
+import {
+  UserOutlined,
+  LockOutlined,
+  FlagOutlined,
+  SunOutlined,
+  MoonOutlined,
+} from '@ant-design/icons';
+import { setToken, setRole } from '../../auth';
+import { useTheme } from '../FeatureMatrix/theme';
+
+const { Title, Text } = Typography;
+
+interface SetupFormValues {
+  username: string;
+  password: string;
+  confirmPassword: string;
+}
+
+export default function SetupPage() {
+  const [themeMode, toggleTheme] = useTheme();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const isDark = themeMode === 'dark';
+
+  const onFinish = async (values: SetupFormValues) => {
+    if (values.password !== values.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/auth/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: values.username,
+          password: values.password,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        setError(data?.error ?? `Setup failed (HTTP ${response.status})`);
+        return;
+      }
+
+      const data = await response.json();
+      setToken(data.token);
+      setRole(data.role);
+      navigate('/', { replace: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Network error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <ConfigProvider
+      theme={{
+        algorithm: isDark ? antTheme.darkAlgorithm : antTheme.defaultAlgorithm,
+        token: {
+          colorPrimary: '#1677ff',
+          borderRadius: 6,
+        },
+      }}
+    >
+      <Flex
+        vertical
+        align="center"
+        justify="center"
+        style={{
+          minHeight: '100vh',
+          background: isDark ? '#000' : '#f5f5f5',
+        }}
+      >
+        <div style={{ position: 'absolute', top: 16, right: 24 }}>
+          <Tooltip title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}>
+            <Switch
+              checked={isDark}
+              onChange={toggleTheme}
+              checkedChildren={<MoonOutlined />}
+              unCheckedChildren={<SunOutlined />}
+            />
+          </Tooltip>
+        </div>
+
+        <Card
+          style={{ width: 420, maxWidth: '90vw' }}
+          bordered={false}
+        >
+          <Flex vertical align="center" gap={8} style={{ marginBottom: 24 }}>
+            <FlagOutlined style={{ fontSize: 32, color: '#1677ff' }} />
+            <Title level={3} style={{ margin: 0 }}>Feature Switcher</Title>
+            <Text type="secondary">Create your first admin account</Text>
+          </Flex>
+
+          {error && (
+            <Alert
+              type="error"
+              message={error}
+              showIcon
+              closable
+              onClose={() => setError(null)}
+              style={{ marginBottom: 16 }}
+            />
+          )}
+
+          <Form<SetupFormValues>
+            onFinish={onFinish}
+            layout="vertical"
+            size="large"
+          >
+            <Form.Item
+              name="username"
+              rules={[{ required: true, message: 'Please enter a username' }]}
+            >
+              <Input
+                prefix={<UserOutlined />}
+                placeholder="Username"
+                autoFocus
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="password"
+              rules={[{ required: true, message: 'Please enter a password' }]}
+            >
+              <Input.Password
+                prefix={<LockOutlined />}
+                placeholder="Password"
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="confirmPassword"
+              rules={[{ required: true, message: 'Please confirm your password' }]}
+            >
+              <Input.Password
+                prefix={<LockOutlined />}
+                placeholder="Confirm password"
+              />
+            </Form.Item>
+
+            <Form.Item style={{ marginBottom: 0 }}>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={loading}
+                block
+              >
+                Create Admin Account
+              </Button>
+            </Form.Item>
+          </Form>
+        </Card>
+      </Flex>
+    </ConfigProvider>
+  );
+}

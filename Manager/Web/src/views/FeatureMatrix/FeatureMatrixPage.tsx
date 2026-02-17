@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ConfigProvider,
   Layout,
@@ -34,11 +35,16 @@ import {
   SearchOutlined,
   FilterOutlined,
   DisconnectOutlined,
+  LogoutOutlined,
+  TeamOutlined,
+  KeyOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 
 import { useFeatureMatrix } from './useFeatureMatrix';
 import { useTheme } from './theme';
+import { removeToken, useAuth } from '../../auth';
+import { ChangePasswordModal } from '../UserManagement';
 import type { FeatureMatrixRow, CellState, NodeDto } from './types';
 
 const { Header, Content } = Layout;
@@ -89,7 +95,7 @@ function CellRenderer({ state, onClick }: CellRendererProps) {
 
   return (
     <Flex justify="center">
-      <Tooltip title={isEnabled ? 'Click to disable' : 'Click to enable'}>
+      <Tooltip title={onClick ? (isEnabled ? 'Click to disable' : 'Click to enable') : 'View only'}>
         <Tag
           color={isEnabled ? 'success' : 'error'}
           icon={isEnabled ? <CheckOutlined /> : <CloseOutlined />}
@@ -123,10 +129,13 @@ function hasDifferences(row: FeatureMatrixRow, nodeNames: string[]): boolean {
 
 export default function FeatureMatrixPage() {
   const [themeMode, toggleTheme] = useTheme();
+  const navigate = useNavigate();
+  const { isAdmin, canToggle } = useAuth();
   const { nodes, rows, errors, unreachableNodes, isLoadingNodes, isLoading, refresh, toggleFeatureState } = useFeatureMatrix();
 
   const [searchText, setSearchText] = useState('');
   const [showOnlyDifferences, setShowOnlyDifferences] = useState(false);
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
 
   const nodeNames = useMemo(() => nodes.map((n) => n.name), [nodes]);
 
@@ -275,7 +284,7 @@ export default function FeatureMatrixPage() {
             : 'Feature not present on this node';
           return <CellRenderer state={{ kind: 'unknown', reason }} />;
         }
-        const handleClick = cellState?.kind === 'value'
+        const handleClick = (cellState?.kind === 'value' && canToggle)
           ? () => toggleFeatureState(node.id, node.name, record.application, record.feature, cellState.value)
           : undefined;
         return <CellRenderer state={cellState} onClick={handleClick} />;
@@ -283,7 +292,7 @@ export default function FeatureMatrixPage() {
     }));
 
     return [...baseColumns, ...nodeColumns];
-  }, [nodes, unreachableNodes, isLoading, toggleFeatureState]);
+  }, [nodes, unreachableNodes, isLoading, toggleFeatureState, canToggle]);
 
   const isDark = themeMode === 'dark';
 
@@ -325,12 +334,38 @@ export default function FeatureMatrixPage() {
             </div>
           </Flex>
           <Space size="middle">
+            {isAdmin && (
+              <Tooltip title="Manage Users">
+                <Button
+                  type="text"
+                  icon={<TeamOutlined />}
+                  onClick={() => navigate('/users')}
+                />
+              </Tooltip>
+            )}
+            <Tooltip title="Change Password">
+              <Button
+                type="text"
+                icon={<KeyOutlined />}
+                onClick={() => setPasswordModalOpen(true)}
+              />
+            </Tooltip>
             <Tooltip title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}>
               <Switch
                 checked={isDark}
                 onChange={toggleTheme}
                 checkedChildren={<MoonOutlined />}
                 unCheckedChildren={<SunOutlined />}
+              />
+            </Tooltip>
+            <Tooltip title="Sign out">
+              <Button
+                type="text"
+                icon={<LogoutOutlined />}
+                onClick={() => {
+                  removeToken();
+                  window.location.href = '/login';
+                }}
               />
             </Tooltip>
           </Space>
@@ -507,6 +542,11 @@ export default function FeatureMatrixPage() {
           </Card>
         </Content>
       </Layout>
+
+      <ChangePasswordModal
+        open={passwordModalOpen}
+        onClose={() => setPasswordModalOpen(false)}
+      />
 
       <style>{`
         .app-row > td {

@@ -24,7 +24,11 @@ public static class ConfigureServices
             services.AddScoped<INodeDataContext, NodesDataContext>();
         }
 
-        return services.AddScoped<INodeRepository, NodeRepository>();
+        services.AddScoped<INodeRepository, NodeRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+
+        return services;
     }
 
     public static IApplicationBuilder MigrateDatabase(this IApplicationBuilder app)
