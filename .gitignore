@@ -8,5 +8,3 @@
 node_modules
 .vite
 .claude/
-Manager/Database/Migrations/
-Node/Database/Migrations
