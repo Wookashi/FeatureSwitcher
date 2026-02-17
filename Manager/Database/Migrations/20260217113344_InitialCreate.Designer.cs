@@ -11,8 +11,8 @@ using Wookashi.FeatureSwitcher.Manager.Database;
 namespace Wookashi.FeatureSwitcher.Manager.Database.Migrations
 {
     [DbContext(typeof(NodesDataContext))]
-    [Migration("20260216184329_UserStructures")]
-    partial class UserStructures
+    [Migration("20260217113344_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

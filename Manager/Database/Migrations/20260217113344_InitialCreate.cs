@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Wookashi.FeatureSwitcher.Manager.Database.Migrations
 {
     /// <inheritdoc />
-    public partial class AddUsersAndRbac : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -50,7 +50,7 @@ namespace Wookashi.FeatureSwitcher.Manager.Database.Migrations
                         .Annotation("Sqlite:Autoincrement", true),
                     Username = table.Column<string>(type: "TEXT", maxLength: 64, nullable: false),
                     PasswordHash = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    Role = table.Column<int>(type: "INTEGER", nullable: false),
+                    RoleEnum = table.Column<int>(type: "INTEGER", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
