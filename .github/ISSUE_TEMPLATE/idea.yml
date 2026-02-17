@@ -1,0 +1,43 @@
+name: "Idea"
+description: "New idea or improvement proposal"
+title: "[Idea]: "
+labels: ["type:idea"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / Opportunity
+      description: What problem does this idea solve?
+      placeholder: Describe the current situation and why it should change.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: High-level concept of the solution.
+    validations:
+      required: true
+
+  - type: textarea
+    id: value
+    attributes:
+      label: Expected value
+      description: Who benefits and how?
+    validations:
+      required: false
+
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks / Concerns
+      description: Possible risks, trade-offs, or technical concerns.
+    validations:
+      required: false
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References / Links
+      description: Related issues, docs, screenshots, discussions.

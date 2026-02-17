@@ -1,0 +1,40 @@
+name: "Bug"
+description: "Report a bug"
+title: "[Bug]: "
+labels: ["type:bug"]
+body:
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to...
+        2. Click...
+        3. See error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version / Environment
+      placeholder: commit/tag/environment
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Screenshots
