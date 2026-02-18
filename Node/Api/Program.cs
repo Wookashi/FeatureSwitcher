@@ -16,6 +16,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.Configure<ManagerSettings>(
     builder.Configuration.GetSection("ManagerSettings"));
+builder.Services.Configure<NodeConfiguration>(
+    builder.Configuration.GetSection("NodeConfiguration"));
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
@@ -32,15 +34,16 @@ builder.Services.AddHostedService<ManagerRegistrationHostedService>();
 
 var app = builder.Build();
 
-var nodeEnvironment = builder.Configuration["NodeConfiguration:Environment"] ?? "FailConfigurationSetting";
+var nodeConfig = builder.Configuration.GetSection("NodeConfiguration").Get<NodeConfiguration>();
+var nodeEnvironment = nodeConfig?.Environment ?? "FailConfigurationSetting";
 var managerSettings = builder.Configuration.GetSection("ManagerSettings").Get<ManagerSettings>();
 
 var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Node.Startup");
 logger.LogInformation("=== Node API Starting ===");
 logger.LogInformation("Environment: {Environment}", app.Environment.EnvironmentName);
 logger.LogInformation("Node Environment: {NodeEnvironment}", nodeEnvironment);
-logger.LogInformation("Node Name: {NodeName}", managerSettings?.NodeName ?? "(not set)");
-logger.LogInformation("Node Address: {NodeAddress}", managerSettings?.NodeAddress ?? "(not set)");
+logger.LogInformation("Node Name: {NodeName}", nodeConfig?.Name ?? "(not set)");
+logger.LogInformation("Node Address: {NodeAddress}", nodeConfig?.Address ?? "(not set)");
 logger.LogInformation("Manager URL: {ManagerUrl}", managerSettings?.Url ?? "(not set)");
 logger.LogInformation("Manager Username: {Username}", string.IsNullOrEmpty(managerSettings?.Username) ? "(not set)" : managerSettings.Username);
 logger.LogInformation("Database: {ConnectionString}", string.IsNullOrEmpty(dbConnectionString) ? "(in-memory)" : $"{dbConnectionString} (configured)");
@@ -60,7 +63,10 @@ if (dbConnectionString != string.Empty)
 
 app.UseHttpsRedirection();
 
-app.UseHealthCheck();
+app.UseHealthCheck(
+    nodeConfig?.Name ?? "(not set)",
+    nodeEnvironment,
+    nodeConfig?.Address ?? "(not set)");
 
 app.MapPost("/applications",
         (ApplicationRegistrationRequestModel registerModel, IFeatureRepository featureRepository) =>

@@ -27,9 +27,9 @@ services:
     image: feature-switcher-node:latest
     environment:
       NodeConfiguration__Environment: "development"
+      NodeConfiguration__Name: "Development"
+      NodeConfiguration__Address: "http://node-dev:5216"
       ManagerSettings__Url: "http://manager:5033"
-      ManagerSettings__NodeName: "Development"
-      ManagerSettings__NodeAddress: "http://node-dev:5216"
       ManagerSettings__Username: "admin"
       ManagerSettings__Password: "admin"
     ports:
@@ -55,9 +55,9 @@ services:
     image: feature-switcher-node:latest
     environment:
       NodeConfiguration__Environment: "uat"
+      NodeConfiguration__Name: "UAT"
+      NodeConfiguration__Address: "http://node-uat:5216"
       ManagerSettings__Url: "http://manager:5033"
-      ManagerSettings__NodeName: "UAT"
-      ManagerSettings__NodeAddress: "http://node-uat:5216"
       ManagerSettings__Username: "admin"
       ManagerSettings__Password: "admin"
     ports:
@@ -83,9 +83,9 @@ services:
     image: feature-switcher-node:latest
     environment:
       NodeConfiguration__Environment: "production"
+      NodeConfiguration__Name: "Production"
+      NodeConfiguration__Address: "http://node-prod:5216"
       ManagerSettings__Url: "http://manager:5033"
-      ManagerSettings__NodeName: "Production"
-      ManagerSettings__NodeAddress: "http://node-prod:5216"
       ManagerSettings__Username: "admin"
       ManagerSettings__Password: "admin"
     ports:

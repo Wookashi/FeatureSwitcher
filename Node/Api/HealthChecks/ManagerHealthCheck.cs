@@ -23,7 +23,7 @@ internal sealed class ManagerHealthCheck(IOptions<ManagerSettings> options) : IH
 
             if (response.IsSuccessStatusCode)
             {
-                return HealthCheckResult.Healthy("Connected");
+                return HealthCheckResult.Healthy("Connected", data: data);
             }
             data.Add("Http Code", (int)response.StatusCode);
             return HealthCheckResult.Degraded("Service returned error", data: data);
