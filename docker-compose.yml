@@ -6,7 +6,6 @@ services:
       dockerfile: Manager/Dockerfile
     image: feature-switcher-manager:latest
     environment:
-      ASPNETCORE_ENVIRONMENT: "Production"
       Jwt__SecretKey: "DockerSecretKey_ChangeMeInProduction_AtLeast32Chars!!"
     ports:
       - "8080:5033"
@@ -27,7 +26,6 @@ services:
       dockerfile: Node/Dockerfile
     image: feature-switcher-node:latest
     environment:
-      ASPNETCORE_ENVIRONMENT: "Production"
       NodeConfiguration__Environment: "development"
       ManagerSettings__Url: "http://manager:5033"
       ManagerSettings__NodeName: "Development"
@@ -56,7 +54,6 @@ services:
       dockerfile: Node/Dockerfile
     image: feature-switcher-node:latest
     environment:
-      ASPNETCORE_ENVIRONMENT: "Production"
       NodeConfiguration__Environment: "uat"
       ManagerSettings__Url: "http://manager:5033"
       ManagerSettings__NodeName: "UAT"
@@ -85,7 +82,6 @@ services:
       dockerfile: Node/Dockerfile
     image: feature-switcher-node:latest
     environment:
-      ASPNETCORE_ENVIRONMENT: "Production"
       NodeConfiguration__Environment: "production"
       ManagerSettings__Url: "http://manager:5033"
       ManagerSettings__NodeName: "Production"
