@@ -85,6 +85,14 @@ builder.Services.AddAuthorization(options =>
 
 var app = builder.Build();
 
+var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Manager.Startup");
+logger.LogInformation("=== Manager API Starting ===");
+logger.LogInformation("Environment: {Environment}", app.Environment.EnvironmentName);
+logger.LogInformation("Database: {ConnectionString}", string.IsNullOrEmpty(dbConnectionString) ? "(in-memory)" : $"{dbConnectionString} (configured)");
+logger.LogInformation("JWT Issuer: {Issuer}, Audience: {Audience}, Expiration: {Expiration} min",
+    jwtSettings.Issuer, jwtSettings.Audience, jwtSettings.ExpirationMinutes);
+logger.LogInformation("================================");
+
 if (dbConnectionString != string.Empty)
 {
     app.MigrateDatabase();
