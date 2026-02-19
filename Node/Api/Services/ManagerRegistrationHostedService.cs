@@ -9,18 +9,20 @@ namespace Wookashi.FeatureSwitcher.Node.Api.Services;
 
 internal sealed class ManagerRegistrationHostedService(
     IOptions<ManagerSettings> managerSettings,
+    IOptions<NodeConfiguration> nodeConfiguration,
     IHttpClientFactory httpClientFactory,
     ILogger<ManagerRegistrationHostedService> logger) : IHostedService
 {
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         var settings = managerSettings.Value;
+        var nodeConfig = nodeConfiguration.Value;
 
         if (string.IsNullOrEmpty(settings.Url) ||
-            string.IsNullOrEmpty(settings.NodeName) ||
-            string.IsNullOrEmpty(settings.NodeAddress))
+            string.IsNullOrEmpty(nodeConfig.Name) ||
+            string.IsNullOrEmpty(nodeConfig.Address))
         {
-            logger.LogWarning("Manager registration skipped: ManagerSettings (Url, NodeName, NodeAddress) not fully configured");
+            logger.LogWarning("Manager registration skipped: ManagerSettings.Url, NodeConfiguration.Name, or NodeConfiguration.Address not fully configured");
             return;
         }
 
@@ -56,8 +58,8 @@ internal sealed class ManagerRegistrationHostedService(
 
             var registrationModel = new NodeRegistrationModel
             {
-                NodeName = settings.NodeName,
-                NodeAddress = new Uri(settings.NodeAddress)
+                NodeName = nodeConfig.Name,
+                NodeAddress = new Uri(nodeConfig.Address)
             };
 
             var content = new StringContent(
@@ -67,7 +69,7 @@ internal sealed class ManagerRegistrationHostedService(
 
             await httpClient.PutAsync($"{settings.Url}/api/nodes", content, cancellationToken);
 
-            logger.LogInformation("Node '{NodeName}' registered with manager at {ManagerUrl}", settings.NodeName, settings.Url);
+            logger.LogInformation("Node '{NodeName}' registered with manager at {ManagerUrl}", nodeConfig.Name, settings.Url);
         }
         catch (Exception ex)
         {

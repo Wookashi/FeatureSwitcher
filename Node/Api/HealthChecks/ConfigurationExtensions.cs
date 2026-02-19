@@ -11,8 +11,14 @@ internal static class ConfigurationExtensions
         return services;
     }
 
-    public static IEndpointRouteBuilder UseHealthCheck(this IEndpointRouteBuilder endpoints)
+    public static IEndpointRouteBuilder UseHealthCheck(this IEndpointRouteBuilder endpoints,
+        string nodeName, string nodeEnvironment, string nodeAddress)
     {
+        var data = new Dictionary<string, object>
+        {
+            { "environment", nodeEnvironment },
+            { "address", nodeAddress },
+        };
         endpoints.MapHealthChecks("/health", new HealthCheckOptions
         {
             ResponseWriter = async (context, report) =>
@@ -20,7 +26,9 @@ internal static class ConfigurationExtensions
                 context.Response.ContentType = "application/json; charset=utf-8";
                 var result = new
                 {
+                    name = nodeName,
                     status = report.Status.ToString(),
+                    data = data,
                     checks = report.Entries.Select(entry => new
                     {
                         name = entry.Key,
