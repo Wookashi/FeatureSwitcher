@@ -16,12 +16,14 @@ internal class NodesController : ControllerBase
     private readonly NodeService _nodeService;
     private readonly NodeAccessService _nodeAccessService;
     private readonly IAuditLogRepository _auditLog;
+    private readonly ILogger<NodesController> _logger;
 
-    public NodesController(NodeService nodeService, NodeAccessService nodeAccessService, IAuditLogRepository auditLog)
+    public NodesController(NodeService nodeService, NodeAccessService nodeAccessService, IAuditLogRepository auditLog, ILogger<NodesController> logger)
     {
         _nodeService = nodeService;
         _nodeAccessService = nodeAccessService;
         _auditLog = auditLog;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -57,8 +59,21 @@ internal class NodesController : ControllerBase
         if (!_nodeAccessService.CanAccessNode(userId, role, nodeId))
             return Forbid();
 
-        var apps = await _nodeService.GetApplicationsAsync(nodeId);
-        return Ok(apps);
+        try
+        {
+            var apps = await _nodeService.GetApplicationsAsync(nodeId);
+            return Ok(apps);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "Node {NodeId} unreachable while fetching applications", nodeId);
+            return StatusCode(StatusCodes.Status502BadGateway, "Node unreachable");
+        }
+        catch (OperationCanceledException ex) when (!HttpContext.RequestAborted.IsCancellationRequested)
+        {
+            _logger.LogWarning(ex, "Request to node {NodeId} timed out while fetching applications", nodeId);
+            return StatusCode(StatusCodes.Status504GatewayTimeout, "Node request timed out");
+        }
     }
 
     [HttpGet("{nodeId:int}/applications/{appName}/features")]
@@ -69,8 +84,21 @@ internal class NodesController : ControllerBase
         if (!_nodeAccessService.CanAccessNode(userId, role, nodeId))
             return Forbid();
 
-        var features = await _nodeService.GetFeaturesForApplicationAsync(nodeId, appName);
-        return Ok(features);
+        try
+        {
+            var features = await _nodeService.GetFeaturesForApplicationAsync(nodeId, appName);
+            return Ok(features);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "Node {NodeId} unreachable while fetching features for app {AppName}", nodeId, appName);
+            return StatusCode(StatusCodes.Status502BadGateway, "Node unreachable");
+        }
+        catch (OperationCanceledException ex) when (!HttpContext.RequestAborted.IsCancellationRequested)
+        {
+            _logger.LogWarning(ex, "Request to node {NodeId} timed out while fetching features for app {AppName}", nodeId, appName);
+            return StatusCode(StatusCodes.Status504GatewayTimeout, "Node request timed out");
+        }
     }
 
     [HttpPut("{nodeId:int}/applications/{appName}/features/{featureName}")]
@@ -94,12 +122,19 @@ internal class NodesController : ControllerBase
             _auditLog.AddEntry(username, "ToggleFeature",
                 $"{featureName} in {appName} on node {nodeId} set to {featureState.State}");
         }
+        else
+        {
+            _logger.LogWarning("Setting feature {FeatureName} in app {AppName} on node {NodeId} failed with status {StatusCode}",
+                featureName, appName, nodeId, (int)response.StatusCode);
+        }
 
         return response.StatusCode switch
         {
             HttpStatusCode.OK => Ok(),
             HttpStatusCode.BadRequest => BadRequest(),
-            _ => StatusCode(500)
+            HttpStatusCode.BadGateway => StatusCode(StatusCodes.Status502BadGateway, "Node unreachable"),
+            HttpStatusCode.GatewayTimeout => StatusCode(StatusCodes.Status504GatewayTimeout, "Node request timed out"),
+            _ => StatusCode(StatusCodes.Status500InternalServerError)
         };
     }
 }

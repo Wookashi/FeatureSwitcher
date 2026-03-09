@@ -3,7 +3,7 @@ name: Create GitHub Release
 on:
   push:
     tags:
-      - "v*"
+      - 'v*.*.*'
 
 permissions:
   contents: write
@@ -12,7 +12,12 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
+      - name: Compute version (strip leading v)
+        id: ver
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
       - name: Create GitHub Release with auto notes
         uses: softprops/action-gh-release@v2
         with:
+          name: ${{ steps.ver.outputs.VERSION }}
           generate_release_notes: true
