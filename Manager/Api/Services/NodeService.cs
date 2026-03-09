@@ -26,6 +26,12 @@ internal sealed class NodeService
         _nodeRepository
             .CreateOrUpdateNode(nodeRegistrationModel.NodeName, nodeRegistrationModel.NodeAddress);
     }
+    
+    public void DeleteNode(int nodeId)
+    {
+        _nodeRepository
+            .DeleteNode(nodeId);
+    }
 
     public List<NodeDto> GetAllNodes()
     {
