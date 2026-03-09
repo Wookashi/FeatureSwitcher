@@ -32,6 +32,16 @@ internal class NodeRepository : INodeRepository
         _context.SaveChanges();
     }
 
+    public void DeleteNode(int nodeId)
+    {
+        var existingNode = _context.Nodes.SingleOrDefault(node => node.Id == nodeId);
+        if (existingNode is not null)
+        {
+            _context.Nodes.Remove(existingNode);
+        }
+        _context.SaveChanges();
+    }
+
     public List<NodeDto> GetAllNodes()
     {
         return _context.Nodes

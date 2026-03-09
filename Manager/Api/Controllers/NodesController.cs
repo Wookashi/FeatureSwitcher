@@ -47,6 +47,14 @@ internal class NodesController : ControllerBase
         _nodeService.CreateOrReplaceNode(nodeRegistrationModel);
         return Created();
     }
+    
+    [HttpDelete("{nodeId:int}")]
+    [Authorize(Policy = "AdminOnly")]
+    public IActionResult Delete(int nodeId)
+    {
+        _nodeService.DeleteNode(nodeId);
+        return Created();
+    }
 
     [HttpGet("{nodeId:int}/applications")]
     public async Task<IActionResult> GetApplications(int nodeId)
