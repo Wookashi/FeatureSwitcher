@@ -19,6 +19,7 @@ import {
   Statistic,
   Divider,
   Flex,
+  Popconfirm,
   theme as antTheme,
 } from 'antd';
 import {
@@ -38,6 +39,7 @@ import {
   LogoutOutlined,
   TeamOutlined,
   KeyOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 
@@ -131,7 +133,7 @@ export default function FeatureMatrixPage() {
   const [themeMode, toggleTheme] = useTheme();
   const navigate = useNavigate();
   const { isAdmin, canToggle } = useAuth();
-  const { nodes, rows, errors, unreachableNodes, isLoadingNodes, isLoading, refresh, toggleFeatureState } = useFeatureMatrix();
+  const { nodes, rows, errors, unreachableNodes, isLoadingNodes, isLoading, refresh, toggleFeatureState, deleteNode } = useFeatureMatrix();
 
   const [searchText, setSearchText] = useState('');
   const [showOnlyDifferences, setShowOnlyDifferences] = useState(false);
@@ -249,23 +251,44 @@ export default function FeatureMatrixPage() {
     const nodeColumns: ColumnsType<TreeRow> = nodes.map((node) => ({
       title: (() => {
         const errorMsg = unreachableNodes.get(node.name);
-        if (errorMsg) {
-          return (
-            <Tooltip title={`Unreachable: ${errorMsg}`}>
-              <Space>
-                <DisconnectOutlined style={{ color: '#ff4d4f' }} />
-                <span style={{ color: '#ff4d4f' }}>{node.name}</span>
-              </Space>
-            </Tooltip>
-          );
-        }
-        return (
+        const nodeLabel = errorMsg ? (
+          <Tooltip title={`Unreachable: ${errorMsg}`}>
+            <Space>
+              <DisconnectOutlined style={{ color: '#ff4d4f' }} />
+              <span style={{ color: '#ff4d4f' }}>{node.name}</span>
+            </Space>
+          </Tooltip>
+        ) : (
           <Tooltip title={`Address: ${nodeMap.get(node.name)?.address}`}>
             <Space>
               <CloudServerOutlined />
               <span>{node.name}</span>
             </Space>
           </Tooltip>
+        );
+        if (!isAdmin) return nodeLabel;
+        return (
+          <Flex align="center" justify="space-between" gap={4}>
+            {nodeLabel}
+            <Popconfirm
+              title={`Delete node "${node.name}"?`}
+              description="This will permanently remove the node and all its access records."
+              onConfirm={() => deleteNode(node.id)}
+              okText="Delete"
+              okButtonProps={{ danger: true }}
+              cancelText="Cancel"
+            >
+              <Tooltip title="Delete node">
+                <Button
+                  type="text"
+                  size="small"
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </Tooltip>
+            </Popconfirm>
+          </Flex>
         );
       })(),
       key: node.name,
@@ -292,7 +315,7 @@ export default function FeatureMatrixPage() {
     }));
 
     return [...baseColumns, ...nodeColumns];
-  }, [nodes, unreachableNodes, isLoading, toggleFeatureState, canToggle]);
+  }, [nodes, unreachableNodes, isLoading, toggleFeatureState, canToggle, isAdmin, deleteNode]);
 
   const isDark = themeMode === 'dark';
 
