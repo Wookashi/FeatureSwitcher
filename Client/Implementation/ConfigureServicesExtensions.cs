@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Wookashi.FeatureSwitcher.Client.Abstraction;
 
 namespace Wookashi.FeatureSwitcher.Client.Implementation;
@@ -41,13 +42,15 @@ public static class ConfigureServicesExtensions
         services.AddSingleton<IFeatureManager>(serviceProvider =>
         {
             var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
+            var logger = serviceProvider.GetService<ILogger<FeatureManager>>();
 
             var featureManager = new FeatureManager(
                 applicationName,
                 environmentName,
                 nodeAddress,
                 features,
-                httpClientFactory);
+                httpClientFactory,
+                logger);
 
             // Register features with the node (sync wrapper required for DI factory)
             featureManager.RegisterFeaturesOnNodeAsync().GetAwaiter().GetResult();
