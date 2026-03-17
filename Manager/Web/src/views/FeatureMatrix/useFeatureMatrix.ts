@@ -19,6 +19,7 @@ interface UseFeatureMatrixResult {
   isLoading: boolean;
   refresh: () => void;
   toggleFeatureState: (nodeId: number, nodeName: string, application: string, feature: string, currentValue: boolean) => Promise<void>;
+  deleteNode: (nodeId: number) => Promise<void>;
 }
 
 function generateErrorId(): string {
@@ -299,6 +300,26 @@ export function useFeatureMatrix(): UseFeatureMatrixResult {
     [addError, updateRowCell]
   );
 
+  const deleteNode = useCallback(
+    async (nodeId: number) => {
+      const endpoint = `/api/nodes/${nodeId}`;
+      try {
+        const response = await authFetch(endpoint, {
+          method: 'DELETE',
+          signal: AbortSignal.timeout(10000),
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        refresh();
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        addError(endpoint, message);
+      }
+    },
+    [addError, refresh]
+  );
+
   // Initial fetch
   useEffect(() => {
     refresh();
@@ -320,5 +341,6 @@ export function useFeatureMatrix(): UseFeatureMatrixResult {
     isLoading: isLoadingNodes || pendingRequests > 0,
     refresh,
     toggleFeatureState,
+    deleteNode,
   };
 }
