@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Wookashi.FeatureSwitcher.Client.Abstraction;
+using Wookashi.FeatureSwitcher.Client.Abstraction.Exceptions;
 
 namespace Wookashi.FeatureSwitcher.Client.Implementation;
 
@@ -52,8 +53,32 @@ public static class ConfigureServicesExtensions
                 httpClientFactory,
                 logger);
 
-            // Register features with the node (sync wrapper required for DI factory)
-            featureManager.RegisterFeaturesOnNodeAsync().GetAwaiter().GetResult();
+            try
+            {
+                featureManager.RegisterFeaturesOnNodeAsync().GetAwaiter().GetResult();
+            }
+            catch (NodeUnreachableException ex)
+            {
+                logger?.LogWarning(ex,
+                    "Node at {NodeAddress} was unreachable during startup. " +
+                    "The app will use initial feature states until the node becomes available.",
+                    nodeAddress);
+            }
+            catch (EnvironmentMismatchException ex)
+            {
+                logger?.LogError(ex,
+                    "Environment mismatch during feature registration. " +
+                    "Verify that the node environment matches '{EnvironmentName}'.",
+                    environmentName);
+                throw;
+            }
+            catch (RegistrationException ex)
+            {
+                logger?.LogError(ex,
+                    "Feature registration failed with status code {StatusCode}.",
+                    ex.Code);
+                throw;
+            }
 
             return featureManager;
         });
