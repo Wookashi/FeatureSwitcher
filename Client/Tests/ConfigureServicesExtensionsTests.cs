@@ -1,5 +1,6 @@
 using System.Net;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Moq;
 using Moq.Protected;
 using Wookashi.FeatureSwitcher.Client.Abstraction;
@@ -218,6 +219,23 @@ public class ConfigureServicesExtensionsTests
         var manager = provider.GetService<IFeatureManager>();
 
         Assert.NotNull(manager);
+    }
+
+    [Fact]
+    public void AddFeatureFlags_RegistersHostedService()
+    {
+        var services = new ServiceCollection();
+
+        services.AddFeatureFlags(
+            AppName,
+            EnvironmentName,
+            new Uri(NodeAddress),
+            new List<IFeatureStateModel>());
+
+        var provider = services.BuildServiceProvider();
+        var hostedServices = provider.GetServices<IHostedService>();
+
+        Assert.Contains(hostedServices, s => s is FeatureSwitcherStartupService);
     }
 
     [Fact]

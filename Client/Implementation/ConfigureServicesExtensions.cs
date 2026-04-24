@@ -1,7 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Wookashi.FeatureSwitcher.Client.Abstraction;
-using Wookashi.FeatureSwitcher.Client.Abstraction.Exceptions;
 
 namespace Wookashi.FeatureSwitcher.Client.Implementation;
 
@@ -40,48 +39,22 @@ public static class ConfigureServicesExtensions
     {
         services.AddHttpClient();
 
-        services.AddSingleton<IFeatureManager>(serviceProvider =>
+        services.AddSingleton<FeatureManager>(serviceProvider =>
         {
             var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
             var logger = serviceProvider.GetService<ILogger<FeatureManager>>();
 
-            var featureManager = new FeatureManager(
+            return new FeatureManager(
                 applicationName,
                 environmentName,
                 nodeAddress,
                 features,
                 httpClientFactory,
                 logger);
-
-            try
-            {
-                featureManager.RegisterFeaturesOnNodeAsync().GetAwaiter().GetResult();
-            }
-            catch (NodeUnreachableException ex)
-            {
-                logger?.LogWarning(ex,
-                    "Node at {NodeAddress} was unreachable during startup. " +
-                    "The app will use initial feature states until the node becomes available.",
-                    nodeAddress);
-            }
-            catch (EnvironmentMismatchException ex)
-            {
-                logger?.LogError(ex,
-                    "Environment mismatch during feature registration. " +
-                    "Verify that the node environment matches '{EnvironmentName}'.",
-                    environmentName);
-                throw;
-            }
-            catch (RegistrationException ex)
-            {
-                logger?.LogError(ex,
-                    "Feature registration failed with status code {StatusCode}.",
-                    ex.Code);
-                throw;
-            }
-
-            return featureManager;
         });
+
+        services.AddSingleton<IFeatureManager>(sp => sp.GetRequiredService<FeatureManager>());
+        services.AddHostedService<FeatureSwitcherStartupService>();
 
         return services;
     }
