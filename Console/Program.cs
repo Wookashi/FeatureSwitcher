@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console;
 using Wookashi.FeatureSwitcher.Client.Abstraction;
 using Wookashi.FeatureSwitcher.Client.Abstraction.Exceptions;
+using Wookashi.FeatureSwitcher.Client.Abstraction.Models;
 using Wookashi.FeatureSwitcher.Client.Implementation;
 using Wookashi.FeatureSwitcher.Console;
 

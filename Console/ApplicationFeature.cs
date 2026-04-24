@@ -1,4 +1,5 @@
 using Wookashi.FeatureSwitcher.Client.Abstraction;
+using Wookashi.FeatureSwitcher.Client.Abstraction.Models;
 
 namespace Wookashi.FeatureSwitcher.Console;
 

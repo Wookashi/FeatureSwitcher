@@ -1,4 +1,4 @@
-namespace Wookashi.FeatureSwitcher.Client.Abstraction;
+namespace Wookashi.FeatureSwitcher.Client.Abstraction.Models;
 
 public interface IFeatureStateModel
 {

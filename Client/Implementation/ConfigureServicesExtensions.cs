@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Wookashi.FeatureSwitcher.Client.Abstraction;
+using Wookashi.FeatureSwitcher.Client.Abstraction.Models;
 
 namespace Wookashi.FeatureSwitcher.Client.Implementation;
 
