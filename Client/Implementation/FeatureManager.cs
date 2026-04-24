@@ -72,11 +72,21 @@ public class FeatureManager : IFeatureManager
     /// Checks if a feature is enabled.
     /// Queries the node first; falls back to cached state if unreachable.
     /// </summary>
-    /// <param name="featureName">Name of the feature to check.</param>
+    /// <param name="feature">Feature to check.</param>
     /// <param name="cancellationToken">Token to cancel the operation.</param>
     /// <returns>True if the feature is enabled, false otherwise.</returns>
     /// <exception cref="FeatureNotRegisteredException">Thrown when the feature was not registered.</exception>
     /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled.</exception>
+    public Task<bool> IsFeatureEnabledAsync(IFeatureStateModel feature, CancellationToken cancellationToken = default)
+    {
+        if (feature is null)
+        {
+            throw new ArgumentNullException(nameof(feature));
+        }
+
+        return IsFeatureEnabledAsync(feature.Name, cancellationToken);
+    }
+
     public async Task<bool> IsFeatureEnabledAsync(string featureName, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();

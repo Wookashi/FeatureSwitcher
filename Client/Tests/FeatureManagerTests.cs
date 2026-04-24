@@ -342,6 +342,36 @@ public class FeatureManagerTests
         Assert.True(result);
     }
 
+    [Fact]
+    public async Task IsFeatureEnabledAsync_WithFeatureReference_ReturnsNodeState()
+    {
+        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+        SetupRegistrationEndpoint(handlerMock);
+        SetupFeatureStateEndpoint(handlerMock, "TestFlag", featureState: true);
+        var factoryMock = CreateMockHttpClientFactory(handlerMock);
+
+        var testFlag = new FeatureStateModel("TestFlag", initialState: false);
+        var features = new List<IFeatureStateModel> { testFlag };
+        var manager = CreateFeatureManager(features, factoryMock);
+        await manager.RegisterFeaturesOnNodeAsync();
+
+        var result = await manager.IsFeatureEnabledAsync(testFlag);
+
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task IsFeatureEnabledAsync_WithFeatureReference_ThrowsArgumentNullException_WhenFeatureIsNull()
+    {
+        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+        var factoryMock = CreateMockHttpClientFactory(handlerMock);
+
+        var manager = CreateFeatureManager(new List<IFeatureStateModel>(), factoryMock);
+
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => manager.IsFeatureEnabledAsync((IFeatureStateModel)null!));
+    }
+
     #endregion
 
     #region RegisterFeaturesOnNodeAsync Tests
