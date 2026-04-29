@@ -71,7 +71,7 @@ try
     while (true)
     {
         Thread.Sleep(1000);
-        var table = new Table().Centered();
+        var table = new Table();
         table.AddColumn("Feature name");
         table.AddColumn("State");
 
@@ -87,7 +87,7 @@ try
         table.Caption = new TableTitle($"Last updated {DateTime.Now.ToLongTimeString()}");
         Console.Clear();
         AnsiConsole.Write(new Text($"env:{environmentName}, appName:{applicationName}, node:{environmentNodeAddress}").Centered());
-        AnsiConsole.Write(table);
+        AnsiConsole.Write(Align.Center(table));
     }
 }
 catch (NodeUnreachableException exception)
