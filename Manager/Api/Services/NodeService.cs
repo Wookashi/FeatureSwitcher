@@ -45,12 +45,12 @@ internal sealed class NodeService
             throw new KeyNotFoundException($"Node with id={nodeId} not found.");
 
         var url = JoinUrl(node.Address, "/applications");
-        _logger.LogInformation("Fetching applications from node {NodeId} at {Url}", nodeId, url);
+        _logger.LogDebug("Fetching applications from node {NodeId} at {Url}", nodeId, url);
 
         try
         {
             var apps = await _httpClient.GetFromJsonAsync<List<ApplicationDto>>(url, ct);
-            _logger.LogInformation("Retrieved {Count} application(s) from node {NodeId}", apps?.Count ?? 0, nodeId);
+            _logger.LogDebug("Retrieved {Count} application(s) from node {NodeId}", apps?.Count ?? 0, nodeId);
             return apps ?? [];
         }
         catch (HttpRequestException ex)
@@ -74,12 +74,12 @@ internal sealed class NodeService
 
         var appNameEncoded = Uri.EscapeDataString(appName);
         var url = JoinUrl(node.Address, $"/applications/{appNameEncoded}/features");
-        _logger.LogInformation("Fetching features for app {AppName} from node {NodeId} at {Url}", appName, nodeId, url);
+        _logger.LogDebug("Fetching features for app {AppName} from node {NodeId} at {Url}", appName, nodeId, url);
 
         try
         {
             var features = await _httpClient.GetFromJsonAsync<List<FeatureDto>>(url, ct);
-            _logger.LogInformation("Retrieved {Count} feature(s) for app {AppName} from node {NodeId}", features?.Count ?? 0, appName, nodeId);
+            _logger.LogDebug("Retrieved {Count} feature(s) for app {AppName} from node {NodeId}", features?.Count ?? 0, appName, nodeId);
             return features ?? [];
         }
         catch (HttpRequestException ex)
@@ -104,7 +104,7 @@ internal sealed class NodeService
         var appNameEncoded = Uri.EscapeDataString(appName);
         var featureNameEncoded = Uri.EscapeDataString(featureName);
         var url = JoinUrl(node.Address, $"/applications/{appNameEncoded}/features/{featureNameEncoded}");
-        _logger.LogInformation("Setting feature {FeatureName} for app {AppName} on node {NodeId} to {State}", featureName, appName, nodeId, featureState.State);
+        _logger.LogDebug("Setting feature {FeatureName} for app {AppName} on node {NodeId} to {State}", featureName, appName, nodeId, featureState.State);
 
         try
         {

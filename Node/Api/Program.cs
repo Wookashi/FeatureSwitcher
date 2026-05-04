@@ -74,12 +74,12 @@ app.UseHealthCheck(
 app.MapPost("/applications",
         (ApplicationRegistrationRequestModel registerModel, IFeatureRepository featureRepository) =>
         {
-            apiLogger.LogInformation("Registering app {AppName} for environment {Environment} with {FeatureCount} feature(s)",
+            apiLogger.LogDebug("Registering app {AppName} for environment {Environment} with {FeatureCount} feature(s)",
                 registerModel.AppName, registerModel.Environment, registerModel.Features?.Count ?? 0);
 
             if (registerModel.Environment != nodeEnvironment)
             {
-                apiLogger.LogWarning("Environment mismatch: node is '{NodeEnv}', request is '{ReqEnv}' for app {AppName}",
+                apiLogger.LogError("Environment mismatch: node is '{NodeEnv}', request is '{ReqEnv}' for app {AppName}",
                     nodeEnvironment, registerModel.Environment, registerModel.AppName);
                 return Results.Problem(
                     title: "Environment mismatch",
@@ -100,13 +100,13 @@ app.MapPost("/applications",
 
 app.MapGet("/applications", (IFeatureRepository featureRepository) =>
     {
-        apiLogger.LogInformation("Listing applications");
+        apiLogger.LogDebug("Listing applications");
         var featureService = new FeatureService(featureRepository);
 
         try
         {
             var apps = featureService.GetApplications();
-            apiLogger.LogInformation("Returning {Count} application(s)", apps.Count);
+            apiLogger.LogDebug("Returning {Count} application(s)", apps.Count);
             return Results.Ok(apps);
         }
         catch (IncorrectEnvironmentException exception)
@@ -120,13 +120,13 @@ app.MapGet("/applications", (IFeatureRepository featureRepository) =>
 
 app.MapGet("/applications/{applicationName}/features/", (string applicationName, IFeatureRepository featureRepository) =>
     {
-        apiLogger.LogInformation("Listing features for app {AppName}", applicationName);
+        apiLogger.LogDebug("Listing features for app {AppName}", applicationName);
         var featureService = new FeatureService(featureRepository);
 
         try
         {
             var features = featureService.GetFeaturesForApplication(new ApplicationDto(applicationName));
-            apiLogger.LogInformation("Returning {Count} feature(s) for app {AppName}", features.Count, applicationName);
+            apiLogger.LogDebug("Returning {Count} feature(s) for app {AppName}", features.Count, applicationName);
             return Results.Ok(features);
         }
         catch (ApplicationNotFoundException exception)
@@ -140,12 +140,12 @@ app.MapGet("/applications/{applicationName}/features/", (string applicationName,
 
 app.MapGet("/applications/{applicationName}/features/{featureName}/state/", (string applicationName, string featureName, IFeatureRepository featureRepository) =>
     {
-        apiLogger.LogInformation("Getting state of feature {FeatureName} for app {AppName}", featureName, applicationName);
+        apiLogger.LogDebug("Getting state of feature {FeatureName} for app {AppName}", featureName, applicationName);
         var featureService = new FeatureService(featureRepository);
         try
         {
             var state = featureService.GetFeatureState(new ApplicationDto(applicationName), featureName);
-            apiLogger.LogInformation("Feature {FeatureName} in app {AppName} is {State}", featureName, applicationName, state);
+            apiLogger.LogDebug("Feature {FeatureName} in app {AppName} is {State}", featureName, applicationName, state);
             return Results.Ok(state);
         }
         catch (FeatureNotFoundException)
@@ -162,7 +162,7 @@ app.MapGet("/applications/{applicationName}/features/{featureName}/state/", (str
 app.MapPut("/applications/{applicationName}/features/{featureName}",
         (string applicationName, string featureName, FeatureStateModel featureState, IFeatureRepository featureRepository) =>
         {
-            apiLogger.LogInformation("Setting feature {FeatureName} in app {AppName} to {State}", featureName, applicationName, featureState.State);
+            apiLogger.LogDebug("Setting feature {FeatureName} in app {AppName} to {State}", featureName, applicationName, featureState.State);
             var featureService = new FeatureService(featureRepository);
             try
             {
