@@ -2,12 +2,14 @@ using System.IO.Compression;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.Extensions.Logging.Console;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Wookashi.FeatureSwitcher.Manager.Api.Configuration;
 using Wookashi.FeatureSwitcher.Manager.Api.Extensions;
 using Wookashi.FeatureSwitcher.Manager.Api.Services;
 using Wookashi.FeatureSwitcher.Manager.Database.Extensions;
+using Wookashi.FeatureSwitcher.Shared.Abstraction.Logger;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -58,6 +60,13 @@ builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"))
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<NodeAccessService>();
 builder.Services.AddScoped<NodeService>();
+
+//Console logs configuration
+builder.Logging.ClearProviders();
+builder.Logging.AddConsoleFormatter<MinimalConsoleFormatter, ConsoleFormatterOptions>();
+builder.Logging.AddConsole(options => {
+    options.FormatterName = "minimal";
+});
 
 var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>() ?? new JwtSettings();
 

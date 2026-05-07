@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Console;
 using Microsoft.OpenApi;
 using Wookashi.FeatureSwitcher.Node.Abstraction.Database.Dtos;
 using Wookashi.FeatureSwitcher.Node.Abstraction.Database.Repositories;
@@ -7,6 +8,7 @@ using Wookashi.FeatureSwitcher.Node.Api.HealthChecks;
 using Wookashi.FeatureSwitcher.Node.Api.Models;
 using Wookashi.FeatureSwitcher.Node.Api.Services;
 using Wookashi.FeatureSwitcher.Node.Database.Extensions;
+using Wookashi.FeatureSwitcher.Shared.Abstraction.Logger;
 using Wookashi.FeatureSwitcher.Shared.Abstraction.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -31,6 +33,13 @@ builder.Services.AddDatabase(dbConnectionString);
 builder.Services.AddHealthCheckElements();
 builder.Services.AddHttpClient();
 builder.Services.AddHostedService<ManagerRegistrationHostedService>();
+
+//Console logs configuration
+builder.Logging.ClearProviders();
+builder.Logging.AddConsoleFormatter<MinimalConsoleFormatter, ConsoleFormatterOptions>();
+builder.Logging.AddConsole(options => {
+    options.FormatterName = "minimal";
+});
 
 var app = builder.Build();
 
