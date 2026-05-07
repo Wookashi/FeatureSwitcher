@@ -6,11 +6,6 @@ namespace Wookashi.FeatureSwitcher.Shared.Abstraction.Logger;
 
 public sealed class MinimalConsoleFormatter() : ConsoleFormatter("minimal")
 {
-    static MinimalConsoleFormatter()
-    {
-        Console.WriteLine(">>> MINIMAL FORMATTER REGISTERED <<<");
-    }
-    
     public override void Write<TState>(
         in LogEntry<TState> logEntry,
         IExternalScopeProvider? scopeProvider,
