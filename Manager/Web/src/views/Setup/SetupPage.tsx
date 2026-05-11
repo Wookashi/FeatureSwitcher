@@ -178,7 +178,7 @@ export default function SetupPage() {
           {appVersion && (
             <Flex justify="center" style={{ marginTop: 16 }}>
               <Text type="secondary" style={{ fontSize: 11 }}>
-                v {appVersion}
+                v&nbsp;{appVersion}
               </Text>
             </Flex>
           )}

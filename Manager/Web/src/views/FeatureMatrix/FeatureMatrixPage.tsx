@@ -356,7 +356,7 @@ export default function FeatureMatrixPage() {
                 </Title>
                 {appVersion && (
                   <Text type="secondary" style={{ fontSize: 11 }}>
-                    v{appVersion}
+                    v&nbsp;{appVersion}
                   </Text>
                 )}
               </Flex>
