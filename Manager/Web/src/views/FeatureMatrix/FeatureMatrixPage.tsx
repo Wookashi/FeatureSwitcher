@@ -135,7 +135,7 @@ export default function FeatureMatrixPage() {
   const navigate = useNavigate();
   const { isAdmin, canToggle } = useAuth();
   const appVersion = useAppVersion();
-  const { nodes, rows, errors, unreachableNodes, isLoadingNodes, isLoading, refresh, toggleFeatureState, deleteNode } = useFeatureMatrix();
+  const { nodes, rows, errors, unreachableNodes, nodeStates, isLoadingNodes, isLoading, refresh, toggleFeatureState, deleteNode } = useFeatureMatrix();
 
   const [searchText, setSearchText] = useState('');
   const [showOnlyDifferences, setShowOnlyDifferences] = useState(false);
@@ -253,15 +253,24 @@ export default function FeatureMatrixPage() {
     const nodeColumns: ColumnsType<TreeRow> = nodes.map((node) => ({
       title: (() => {
         const errorMsg = unreachableNodes.get(node.name);
+        const state = nodeStates.get(node.name);
+        const tooltipContent = (
+          <div>
+            <div>Address: {nodeMap.get(node.name)?.address}</div>
+            {state?.version && <div>Version: v{state.version}</div>}
+            {state?.status && <div>Status: {state.status}</div>}
+            {errorMsg && <div>Unreachable: {errorMsg}</div>}
+          </div>
+        );
         const nodeLabel = errorMsg ? (
-          <Tooltip title={`Unreachable: ${errorMsg}`}>
+          <Tooltip title={tooltipContent}>
             <Space>
               <DisconnectOutlined style={{ color: '#ff4d4f' }} />
               <span style={{ color: '#ff4d4f' }}>{node.name}</span>
             </Space>
           </Tooltip>
         ) : (
-          <Tooltip title={`Address: ${nodeMap.get(node.name)?.address}`}>
+          <Tooltip title={tooltipContent}>
             <Space>
               <CloudServerOutlined />
               <span>{node.name}</span>
@@ -317,7 +326,7 @@ export default function FeatureMatrixPage() {
     }));
 
     return [...baseColumns, ...nodeColumns];
-  }, [nodes, unreachableNodes, isLoading, toggleFeatureState, canToggle, isAdmin, deleteNode]);
+  }, [nodes, unreachableNodes, nodeStates, isLoading, toggleFeatureState, canToggle, isAdmin, deleteNode]);
 
   const isDark = themeMode === 'dark';
 
