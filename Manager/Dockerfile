@@ -20,7 +20,8 @@ COPY Manager/Api Manager/Api
 COPY Manager/Abstraction Manager/Abstraction
 COPY Manager/Database Manager/Database
 COPY Shared/Abstraction Shared/Abstraction
-RUN dotnet publish Manager/Api/Manager.Api.csproj -c Release -o /app/publish /p:UseAppHost=false
+ARG APP_VERSION=0.0.0-dev
+RUN dotnet publish Manager/Api/Manager.Api.csproj -c Release -o /app/publish /p:UseAppHost=false /p:InformationalVersion=${APP_VERSION}
 
 # --- RUNTIME ---
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final

@@ -22,6 +22,7 @@ import {
 } from '@ant-design/icons';
 import { setToken, setRole } from '../../auth';
 import { useTheme } from '../FeatureMatrix/theme';
+import { useAppVersion } from '../../version/useAppVersion';
 
 const { Title, Text } = Typography;
 
@@ -36,6 +37,7 @@ export default function SetupPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const appVersion = useAppVersion();
 
   const isDark = themeMode === 'dark';
 
@@ -173,6 +175,13 @@ export default function SetupPage() {
               </Button>
             </Form.Item>
           </Form>
+          {appVersion && (
+            <Flex justify="center" style={{ marginTop: 16 }}>
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                v {appVersion}
+              </Text>
+            </Flex>
+          )}
         </Card>
       </Flex>
     </ConfigProvider>

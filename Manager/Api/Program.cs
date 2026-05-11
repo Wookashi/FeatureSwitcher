@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Reflection;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -121,7 +122,11 @@ app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapGet("/health", () => Results.Ok(new { ok = true, ts = DateTimeOffset.UtcNow })).ExcludeFromDescription();
+var appVersion = typeof(Program).Assembly
+    .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+    .InformationalVersion?.Split('+')[0] ?? "unknown";
+
+app.MapGet("/health", () => Results.Ok(new { ok = true, version = appVersion, ts = DateTimeOffset.UtcNow })).ExcludeFromDescription();
 
 app.MapControllers();
 app.MapFallbackToFile("index.html");

@@ -47,6 +47,7 @@ import { useFeatureMatrix } from './useFeatureMatrix';
 import { useTheme } from './theme';
 import { removeToken, useAuth } from '../../auth';
 import { ChangePasswordModal } from '../UserManagement';
+import { useAppVersion } from '../../version/useAppVersion';
 import type { FeatureMatrixRow, CellState, NodeDto } from './types';
 
 const { Header, Content } = Layout;
@@ -133,6 +134,7 @@ export default function FeatureMatrixPage() {
   const [themeMode, toggleTheme] = useTheme();
   const navigate = useNavigate();
   const { isAdmin, canToggle } = useAuth();
+  const appVersion = useAppVersion();
   const { nodes, rows, errors, unreachableNodes, isLoadingNodes, isLoading, refresh, toggleFeatureState, deleteNode } = useFeatureMatrix();
 
   const [searchText, setSearchText] = useState('');
@@ -348,9 +350,16 @@ export default function FeatureMatrixPage() {
           <Flex align="center" gap={16}>
             <FlagOutlined style={{ fontSize: 24, color: token.colorPrimary }} />
             <div>
-              <Title level={4} style={{ margin: 0, marginTop: 4, lineHeight: 1.2 }}>
-                Feature States
-              </Title>
+              <Flex align="baseline" gap={8}>
+                <Title level={4} style={{ margin: 0, marginTop: 4, lineHeight: 1.2 }}>
+                  Feature States
+                </Title>
+                {appVersion && (
+                  <Text type="secondary" style={{ fontSize: 11 }}>
+                    v{appVersion}
+                  </Text>
+                )}
+              </Flex>
               <Text type="secondary" style={{ fontSize: 12 }}>
                 Manage feature flags across environments
               </Text>

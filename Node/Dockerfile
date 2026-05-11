@@ -12,7 +12,8 @@ COPY Node/Api Node/Api
 COPY Node/Abstraction Node/Abstraction
 COPY Node/Database Node/Database
 COPY Shared/Abstraction Shared/Abstraction
-RUN dotnet publish Node/Api/Node.Api.csproj -c Release -o /app/publish /p:UseAppHost=false
+ARG APP_VERSION=0.0.0-dev
+RUN dotnet publish Node/Api/Node.Api.csproj -c Release -o /app/publish /p:UseAppHost=false /p:InformationalVersion=${APP_VERSION}
 
 # --- RUNTIME ---
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
