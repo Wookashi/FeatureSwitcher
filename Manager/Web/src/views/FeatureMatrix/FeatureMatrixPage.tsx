@@ -47,6 +47,7 @@ import { useFeatureMatrix } from './useFeatureMatrix';
 import { useTheme } from './theme';
 import { removeToken, useAuth } from '../../auth';
 import { ChangePasswordModal } from '../UserManagement';
+import { useAppVersion } from '../../version/useAppVersion';
 import type { FeatureMatrixRow, CellState, NodeDto } from './types';
 
 const { Header, Content } = Layout;
@@ -133,7 +134,8 @@ export default function FeatureMatrixPage() {
   const [themeMode, toggleTheme] = useTheme();
   const navigate = useNavigate();
   const { isAdmin, canToggle } = useAuth();
-  const { nodes, rows, errors, unreachableNodes, isLoadingNodes, isLoading, refresh, toggleFeatureState, deleteNode } = useFeatureMatrix();
+  const appVersion = useAppVersion();
+  const { nodes, rows, errors, unreachableNodes, nodeStates, isLoadingNodes, isLoading, refresh, toggleFeatureState, deleteNode } = useFeatureMatrix();
 
   const [searchText, setSearchText] = useState('');
   const [showOnlyDifferences, setShowOnlyDifferences] = useState(false);
@@ -251,15 +253,24 @@ export default function FeatureMatrixPage() {
     const nodeColumns: ColumnsType<TreeRow> = nodes.map((node) => ({
       title: (() => {
         const errorMsg = unreachableNodes.get(node.name);
+        const state = nodeStates.get(node.name);
+        const tooltipContent = (
+          <div>
+            <div>Address: {nodeMap.get(node.name)?.address}</div>
+            {state?.version && <div>Version: v{state.version}</div>}
+            {state?.status && <div>Status: {state.status}</div>}
+            {errorMsg && <div>Unreachable: {errorMsg}</div>}
+          </div>
+        );
         const nodeLabel = errorMsg ? (
-          <Tooltip title={`Unreachable: ${errorMsg}`}>
+          <Tooltip title={tooltipContent}>
             <Space>
               <DisconnectOutlined style={{ color: '#ff4d4f' }} />
               <span style={{ color: '#ff4d4f' }}>{node.name}</span>
             </Space>
           </Tooltip>
         ) : (
-          <Tooltip title={`Address: ${nodeMap.get(node.name)?.address}`}>
+          <Tooltip title={tooltipContent}>
             <Space>
               <CloudServerOutlined />
               <span>{node.name}</span>
@@ -315,7 +326,7 @@ export default function FeatureMatrixPage() {
     }));
 
     return [...baseColumns, ...nodeColumns];
-  }, [nodes, unreachableNodes, isLoading, toggleFeatureState, canToggle, isAdmin, deleteNode]);
+  }, [nodes, unreachableNodes, nodeStates, isLoading, toggleFeatureState, canToggle, isAdmin, deleteNode]);
 
   const isDark = themeMode === 'dark';
 
@@ -348,9 +359,16 @@ export default function FeatureMatrixPage() {
           <Flex align="center" gap={16}>
             <FlagOutlined style={{ fontSize: 24, color: token.colorPrimary }} />
             <div>
-              <Title level={4} style={{ margin: 0, marginTop: 4, lineHeight: 1.2 }}>
-                Feature States
-              </Title>
+              <Flex align="baseline" gap={8}>
+                <Title level={4} style={{ margin: 0, marginTop: 4, lineHeight: 1.2 }}>
+                  Feature States
+                </Title>
+                {appVersion && (
+                  <Text type="secondary" style={{ fontSize: 11 }}>
+                    v&nbsp;{appVersion}
+                  </Text>
+                )}
+              </Flex>
               <Text type="secondary" style={{ fontSize: 12 }}>
                 Manage feature flags across environments
               </Text>

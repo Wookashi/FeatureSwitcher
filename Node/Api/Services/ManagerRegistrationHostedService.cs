@@ -26,54 +26,63 @@ internal sealed class ManagerRegistrationHostedService(
             return;
         }
 
-        try
+        var connected = false;
+        var attempt = 0;
+        var httpClient = httpClientFactory.CreateClient();
+        
+        while (!connected)
         {
-            var httpClient = httpClientFactory.CreateClient();
-
-            // Authenticate with manager if credentials are configured
-            if (!string.IsNullOrEmpty(settings.Username) && !string.IsNullOrEmpty(settings.Password))
+            attempt++;
+            try
             {
-                var loginPayload = JsonSerializer.Serialize(new { username = settings.Username, password = settings.Password });
-                var loginContent = new StringContent(loginPayload, Encoding.UTF8, "application/json");
-
-                var loginResponse = await httpClient.PostAsync($"{settings.Url}/api/auth/login", loginContent, cancellationToken);
-
-                if (!loginResponse.IsSuccessStatusCode)
+                // Authenticate with manager if credentials are configured
+                if (!string.IsNullOrEmpty(settings.Username) && !string.IsNullOrEmpty(settings.Password))
                 {
-                    logger.LogError(
-                        "Authentication with manager failed (HTTP {StatusCode}). " +
-                        "Make sure the initial admin setup has been completed at the Manager UI " +
-                        "and that the configured credentials (ManagerSettings__Username / ManagerSettings__Password) " +
-                        "match an existing Admin account. " +
-                        "Restart this node after completing setup.",
-                        (int)loginResponse.StatusCode);
-                    return;
+                    var loginPayload = JsonSerializer.Serialize(new { username = settings.Username, password = settings.Password });
+                    var loginContent = new StringContent(loginPayload, Encoding.UTF8, "application/json");
+
+                    var loginResponse = await httpClient.PostAsync($"{settings.Url}/api/auth/login", loginContent, cancellationToken);
+
+                    if (!loginResponse.IsSuccessStatusCode)
+                    {
+                        logger.LogError(
+                            "Authentication with manager failed (HTTP {StatusCode}). " +
+                            "Make sure the initial admin setup has been completed at the Manager UI " +
+                            "and that the configured credentials (ManagerSettings__Username / ManagerSettings__Password) " +
+                            "match an existing Admin account. " +
+                            "Restart this node after completing setup.",
+                            (int)loginResponse.StatusCode);
+                        return;
+                    }
+
+                    var loginJson = await loginResponse.Content.ReadAsStringAsync(cancellationToken);
+                    var token = JsonDocument.Parse(loginJson).RootElement.GetProperty("token").GetString();
+
+                    httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
                 }
 
-                var loginJson = await loginResponse.Content.ReadAsStringAsync(cancellationToken);
-                var token = JsonDocument.Parse(loginJson).RootElement.GetProperty("token").GetString();
+                var registrationModel = new NodeRegistrationModel
+                {
+                    NodeName = nodeConfig.Name,
+                    NodeAddress = new Uri(nodeConfig.Address)
+                };
 
-                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                var content = new StringContent(
+                    JsonSerializer.Serialize(registrationModel),
+                    Encoding.UTF8,
+                    "application/json");
+
+                await httpClient.PutAsync($"{settings.Url}/api/nodes", content, cancellationToken);
+                connected = true;
+
+                logger.LogInformation("Node '{NodeName}' registered with manager at {ManagerUrl}", nodeConfig.Name, settings.Url);
             }
-
-            var registrationModel = new NodeRegistrationModel
+            catch (Exception ex)
             {
-                NodeName = nodeConfig.Name,
-                NodeAddress = new Uri(nodeConfig.Address)
-            };
-
-            var content = new StringContent(
-                JsonSerializer.Serialize(registrationModel),
-                Encoding.UTF8,
-                "application/json");
-
-            await httpClient.PutAsync($"{settings.Url}/api/nodes", content, cancellationToken);
-
-            logger.LogInformation("Node '{NodeName}' registered with manager at {ManagerUrl}", nodeConfig.Name, settings.Url);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to register node with manager at {ManagerUrl}", settings.Url);
+                var WaitSeconds = attempt + 50;
+                logger.LogWarning(ex, "Failed to register node with manager at {ManagerUrl}, next attempt after {WaitSeconds} seconds", settings.Url, WaitSeconds);
+                Thread.Sleep(WaitSeconds*1000);
+            }
         }
     }
 

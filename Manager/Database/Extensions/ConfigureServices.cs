@@ -40,8 +40,4 @@ public static class ConfigureServices
         }
         return app;
     }
-
-    extension(IApplicationBuilder app)
-    {
-    }
 }

@@ -1,9 +1,15 @@
+using System.Reflection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
 namespace Wookashi.FeatureSwitcher.Node.Api.HealthChecks;
 
 internal static class ConfigurationExtensions
 {
+    private static readonly string AppVersion =
+        typeof(ConfigurationExtensions).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+            .InformationalVersion?.Split('+')[0] ?? "unknown";
+
     internal static IServiceCollection AddHealthCheckElements(this IServiceCollection services)
     {
         services.AddHealthChecks()
@@ -27,6 +33,7 @@ internal static class ConfigurationExtensions
                 var result = new
                 {
                     name = nodeName,
+                    version = AppVersion,
                     status = report.Status.ToString(),
                     data = data,
                     checks = report.Entries.Select(entry => new

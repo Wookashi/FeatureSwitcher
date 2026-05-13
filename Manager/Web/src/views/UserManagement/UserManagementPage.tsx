@@ -33,6 +33,7 @@ import type { ColumnsType } from 'antd/es/table';
 
 import { authFetch, useAuth } from '../../auth';
 import { useTheme } from '../FeatureMatrix/theme';
+import { useAppVersion } from '../../version/useAppVersion';
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -68,6 +69,7 @@ export default function UserManagementPage() {
   const [themeMode, toggleTheme] = useTheme();
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
+  const appVersion = useAppVersion();
 
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [nodes, setNodes] = useState<NodeRecord[]>([]);
@@ -311,9 +313,16 @@ export default function UserManagementPage() {
             />
             <TeamOutlined style={{ fontSize: 24, color: token.colorPrimary }} />
             <div>
-              <Title level={4} style={{ margin: 0, marginTop: 4, lineHeight: 1.2 }}>
-                User Management
-              </Title>
+              <Flex align="baseline" gap={8}>
+                <Title level={4} style={{ margin: 0, marginTop: 4, lineHeight: 1.2 }}>
+                  User Management
+                </Title>
+                {appVersion && (
+                  <Text type="secondary" style={{ fontSize: 11 }}>
+                    v&nbsp;{appVersion}
+                  </Text>
+                )}
+              </Flex>
               <Text type="secondary" style={{ fontSize: 12 }}>
                 Manage users and their access
               </Text>

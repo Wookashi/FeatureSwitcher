@@ -83,6 +83,14 @@ internal class NodesController : ControllerBase
             return StatusCode(StatusCodes.Status504GatewayTimeout, "Node request timed out");
         }
     }
+    
+    
+    [HttpGet("{nodeId:int}/state")]
+    public async Task<IActionResult> GetNodeState(int nodeId)
+    {
+        var state = await _nodeService.GetNodeState(nodeId);
+        return Ok(state);
+    }
 
     [HttpGet("{nodeId:int}/applications/{appName}/features")]
     public async Task<IActionResult> GetFeatures(int nodeId, string appName)

@@ -1,13 +1,16 @@
 using System.IO.Compression;
+using System.Reflection;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.Extensions.Logging.Console;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Wookashi.FeatureSwitcher.Manager.Api.Configuration;
 using Wookashi.FeatureSwitcher.Manager.Api.Extensions;
 using Wookashi.FeatureSwitcher.Manager.Api.Services;
 using Wookashi.FeatureSwitcher.Manager.Database.Extensions;
+using Wookashi.FeatureSwitcher.Shared.Abstraction.Logger;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,10 +33,10 @@ builder.Services.AddSwaggerGen(options =>
         In = ParameterLocation.Header,
         Description = "Enter your JWT token"
     });
-    options.AddSecurityRequirement(_ => new OpenApiSecurityRequirement
+    options.AddSecurityRequirement(doc => new OpenApiSecurityRequirement
     {
         {
-            new OpenApiSecuritySchemeReference("Bearer"),
+            new OpenApiSecuritySchemeReference("Bearer", doc),
             new List<string>()
         }
     });
@@ -58,6 +61,13 @@ builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"))
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<NodeAccessService>();
 builder.Services.AddScoped<NodeService>();
+
+//Console logs configuration
+builder.Logging.ClearProviders();
+builder.Logging.AddConsoleFormatter<MinimalConsoleFormatter, ConsoleFormatterOptions>();
+builder.Logging.AddConsole(options => {
+    options.FormatterName = "minimal";
+});
 
 var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>() ?? new JwtSettings();
 
@@ -112,7 +122,11 @@ app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapGet("/health", () => Results.Ok(new { ok = true, ts = DateTimeOffset.UtcNow })).ExcludeFromDescription();
+var appVersion = typeof(Program).Assembly
+    .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+    .InformationalVersion?.Split('+')[0] ?? "unknown";
+
+app.MapGet("/health", () => Results.Ok(new { ok = true, version = appVersion, ts = DateTimeOffset.UtcNow })).ExcludeFromDescription();
 
 app.MapControllers();
 app.MapFallbackToFile("index.html");

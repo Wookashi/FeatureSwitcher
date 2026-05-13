@@ -6,6 +6,7 @@ import type {
   FeatureMatrixRow,
   FetchError,
   CellState,
+  NodeStateDto,
 } from './types';
 import { ConcurrencyLimiter } from './concurrency';
 import { authFetch } from '../../auth';
@@ -15,6 +16,7 @@ interface UseFeatureMatrixResult {
   rows: FeatureMatrixRow[];
   errors: FetchError[];
   unreachableNodes: Map<string, string>; // nodeName -> error message
+  nodeStates: Map<string, NodeStateDto>; // nodeName -> state
   isLoadingNodes: boolean;
   isLoading: boolean;
   refresh: () => void;
@@ -35,6 +37,7 @@ export function useFeatureMatrix(): UseFeatureMatrixResult {
   const [rows, setRows] = useState<FeatureMatrixRow[]>([]);
   const [errors, setErrors] = useState<FetchError[]>([]);
   const [unreachableNodes, setUnreachableNodes] = useState<Map<string, string>>(new Map());
+  const [nodeStates, setNodeStates] = useState<Map<string, NodeStateDto>>(new Map());
   const [isLoadingNodes, setIsLoadingNodes] = useState(true);
   const [pendingRequests, setPendingRequests] = useState(0);
 
@@ -203,6 +206,27 @@ export function useFeatureMatrix(): UseFeatureMatrixResult {
     [addError, fetchFeatures]
   );
 
+  const fetchNodeState = useCallback(
+    async (node: NodeDto, signal: AbortSignal) => {
+      const endpoint = `/api/nodes/${node.id}/state`;
+      try {
+        const timeoutSignal = AbortSignal.timeout(10000);
+        const combinedSignal = AbortSignal.any([signal, timeoutSignal]);
+        const response = await authFetch(endpoint, { signal: combinedSignal });
+        if (!response.ok) return;
+        const state: NodeStateDto = await response.json();
+        setNodeStates((prev) => {
+          const next = new Map(prev);
+          next.set(node.name, state);
+          return next;
+        });
+      } catch {
+        // state is best-effort; failure is silent (unreachable status already shown elsewhere)
+      }
+    },
+    []
+  );
+
   const fetchNodes = useCallback(
     async (signal: AbortSignal) => {
       const endpoint = '/api/nodes';
@@ -220,9 +244,10 @@ export function useFeatureMatrix(): UseFeatureMatrixResult {
         setNodes(nodeList);
         setIsLoadingNodes(false);
 
-        // Start fetching applications for each node
+        // Start fetching applications and state for each node
         nodeList.forEach((node) => {
           fetchApplications(node, signal);
+          fetchNodeState(node, signal);
         });
       } catch (err) {
         if (signal.aborted) return;
@@ -231,7 +256,7 @@ export function useFeatureMatrix(): UseFeatureMatrixResult {
         setIsLoadingNodes(false);
       }
     },
-    [addError, fetchApplications]
+    [addError, fetchApplications, fetchNodeState]
   );
 
   const refresh = useCallback(() => {
@@ -249,6 +274,7 @@ export function useFeatureMatrix(): UseFeatureMatrixResult {
     setRows([]);
     setErrors([]);
     setUnreachableNodes(new Map());
+    setNodeStates(new Map());
     setIsLoadingNodes(true);
     setPendingRequests(0);
 
@@ -337,6 +363,7 @@ export function useFeatureMatrix(): UseFeatureMatrixResult {
     rows,
     errors,
     unreachableNodes,
+    nodeStates,
     isLoadingNodes,
     isLoading: isLoadingNodes || pendingRequests > 0,
     refresh,

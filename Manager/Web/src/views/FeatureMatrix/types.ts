@@ -15,6 +15,11 @@ export interface FeatureDto {
   state: boolean;
 }
 
+export interface NodeStateDto {
+  status: string;
+  version?: string | null;
+}
+
 // Cell state for the matrix
 export type CellState =
   | { kind: 'loading' }

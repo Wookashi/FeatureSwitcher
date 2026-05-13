@@ -1,8 +1,10 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Dtos;
 using Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Repositories;
+using Wookashi.FeatureSwitcher.Manager.Api.Models;
 using Wookashi.FeatureSwitcher.Shared.Abstraction.Models;
 
 namespace Wookashi.FeatureSwitcher.Manager.Api.Services;
@@ -37,7 +39,44 @@ internal sealed class NodeService
     {
         return _nodeRepository.GetAllNodes();
     }
+    
+    public async Task<NodeHealthResponse> GetNodeState(int nodeId, CancellationToken ct = default)
+    {
+        var node = _nodeRepository.GetNodeById(nodeId);
+        if (node is null)
+            throw new KeyNotFoundException($"Node with id={nodeId} not found.");
 
+        var url = JoinUrl(node.Address, "/health");
+        _logger.LogInformation("Fetching health from node {NodeId} at {Url}", nodeId, url);
+
+        try
+        {
+            var health = await _httpClient.GetFromJsonAsync<NodeHealthResponse>(url, ct);
+            _logger.LogInformation("Retrieved node status from node {NodeId}: {Status}, version {Version}", nodeId, health?.Status, health?.Version);
+
+            // var status = health?.Status switch
+            // {
+            //     "Healthy" => HealthStatus.Healthy,
+            //     "Degraded" => HealthStatus.Degraded,
+            //     _ => HealthStatus.Unhealthy
+            // };
+            // return new NodeStateDto { Status = status, Version = health?.Version };
+            
+            return health ??  new NodeHealthResponse { Status = HealthStatus.Unhealthy };
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "Node {NodeId} ({Url}) returned an error while checking health. StatusCode: {StatusCode}", nodeId, url, ex.StatusCode);
+            return new NodeHealthResponse { Status = HealthStatus.Unhealthy };
+        }
+        catch (OperationCanceledException ex)
+        {
+            if (!ct.IsCancellationRequested)
+                _logger.LogError(ex, "Request to node {NodeId} ({Url}) timed out while fetching health", nodeId, url);
+            return new NodeHealthResponse { Status = HealthStatus.Unhealthy };
+        }
+    }
+    
     public async Task<List<ApplicationDto>> GetApplicationsAsync(int nodeId, CancellationToken ct = default)
     {
         var node = _nodeRepository.GetNodeById(nodeId);
