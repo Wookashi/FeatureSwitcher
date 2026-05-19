@@ -129,4 +129,27 @@ public class FeatureSwitcherBasicClientConfigurationTests
 
         Assert.Equal(expectedUri, config.NodeAddress);
     }
+
+    [Fact]
+    public void Constructor_DefaultsAllowStartWithoutNodeToFalse()
+    {
+        var config = new FeatureSwitcherBasicClientConfiguration(
+            applicationName: "MyApp",
+            environmentName: "Production",
+            nodeAddress: new Uri("http://localhost:8081/"));
+
+        Assert.False(config.AllowStartWithoutNode);
+    }
+
+    [Fact]
+    public void Constructor_SetsAllowStartWithoutNodeWhenProvided()
+    {
+        var config = new FeatureSwitcherBasicClientConfiguration(
+            applicationName: "MyApp",
+            environmentName: "Production",
+            nodeAddress: new Uri("http://localhost:8081/"),
+            allowStartWithoutNode: true);
+
+        Assert.True(config.AllowStartWithoutNode);
+    }
 }

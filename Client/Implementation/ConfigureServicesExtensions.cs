@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Wookashi.FeatureSwitcher.Client.Abstraction;
 using Wookashi.FeatureSwitcher.Client.Abstraction.Models;
@@ -15,58 +16,25 @@ public static class ConfigureServicesExtensions
     /// Features are registered with the node during service activation.
     /// </summary>
     /// <param name="services">The service collection.</param>
-    /// <param name="applicationName">Unique name for your application.</param>
-    /// <param name="environmentName">Environment name (e.g., "Development", "Production").</param>
-    /// <param name="nodeAddress">URI of the Feature Switcher Node service.</param>
+    /// <param name="configuration">
+    /// Configuration with application name, environment, node address, and startup behavior.
+    /// <see cref="IFeatureSwitcherBasicClientConfiguration.AllowStartWithoutNode"/> controls whether
+    /// the host is allowed to start when the node is unreachable during registration.
+    /// </param>
     /// <param name="features">List of features to register.</param>
     /// <returns>The service collection for chaining.</returns>
     /// <example>
     /// services.AddFeatureFlags(
-    ///     applicationName: "MyApp",
-    ///     environmentName: "Production",
-    ///     nodeAddress: new Uri("http://localhost:8081/"),
-    ///     features: new List&lt;FeatureStateModel&gt;
+    ///     new FeatureSwitcherBasicClientConfiguration(
+    ///         applicationName: "MyApp",
+    ///         environmentName: "Production",
+    ///         nodeAddress: new Uri("http://localhost:8081/")),
+    ///     features: new List&lt;IFeatureStateModel&gt;
     ///     {
-    ///         new("DarkMode", initialState: false),
-    ///         new("NewCheckout", initialState: true),
+    ///         new FeatureStateModel("DarkMode", initialState: false),
+    ///         new FeatureStateModel("NewCheckout", initialState: true),
     ///     });
     /// </example>
-    public static IServiceCollection AddFeatureFlags(
-        this IServiceCollection services,
-        string applicationName,
-        string environmentName,
-        Uri nodeAddress,
-        List<IFeatureStateModel> features)
-    {
-        services.AddHttpClient();
-
-        services.AddSingleton<FeatureManager>(serviceProvider =>
-        {
-            var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
-            var logger = serviceProvider.GetService<ILogger<FeatureManager>>();
-
-            return new FeatureManager(
-                applicationName,
-                environmentName,
-                nodeAddress,
-                features,
-                httpClientFactory,
-                logger);
-        });
-
-        services.AddSingleton<IFeatureManager>(sp => sp.GetRequiredService<FeatureManager>());
-        services.AddHostedService<FeatureSwitcherStartupService>();
-
-        return services;
-    }
-
-    /// <summary>
-    /// Registers FeatureManager with the dependency injection container using a configuration object.
-    /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <param name="configuration">Configuration with application name, environment, and node address.</param>
-    /// <param name="features">List of features to register.</param>
-    /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddFeatureFlags(
         this IServiceCollection services,
         IFeatureSwitcherBasicClientConfiguration configuration,
@@ -77,10 +45,28 @@ public static class ConfigureServicesExtensions
             throw new ArgumentNullException(nameof(configuration));
         }
 
-        return services.AddFeatureFlags(
-            configuration.ApplicationName,
-            configuration.EnvironmentName,
-            configuration.NodeAddress,
-            features);
+        services.AddHttpClient();
+
+        services.AddSingleton<FeatureManager>(serviceProvider =>
+        {
+            var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
+            var logger = serviceProvider.GetService<ILogger<FeatureManager>>();
+
+            return new FeatureManager(
+                configuration.ApplicationName,
+                configuration.EnvironmentName,
+                configuration.NodeAddress,
+                features,
+                httpClientFactory,
+                logger);
+        });
+
+        services.AddSingleton<IFeatureManager>(sp => sp.GetRequiredService<FeatureManager>());
+        services.AddSingleton<IHostedService>(sp => new FeatureSwitcherStartupService(
+            sp.GetRequiredService<FeatureManager>(),
+            configuration.AllowStartWithoutNode,
+            sp.GetService<ILogger<FeatureSwitcherStartupService>>()));
+
+        return services;
     }
 }

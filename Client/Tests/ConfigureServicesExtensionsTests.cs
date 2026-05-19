@@ -15,6 +15,9 @@ public class ConfigureServicesExtensionsTests
     private const string AppName = "TestApp";
     private const string EnvironmentName = "TestEnv";
 
+    private static FeatureSwitcherBasicClientConfiguration CreateConfig(bool allowStartWithoutNode = false)
+        => new(AppName, EnvironmentName, new Uri(NodeAddress), allowStartWithoutNode);
+
     private static void SetupRegistrationEndpoint(Mock<HttpMessageHandler> handlerMock)
     {
         handlerMock
@@ -34,15 +37,8 @@ public class ConfigureServicesExtensionsTests
             });
     }
 
-    [Fact]
-    public void AddFeatureFlags_RegistersIFeatureManager()
+    private static void RegisterMockHttpClientFactory(ServiceCollection services, Mock<HttpMessageHandler> handlerMock)
     {
-        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
-        SetupRegistrationEndpoint(handlerMock);
-
-        var services = new ServiceCollection();
-
-        // Replace HttpClient registration to use our mock
         services.AddSingleton<IHttpClientFactory>(_ =>
         {
             var httpClient = new HttpClient(handlerMock.Object);
@@ -50,11 +46,19 @@ public class ConfigureServicesExtensionsTests
             factoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
             return factoryMock.Object;
         });
+    }
+
+    [Fact]
+    public void AddFeatureFlags_RegistersIFeatureManager()
+    {
+        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+        SetupRegistrationEndpoint(handlerMock);
+
+        var services = new ServiceCollection();
+        RegisterMockHttpClientFactory(services, handlerMock);
 
         services.AddFeatureFlags(
-            AppName,
-            EnvironmentName,
-            new Uri(NodeAddress),
+            CreateConfig(),
             new List<IFeatureStateModel>
             {
                 new FeatureStateModel("TestFeature"),
@@ -68,41 +72,7 @@ public class ConfigureServicesExtensionsTests
     }
 
     [Fact]
-    public void AddFeatureFlags_WithConfiguration_RegistersIFeatureManager()
-    {
-        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
-        SetupRegistrationEndpoint(handlerMock);
-
-        var services = new ServiceCollection();
-
-        services.AddSingleton<IHttpClientFactory>(_ =>
-        {
-            var httpClient = new HttpClient(handlerMock.Object);
-            var factoryMock = new Mock<IHttpClientFactory>();
-            factoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
-            return factoryMock.Object;
-        });
-
-        var config = new FeatureSwitcherBasicClientConfiguration(
-            AppName,
-            EnvironmentName,
-            new Uri(NodeAddress));
-
-        services.AddFeatureFlags(
-            config,
-            new List<IFeatureStateModel>
-            {
-                new FeatureStateModel("TestFeature"),
-            });
-
-        var provider = services.BuildServiceProvider();
-        var manager = provider.GetService<IFeatureManager>();
-
-        Assert.NotNull(manager);
-    }
-
-    [Fact]
-    public void AddFeatureFlags_WithConfiguration_ThrowsArgumentNullException_WhenConfigurationIsNull()
+    public void AddFeatureFlags_ThrowsArgumentNullException_WhenConfigurationIsNull()
     {
         var services = new ServiceCollection();
 
@@ -114,33 +84,9 @@ public class ConfigureServicesExtensionsTests
     [Fact]
     public void AddFeatureFlags_ReturnsServiceCollection_ForChaining()
     {
-        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
-        SetupRegistrationEndpoint(handlerMock);
-
         var services = new ServiceCollection();
 
-        var result = services.AddFeatureFlags(
-            AppName,
-            EnvironmentName,
-            new Uri(NodeAddress),
-            new List<IFeatureStateModel>());
-
-        Assert.Same(services, result);
-    }
-
-    [Fact]
-    public void AddFeatureFlags_WithConfiguration_ReturnsServiceCollection_ForChaining()
-    {
-        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
-        SetupRegistrationEndpoint(handlerMock);
-
-        var services = new ServiceCollection();
-        var config = new FeatureSwitcherBasicClientConfiguration(
-            AppName,
-            EnvironmentName,
-            new Uri(NodeAddress));
-
-        var result = services.AddFeatureFlags(config, new List<IFeatureStateModel>());
+        var result = services.AddFeatureFlags(CreateConfig(), new List<IFeatureStateModel>());
 
         Assert.Same(services, result);
     }
@@ -150,11 +96,7 @@ public class ConfigureServicesExtensionsTests
     {
         var services = new ServiceCollection();
 
-        services.AddFeatureFlags(
-            AppName,
-            EnvironmentName,
-            new Uri(NodeAddress),
-            new List<IFeatureStateModel>());
+        services.AddFeatureFlags(CreateConfig(), new List<IFeatureStateModel>());
 
         var provider = services.BuildServiceProvider();
         var httpClientFactory = provider.GetService<IHttpClientFactory>();
@@ -169,19 +111,10 @@ public class ConfigureServicesExtensionsTests
         SetupRegistrationEndpoint(handlerMock);
 
         var services = new ServiceCollection();
-
-        services.AddSingleton<IHttpClientFactory>(_ =>
-        {
-            var httpClient = new HttpClient(handlerMock.Object);
-            var factoryMock = new Mock<IHttpClientFactory>();
-            factoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
-            return factoryMock.Object;
-        });
+        RegisterMockHttpClientFactory(services, handlerMock);
 
         services.AddFeatureFlags(
-            AppName,
-            EnvironmentName,
-            new Uri(NodeAddress),
+            CreateConfig(),
             new List<IFeatureStateModel>
             {
                 new FeatureStateModel("TestFeature"),
@@ -201,20 +134,9 @@ public class ConfigureServicesExtensionsTests
         SetupRegistrationEndpoint(handlerMock);
 
         var services = new ServiceCollection();
+        RegisterMockHttpClientFactory(services, handlerMock);
 
-        services.AddSingleton<IHttpClientFactory>(_ =>
-        {
-            var httpClient = new HttpClient(handlerMock.Object);
-            var factoryMock = new Mock<IHttpClientFactory>();
-            factoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
-            return factoryMock.Object;
-        });
-
-        services.AddFeatureFlags(
-            AppName,
-            EnvironmentName,
-            new Uri(NodeAddress),
-            new List<IFeatureStateModel>());
+        services.AddFeatureFlags(CreateConfig(), new List<IFeatureStateModel>());
 
         var provider = services.BuildServiceProvider();
         var manager = provider.GetService<IFeatureManager>();
@@ -227,16 +149,40 @@ public class ConfigureServicesExtensionsTests
     {
         var services = new ServiceCollection();
 
-        services.AddFeatureFlags(
-            AppName,
-            EnvironmentName,
-            new Uri(NodeAddress),
-            new List<IFeatureStateModel>());
+        services.AddFeatureFlags(CreateConfig(), new List<IFeatureStateModel>());
 
         var provider = services.BuildServiceProvider();
         var hostedServices = provider.GetServices<IHostedService>();
 
         Assert.Contains(hostedServices, s => s is FeatureSwitcherStartupService);
+    }
+
+    [Fact]
+    public async Task AddFeatureFlags_PropagatesAllowStartWithoutNode()
+    {
+        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+        handlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ThrowsAsync(new HttpRequestException(
+                "Connection refused",
+                new System.Net.Sockets.SocketException()));
+
+        var services = new ServiceCollection();
+        RegisterMockHttpClientFactory(services, handlerMock);
+
+        services.AddFeatureFlags(
+            CreateConfig(allowStartWithoutNode: true),
+            new List<IFeatureStateModel>());
+
+        var provider = services.BuildServiceProvider();
+        var hostedService = provider.GetServices<IHostedService>()
+            .Single(s => s is FeatureSwitcherStartupService);
+
+        await hostedService.StartAsync(CancellationToken.None);
     }
 
     [Fact]
@@ -246,19 +192,10 @@ public class ConfigureServicesExtensionsTests
         SetupRegistrationEndpoint(handlerMock);
 
         var services = new ServiceCollection();
-
-        services.AddSingleton<IHttpClientFactory>(_ =>
-        {
-            var httpClient = new HttpClient(handlerMock.Object);
-            var factoryMock = new Mock<IHttpClientFactory>();
-            factoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
-            return factoryMock.Object;
-        });
+        RegisterMockHttpClientFactory(services, handlerMock);
 
         services.AddFeatureFlags(
-            AppName,
-            EnvironmentName,
-            new Uri(NodeAddress),
+            CreateConfig(),
             new List<IFeatureStateModel>
             {
                 new FeatureStateModel("Feature1", initialState: true),

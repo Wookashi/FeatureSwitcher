@@ -14,14 +14,17 @@ dotnet add package Wookashi.FeatureSwitcher.Client.Implementation
 using Wookashi.FeatureSwitcher.Client.Implementation;
 
 // Define your features and register with DI
-services.AddFeatureFlags(
+var config = new FeatureSwitcherBasicClientConfiguration(
     applicationName: "MyApp",
     environmentName: "Production",
-    nodeAddress: new Uri("http://localhost:8081/"),
-    features: new List<FeatureStateModel>
+    nodeAddress: new Uri("http://localhost:8081/"));
+
+services.AddFeatureFlags(
+    config,
+    new List<IFeatureStateModel>
     {
-        new("DarkMode", initialState: false),
-        new("NewCheckout", initialState: true),
+        new FeatureStateModel("DarkMode", initialState: false),
+        new FeatureStateModel("NewCheckout", initialState: true),
     });
 ```
 
@@ -83,16 +86,38 @@ if (await featureManager.IsFeatureEnabledAsync("DarkMode"))
 
 ## Configuration
 
+`FeatureSwitcherBasicClientConfiguration` parameters:
+
 | Parameter | Description |
 |-----------|-------------|
 | `applicationName` | Unique identifier for your application |
 | `environmentName` | Environment name (e.g., Development, Production) |
 | `nodeAddress` | URI of the Feature Switcher Node service |
-| `features` | List of features to manage |
+| `allowStartWithoutNode` | Optional. When `true`, the host starts even if the Node is unreachable during startup registration. Features serve their `initialState` until the Node becomes reachable. Defaults to `false`. |
+
+`AddFeatureFlags` also takes the list of features to manage.
 
 ## Resilience
 
 The client caches feature states locally. If the Node service becomes unreachable, the client falls back to cached values, ensuring your application continues to function.
+
+### Tolerating an unreachable Node at startup
+
+By default, `AddFeatureFlags` registers a hosted service that calls `RegisterFeaturesOnNodeAsync` on startup. If the Node is unreachable, registration throws `NodeUnreachableException` and the host fails to start.
+
+Set `allowStartWithoutNode: true` on the configuration to let the application boot anyway. The failure is logged as a warning and features serve their `initialState` until subsequent `IsFeatureEnabledAsync` calls successfully reach the Node:
+
+```csharp
+var config = new FeatureSwitcherBasicClientConfiguration(
+    applicationName: "MyApp",
+    environmentName: "Production",
+    nodeAddress: new Uri("http://localhost:8081/"),
+    allowStartWithoutNode: true);
+
+services.AddFeatureFlags(config, features);
+```
+
+Only `NodeUnreachableException` is suppressed. `EnvironmentMismatchException` and `RegistrationException` (errors returned by a reachable Node) still abort startup because they indicate misconfiguration rather than a transient connectivity issue.
 
 ## Documentation
 
