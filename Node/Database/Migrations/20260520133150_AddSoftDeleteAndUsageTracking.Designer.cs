@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Wookashi.FeatureSwitcher.Node.Database;
 
@@ -10,9 +11,11 @@ using Wookashi.FeatureSwitcher.Node.Database;
 namespace Wookashi.FeatureSwitcher.Node.Database.Migrations
 {
     [DbContext(typeof(FeaturesDataContext))]
-    partial class FeaturesDataContextModelSnapshot : ModelSnapshot
+    [Migration("20260520133150_AddSoftDeleteAndUsageTracking")]
+    partial class AddSoftDeleteAndUsageTracking
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.7");

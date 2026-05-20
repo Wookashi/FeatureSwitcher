@@ -33,6 +33,7 @@ builder.Services.AddDatabase(dbConnectionString);
 builder.Services.AddHealthCheckElements();
 builder.Services.AddHttpClient();
 builder.Services.AddHostedService<ManagerRegistrationHostedService>();
+builder.Services.AddHostedService<SoftDeleteSweepHostedService>();
 
 //Console logs configuration
 builder.Logging.ClearProviders();
@@ -190,5 +191,89 @@ app.MapPut("/applications/{applicationName}/features/{featureName}",
     .WithTags("Manager")
     .Produces(StatusCodes.Status200OK)
     .ProducesProblem(StatusCodes.Status404NotFound);
+
+app.MapGet("/pending-deletion/features", (IFeatureRepository featureRepository) =>
+    {
+        apiLogger.LogDebug("Listing features pending deletion");
+        var featureService = new FeatureService(featureRepository);
+        var pending = featureService.GetPendingFeatures();
+        return Results.Ok(pending);
+    })
+    .WithDescription("Lists features currently soft-deleted (pending permanent deletion). Used by manager UI.")
+    .WithTags("Manager");
+
+app.MapGet("/pending-deletion/applications", (IFeatureRepository featureRepository) =>
+    {
+        apiLogger.LogDebug("Listing applications pending deletion");
+        var featureService = new FeatureService(featureRepository);
+        var pending = featureService.GetPendingApplications();
+        return Results.Ok(pending);
+    })
+    .WithDescription("Lists applications currently soft-deleted (pending permanent deletion). Used by manager UI.")
+    .WithTags("Manager");
+
+app.MapDelete("/applications/{applicationName}/features/{featureName}/pending",
+        (string applicationName, string featureName, IFeatureRepository featureRepository) =>
+        {
+            apiLogger.LogDebug("Permanently deleting feature {FeatureName} in app {AppName}", featureName, applicationName);
+            var featureService = new FeatureService(featureRepository);
+            try
+            {
+                var result = featureService.PermanentlyDeleteFeature(applicationName, featureName);
+                apiLogger.LogInformation(
+                    "Feature {FeatureName} in app {AppName} permanently deleted (last used {LastUsedAt:o}, pending since {PendingSince:o})",
+                    featureName, applicationName, result.LastUsedAt, result.PendingDeletionSince);
+                return Results.Ok(result);
+            }
+            catch (FeatureNotFoundException)
+            {
+                apiLogger.LogWarning("Feature {FeatureName} not found in app {AppName} during permanent deletion", featureName, applicationName);
+                return Results.NotFound();
+            }
+            catch (FeatureNotPendingDeletionException ex)
+            {
+                apiLogger.LogInformation(
+                    "Permanent deletion of {FeatureName} in {AppName} skipped — feature was restored: {Message}",
+                    featureName, applicationName, ex.Message);
+                return Results.Conflict(new { ex.Message });
+            }
+        })
+    .WithDescription("Permanently deletes a feature that is in PendingDeletion state. Returns 409 if the feature was restored between view and confirm.")
+    .WithTags("Manager")
+    .Produces(StatusCodes.Status200OK)
+    .ProducesProblem(StatusCodes.Status404NotFound)
+    .ProducesProblem(StatusCodes.Status409Conflict);
+
+app.MapDelete("/applications/{applicationName}/pending",
+        (string applicationName, IFeatureRepository featureRepository) =>
+        {
+            apiLogger.LogDebug("Permanently deleting app {AppName}", applicationName);
+            var featureService = new FeatureService(featureRepository);
+            try
+            {
+                var result = featureService.PermanentlyDeleteApplication(applicationName);
+                apiLogger.LogInformation(
+                    "Application {AppName} permanently deleted (last used {LastUsedAt:o}, pending since {PendingSince:o})",
+                    applicationName, result.LastUsedAt, result.PendingDeletionSince);
+                return Results.Ok(result);
+            }
+            catch (ApplicationNotFoundException)
+            {
+                apiLogger.LogWarning("Application {AppName} not found during permanent deletion", applicationName);
+                return Results.NotFound();
+            }
+            catch (FeatureNotPendingDeletionException ex)
+            {
+                apiLogger.LogInformation(
+                    "Permanent deletion of app {AppName} skipped — application was restored: {Message}",
+                    applicationName, ex.Message);
+                return Results.Conflict(new { ex.Message });
+            }
+        })
+    .WithDescription("Permanently deletes an application (and its features) that is in PendingDeletion state. Returns 409 if it was restored between view and confirm.")
+    .WithTags("Manager")
+    .Produces(StatusCodes.Status200OK)
+    .ProducesProblem(StatusCodes.Status404NotFound)
+    .ProducesProblem(StatusCodes.Status409Conflict);
 
 app.Run();

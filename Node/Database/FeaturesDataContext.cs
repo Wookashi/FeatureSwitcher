@@ -9,7 +9,8 @@ public class FeaturesDataContext : DbContext, IFeaturesDataContext
         : base(options)
     {
     }
-        
+
     public DbSet<FeatureEntity> Features { get; set; }
     public DbSet<ApplicationEntity> Applications { get; set; }
+    public DbSet<FeatureUsageEntity> FeatureUsage { get; set; }
 }
