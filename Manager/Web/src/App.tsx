@@ -1,34 +1,49 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Spin } from 'antd';
 import { RequireAuth } from './auth';
-import FeatureMatrixPage from './views/FeatureMatrix/FeatureMatrixPage';
-import { LoginPage } from './views/Login';
-import { SetupPage } from './views/Setup';
-import { UserManagementPage } from './views/UserManagement';
+
+const FeatureMatrixPage = lazy(() => import('./views/FeatureMatrix/FeatureMatrixPage'));
+const LoginPage = lazy(() => import('./views/Login').then((m) => ({ default: m.LoginPage })));
+const SetupPage = lazy(() => import('./views/Setup').then((m) => ({ default: m.SetupPage })));
+const UserManagementPage = lazy(() =>
+  import('./views/UserManagement').then((m) => ({ default: m.UserManagementPage }))
+);
+
+function RouteFallback() {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+      <Spin size="large" />
+    </div>
+  );
+}
 
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/setup" element={<SetupPage />} />
-        <Route
-          path="/users"
-          element={
-            <RequireAuth requiredRole="Admin">
-              <UserManagementPage />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/"
-          element={
-            <RequireAuth>
-              <FeatureMatrixPage />
-            </RequireAuth>
-          }
-        />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <Suspense fallback={<RouteFallback />}>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/setup" element={<SetupPage />} />
+          <Route
+            path="/users"
+            element={
+              <RequireAuth requiredRole="Admin">
+                <UserManagementPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/"
+            element={
+              <RequireAuth>
+                <FeatureMatrixPage />
+              </RequireAuth>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

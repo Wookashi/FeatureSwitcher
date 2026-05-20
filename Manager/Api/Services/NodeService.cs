@@ -134,6 +134,85 @@ internal sealed class NodeService
         }
     }
 
+    public async Task<List<PendingFeatureDto>> GetPendingFeaturesAsync(int nodeId, CancellationToken ct = default)
+    {
+        var node = _nodeRepository.GetNodeById(nodeId);
+        if (node is null)
+            throw new KeyNotFoundException($"Node with id={nodeId} not found.");
+
+        var url = JoinUrl(node.Address, "/pending-deletion/features");
+        _logger.LogDebug("Fetching pending features from node {NodeId} at {Url}", nodeId, url);
+
+        var pending = await _httpClient.GetFromJsonAsync<List<PendingFeatureDto>>(url, ct);
+        return pending ?? [];
+    }
+
+    public async Task<List<PendingApplicationDto>> GetPendingApplicationsAsync(int nodeId, CancellationToken ct = default)
+    {
+        var node = _nodeRepository.GetNodeById(nodeId);
+        if (node is null)
+            throw new KeyNotFoundException($"Node with id={nodeId} not found.");
+
+        var url = JoinUrl(node.Address, "/pending-deletion/applications");
+        _logger.LogDebug("Fetching pending applications from node {NodeId} at {Url}", nodeId, url);
+
+        var pending = await _httpClient.GetFromJsonAsync<List<PendingApplicationDto>>(url, ct);
+        return pending ?? [];
+    }
+
+    public async Task<HttpResponseMessage> DeleteFeaturePermanentlyAsync(int nodeId, string appName, string featureName, CancellationToken ct = default)
+    {
+        var node = _nodeRepository.GetNodeById(nodeId);
+        if (node is null)
+            throw new KeyNotFoundException($"Node with id={nodeId} not found.");
+
+        var appNameEncoded = Uri.EscapeDataString(appName);
+        var featureNameEncoded = Uri.EscapeDataString(featureName);
+        var url = JoinUrl(node.Address, $"/applications/{appNameEncoded}/features/{featureNameEncoded}/pending");
+        _logger.LogDebug("Permanently deleting feature {FeatureName} for app {AppName} on node {NodeId}", featureName, appName, nodeId);
+
+        try
+        {
+            return await _httpClient.DeleteAsync(url, ct);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "Node {NodeId} ({Url}) unreachable while permanently deleting feature {FeatureName}", nodeId, url, featureName);
+            return new HttpResponseMessage(HttpStatusCode.BadGateway);
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogError(ex, "Request to node {NodeId} ({Url}) timed out while permanently deleting feature {FeatureName}", nodeId, url, featureName);
+            return new HttpResponseMessage(HttpStatusCode.GatewayTimeout);
+        }
+    }
+
+    public async Task<HttpResponseMessage> DeleteApplicationPermanentlyAsync(int nodeId, string appName, CancellationToken ct = default)
+    {
+        var node = _nodeRepository.GetNodeById(nodeId);
+        if (node is null)
+            throw new KeyNotFoundException($"Node with id={nodeId} not found.");
+
+        var appNameEncoded = Uri.EscapeDataString(appName);
+        var url = JoinUrl(node.Address, $"/applications/{appNameEncoded}/pending");
+        _logger.LogDebug("Permanently deleting app {AppName} on node {NodeId}", appName, nodeId);
+
+        try
+        {
+            return await _httpClient.DeleteAsync(url, ct);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "Node {NodeId} ({Url}) unreachable while permanently deleting app {AppName}", nodeId, url, appName);
+            return new HttpResponseMessage(HttpStatusCode.BadGateway);
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogError(ex, "Request to node {NodeId} ({Url}) timed out while permanently deleting app {AppName}", nodeId, url, appName);
+            return new HttpResponseMessage(HttpStatusCode.GatewayTimeout);
+        }
+    }
+
     public async Task<HttpResponseMessage> SetFeatureStateAsync(int nodeId, string appName, string featureName, FeatureStateModel featureState, CancellationToken ct = default)
     {
         var node = _nodeRepository.GetNodeById(nodeId);

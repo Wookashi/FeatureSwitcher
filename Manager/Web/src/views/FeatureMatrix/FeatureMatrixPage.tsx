@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
+  Badge,
   ConfigProvider,
   Layout,
   Table,
@@ -40,6 +41,7 @@ import {
   TeamOutlined,
   KeyOutlined,
   DeleteOutlined,
+  ExclamationCircleOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 
@@ -47,6 +49,7 @@ import { useFeatureMatrix } from './useFeatureMatrix';
 import { useTheme } from './theme';
 import { removeToken, useAuth } from '../../auth';
 import { ChangePasswordModal } from '../UserManagement';
+import { PendingDeletionModal, usePendingDeletion } from '../PendingDeletion';
 import { useAppVersion } from '../../version/useAppVersion';
 import type { FeatureMatrixRow, CellState, NodeDto } from './types';
 
@@ -140,6 +143,8 @@ export default function FeatureMatrixPage() {
   const [searchText, setSearchText] = useState('');
   const [showOnlyDifferences, setShowOnlyDifferences] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [pendingDeletionOpen, setPendingDeletionOpen] = useState(false);
+  const pendingDeletion = usePendingDeletion(isAdmin);
 
   const nodeNames = useMemo(() => nodes.map((n) => n.name), [nodes]);
 
@@ -376,6 +381,25 @@ export default function FeatureMatrixPage() {
           </Flex>
           <Space size="middle">
             {isAdmin && (
+              <Tooltip title={
+                pendingDeletion.totalCount > 0
+                  ? `${pendingDeletion.totalCount} item${pendingDeletion.totalCount === 1 ? '' : 's'} pending permanent deletion`
+                  : 'No flags pending deletion'
+              }>
+                <Badge count={pendingDeletion.totalCount} size="small" offset={[-2, 2]}>
+                  <Button
+                    type="text"
+                    icon={
+                      <ExclamationCircleOutlined
+                        style={pendingDeletion.totalCount > 0 ? { color: '#faad14' } : undefined}
+                      />
+                    }
+                    onClick={() => setPendingDeletionOpen(true)}
+                  />
+                </Badge>
+              </Tooltip>
+            )}
+            {isAdmin && (
               <Tooltip title="Manage Users">
                 <Button
                   type="text"
@@ -587,6 +611,12 @@ export default function FeatureMatrixPage() {
       <ChangePasswordModal
         open={passwordModalOpen}
         onClose={() => setPasswordModalOpen(false)}
+      />
+
+      <PendingDeletionModal
+        open={pendingDeletionOpen}
+        onClose={() => setPendingDeletionOpen(false)}
+        pending={pendingDeletion}
       />
 
       <style>{`

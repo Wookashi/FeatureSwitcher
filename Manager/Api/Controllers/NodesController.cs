@@ -1,6 +1,8 @@
 using System.Net;
+using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Dtos;
 using Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Repositories;
 using Wookashi.FeatureSwitcher.Manager.Api.Extensions;
 using Wookashi.FeatureSwitcher.Manager.Api.Services;
@@ -116,6 +118,105 @@ internal class NodesController : ControllerBase
             return StatusCode(StatusCodes.Status504GatewayTimeout, "Node request timed out");
         }
     }
+
+    [HttpGet("{nodeId:int}/pending-deletion/features")]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> GetPendingFeatures(int nodeId)
+    {
+        try
+        {
+            var pending = await _nodeService.GetPendingFeaturesAsync(nodeId);
+            return Ok(pending);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "Node {NodeId} unreachable while fetching pending features", nodeId);
+            return StatusCode(StatusCodes.Status502BadGateway, "Node unreachable");
+        }
+        catch (OperationCanceledException ex) when (!HttpContext.RequestAborted.IsCancellationRequested)
+        {
+            _logger.LogWarning(ex, "Request to node {NodeId} timed out while fetching pending features", nodeId);
+            return StatusCode(StatusCodes.Status504GatewayTimeout, "Node request timed out");
+        }
+    }
+
+    [HttpGet("{nodeId:int}/pending-deletion/applications")]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> GetPendingApplications(int nodeId)
+    {
+        try
+        {
+            var pending = await _nodeService.GetPendingApplicationsAsync(nodeId);
+            return Ok(pending);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "Node {NodeId} unreachable while fetching pending applications", nodeId);
+            return StatusCode(StatusCodes.Status502BadGateway, "Node unreachable");
+        }
+        catch (OperationCanceledException ex) when (!HttpContext.RequestAborted.IsCancellationRequested)
+        {
+            _logger.LogWarning(ex, "Request to node {NodeId} timed out while fetching pending applications", nodeId);
+            return StatusCode(StatusCodes.Status504GatewayTimeout, "Node request timed out");
+        }
+    }
+
+    [HttpDelete("{nodeId:int}/applications/{appName}/features/{featureName}/pending")]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> DeleteFeaturePermanently(int nodeId, string appName, string featureName)
+    {
+        var username = User.GetUserName();
+
+        var response = await _nodeService.DeleteFeaturePermanentlyAsync(nodeId, appName, featureName);
+
+        if (response.StatusCode == HttpStatusCode.OK)
+        {
+            var body = await response.Content.ReadAsStringAsync();
+            _auditLog.AddEntry(username, "FeaturePermanentlyDeleted",
+                $"{featureName} in {appName} on node {nodeId}. Deletion metadata: {body}");
+            return Ok(JsonSerializer.Deserialize<DeletionResultDto>(body, JsonOptions));
+        }
+
+        return response.StatusCode switch
+        {
+            HttpStatusCode.NotFound => NotFound(),
+            HttpStatusCode.Conflict => Conflict("Feature was restored between view and confirmation"),
+            HttpStatusCode.BadGateway => StatusCode(StatusCodes.Status502BadGateway, "Node unreachable"),
+            HttpStatusCode.GatewayTimeout => StatusCode(StatusCodes.Status504GatewayTimeout, "Node request timed out"),
+            _ => StatusCode(StatusCodes.Status500InternalServerError)
+        };
+    }
+
+    [HttpDelete("{nodeId:int}/applications/{appName}/pending")]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> DeleteApplicationPermanently(int nodeId, string appName)
+    {
+        var username = User.GetUserName();
+
+        var response = await _nodeService.DeleteApplicationPermanentlyAsync(nodeId, appName);
+
+        if (response.StatusCode == HttpStatusCode.OK)
+        {
+            var body = await response.Content.ReadAsStringAsync();
+            _auditLog.AddEntry(username, "ApplicationPermanentlyDeleted",
+                $"{appName} on node {nodeId}. Deletion metadata: {body}");
+            return Ok(JsonSerializer.Deserialize<DeletionResultDto>(body, JsonOptions));
+        }
+
+        return response.StatusCode switch
+        {
+            HttpStatusCode.NotFound => NotFound(),
+            HttpStatusCode.Conflict => Conflict("Application was restored between view and confirmation"),
+            HttpStatusCode.BadGateway => StatusCode(StatusCodes.Status502BadGateway, "Node unreachable"),
+            HttpStatusCode.GatewayTimeout => StatusCode(StatusCodes.Status504GatewayTimeout, "Node request timed out"),
+            _ => StatusCode(StatusCodes.Status500InternalServerError)
+        };
+    }
+
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+    };
 
     [HttpPut("{nodeId:int}/applications/{appName}/features/{featureName}")]
     [Authorize(Policy = "EditorOrAdmin")]
