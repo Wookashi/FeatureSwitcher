@@ -319,7 +319,7 @@ export default function UserManagementPage() {
                 </Title>
                 {appVersion && (
                   <Text type="secondary" style={{ fontSize: 11 }}>
-                    v&nbsp;{appVersion}
+                    v{appVersion}
                   </Text>
                 )}
               </Flex>

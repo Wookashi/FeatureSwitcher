@@ -165,7 +165,7 @@ export default function AuditLogPage() {
                 <Title level={4} style={{ margin: 0, marginTop: 4, lineHeight: 1.2 }}>
                   <Space><AuditOutlined /> Audit Log</Space>
                 </Title>
-                {appVersion && <Text type="secondary" style={{ fontSize: 11 }}>v&nbsp;{appVersion}</Text>}
+                {appVersion && <Text type="secondary" style={{ fontSize: 11 }}>v{appVersion}</Text>}
               </Flex>
               <Text type="secondary" style={{ fontSize: 12 }}>
                 Admin actions are recorded here

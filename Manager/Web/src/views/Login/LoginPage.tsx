@@ -175,7 +175,7 @@ export default function LoginPage() {
           {appVersion && (
             <Flex justify="center" style={{ marginTop: 16 }}>
               <Text type="secondary" style={{ fontSize: 11 }}>
-                v&nbsp;{appVersion}
+                v{appVersion}
               </Text>
             </Flex>
           )}
