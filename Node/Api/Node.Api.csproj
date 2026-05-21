@@ -8,7 +8,7 @@
         <AssemblyName>Wookashi.FeatureSwitcher.Node.Api</AssemblyName>
         <RootNamespace>Wookashi.FeatureSwitcher.Node.Api</RootNamespace>
         <LangVersion>default</LangVersion>
-        <InformationalVersion>0.1.0</InformationalVersion>
+        <InformationalVersion>0.0.0-dev</InformationalVersion>
     </PropertyGroup>
 
     <ItemGroup>
