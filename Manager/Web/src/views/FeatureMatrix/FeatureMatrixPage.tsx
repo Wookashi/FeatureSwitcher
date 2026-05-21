@@ -43,11 +43,14 @@ import {
   DeleteOutlined,
   ExclamationCircleOutlined,
   AuditOutlined,
+  LeftOutlined,
+  RightOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 
 import { useFeatureMatrix } from './useFeatureMatrix';
 import { useTheme } from './theme';
+import { useColumnOrder } from './useColumnOrder';
 import { removeToken, useAuth } from '../../auth';
 import { ChangePasswordModal } from '../UserManagement';
 import { PendingDeletionModal, usePendingDeletion } from '../PendingDeletion';
@@ -179,6 +182,14 @@ export default function FeatureMatrixPage() {
   const pendingDeletion = usePendingDeletion(isAdmin);
 
   const nodeNames = useMemo(() => nodes.map((n) => n.name), [nodes]);
+  const { orderedNames, moveLeft, moveRight, canMoveLeft, canMoveRight } = useColumnOrder(nodeNames);
+
+  const orderedNodes = useMemo(() => {
+    const byName = new Map(nodes.map((n) => [n.name, n]));
+    return orderedNames
+      .map((name) => byName.get(name))
+      .filter((n): n is NodeDto => Boolean(n));
+  }, [nodes, orderedNames]);
 
   const stats = useMemo(() => {
     const applications = new Set(rows.map((r) => r.application));
@@ -287,7 +298,7 @@ export default function FeatureMatrixPage() {
       },
     ];
 
-    const nodeColumns: ColumnsType<TreeRow> = nodes.map((node) => ({
+    const nodeColumns: ColumnsType<TreeRow> = orderedNodes.map((node) => ({
       title: (() => {
         const errorMsg = unreachableNodes.get(node.name);
         const state = nodeStates.get(node.name);
@@ -301,46 +312,80 @@ export default function FeatureMatrixPage() {
         );
         const nodeLabel = errorMsg ? (
           <Tooltip title={tooltipContent}>
-            <Space>
+            <Space size={4}>
               <DisconnectOutlined style={{ color: '#ff4d4f' }} />
               <span style={{ color: '#ff4d4f' }}>{node.name}</span>
             </Space>
           </Tooltip>
         ) : (
           <Tooltip title={tooltipContent}>
-            <Space>
+            <Space size={4}>
               <CloudServerOutlined />
               <span>{node.name}</span>
             </Space>
           </Tooltip>
         );
-        if (!isAdmin) return nodeLabel;
+        const leftCanMove = canMoveLeft(node.name);
+        const rightCanMove = canMoveRight(node.name);
+        const reorderButtons = (
+          <Space size={0}>
+            <Tooltip title="Move column left">
+              <Button
+                type="text"
+                size="small"
+                disabled={!leftCanMove}
+                icon={<LeftOutlined />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  moveLeft(node.name);
+                }}
+              />
+            </Tooltip>
+            <Tooltip title="Move column right">
+              <Button
+                type="text"
+                size="small"
+                disabled={!rightCanMove}
+                icon={<RightOutlined />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  moveRight(node.name);
+                }}
+              />
+            </Tooltip>
+          </Space>
+        );
         return (
           <Flex align="center" justify="space-between" gap={4}>
+            {reorderButtons}
             {nodeLabel}
-            <Popconfirm
-              title={`Delete node "${node.name}"?`}
-              description="This will permanently remove the node and all its access records."
-              onConfirm={() => deleteNode(node.id)}
-              okText="Delete"
-              okButtonProps={{ danger: true }}
-              cancelText="Cancel"
-            >
-              <Tooltip title="Delete node">
-                <Button
-                  type="text"
-                  size="small"
-                  danger
-                  icon={<DeleteOutlined />}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </Tooltip>
-            </Popconfirm>
+            {isAdmin ? (
+              <Popconfirm
+                title={`Delete node "${node.name}"?`}
+                description="This will permanently remove the node and all its access records."
+                onConfirm={() => deleteNode(node.id)}
+                okText="Delete"
+                okButtonProps={{ danger: true }}
+                cancelText="Cancel"
+              >
+                <Tooltip title="Delete node">
+                  <Button
+                    type="text"
+                    size="small"
+                    danger
+                    icon={<DeleteOutlined />}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </Tooltip>
+              </Popconfirm>
+            ) : (
+              <span style={{ width: 24 }} />
+            )}
           </Flex>
         );
       })(),
       key: node.name,
-      width: 140,
+      width: 180,
       align: 'center' as const,
       render: (_: unknown, record: TreeRow) => {
         if (record.isApplication) {
@@ -363,7 +408,7 @@ export default function FeatureMatrixPage() {
     }));
 
     return [...baseColumns, ...nodeColumns];
-  }, [nodes, unreachableNodes, nodeStates, isLoading, toggleFeatureState, canToggle, isAdmin, deleteNode]);
+  }, [orderedNodes, nodes, unreachableNodes, nodeStates, isLoading, toggleFeatureState, canToggle, isAdmin, deleteNode, moveLeft, moveRight, canMoveLeft, canMoveRight]);
 
   const isDark = themeMode === 'dark';
 
