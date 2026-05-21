@@ -34,6 +34,39 @@ internal sealed class FeatureRepository : IFeatureRepository
             .ToList();
     }
 
+    public List<FeatureWithUsageDto> GetFeaturesWithUsageForApplication(ApplicationDto application)
+    {
+        var features = _context.Features
+            .Where(feature => feature.Application.Name == application.Name
+                              && feature.Status == EntityStatus.Active)
+            .Select(f => new { f.Id, f.Name, f.IsEnabled, f.LastUsedAt })
+            .ToList();
+
+        if (features.Count == 0)
+        {
+            return [];
+        }
+
+        // Last 7 days, including today. UsageDay is stored normalized to UTC midnight.
+        var since = DateTime.UtcNow.Date.AddDays(-6);
+        var featureIds = features.Select(f => f.Id).ToList();
+
+        var counts = _context.FeatureUsage
+            .Where(u => featureIds.Contains(u.FeatureId) && u.UsageDay >= since)
+            .GroupBy(u => u.FeatureId)
+            .Select(g => new { FeatureId = g.Key, Total = g.Sum(u => u.UseCount) })
+            .ToList()
+            .ToDictionary(x => x.FeatureId, x => x.Total);
+
+        return features
+            .Select(f => new FeatureWithUsageDto(
+                f.Name,
+                f.IsEnabled,
+                f.LastUsedAt,
+                counts.TryGetValue(f.Id, out var c) ? c : 0))
+            .ToList();
+    }
+
     public bool GetFeatureState(ApplicationDto application, string featureName)
     {
         var featureEntity = _context.Features

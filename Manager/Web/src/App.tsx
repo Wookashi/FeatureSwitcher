@@ -9,6 +9,9 @@ const SetupPage = lazy(() => import('./views/Setup').then((m) => ({ default: m.S
 const UserManagementPage = lazy(() =>
   import('./views/UserManagement').then((m) => ({ default: m.UserManagementPage }))
 );
+const AuditLogPage = lazy(() =>
+  import('./views/AuditLog').then((m) => ({ default: m.AuditLogPage }))
+);
 
 function RouteFallback() {
   return (
@@ -30,6 +33,14 @@ export default function App() {
             element={
               <RequireAuth requiredRole="Admin">
                 <UserManagementPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/audit-log"
+            element={
+              <RequireAuth requiredRole="Admin">
+                <AuditLogPage />
               </RequireAuth>
             }
           />

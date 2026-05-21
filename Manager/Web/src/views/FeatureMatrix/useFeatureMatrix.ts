@@ -128,7 +128,12 @@ export function useFeatureMatrix(): UseFeatureMatrixResult {
 
         // Update cells for features we received
         features.forEach((f) => {
-          updateRowCell(applicationName, f.name, nodeName, { kind: 'value', value: f.state });
+          updateRowCell(applicationName, f.name, nodeName, {
+            kind: 'value',
+            value: f.state,
+            lastUsedAt: f.lastUsedAt,
+            usesLast7Days: f.usesLast7Days,
+          });
         });
 
         // For features known from other nodes but missing here, mark as unknown

@@ -8,6 +8,13 @@ public interface IFeatureRepository
 
     public List<ApplicationDto> GetApplications();
     public List<FeatureDto> GetFeaturesForApplication(ApplicationDto application);
+
+    /// <summary>
+    /// Same as <see cref="GetFeaturesForApplication"/> but each feature carries usage metadata
+    /// (LastUsedAt and the aggregated use count for the last 7 days). Used by the Manager UI.
+    /// </summary>
+    public List<FeatureWithUsageDto> GetFeaturesWithUsageForApplication(ApplicationDto application);
+
     public bool GetFeatureState(ApplicationDto application, string featureName);
 
     // ---- Mutations ----

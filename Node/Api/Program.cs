@@ -130,12 +130,11 @@ app.MapGet("/applications", (IFeatureRepository featureRepository) =>
 
 app.MapGet("/applications/{applicationName}/features/", (string applicationName, IFeatureRepository featureRepository) =>
     {
-        apiLogger.LogDebug("Listing features for app {AppName}", applicationName);
-        var featureService = new FeatureService(featureRepository);
+        apiLogger.LogDebug("Listing features (with usage) for app {AppName}", applicationName);
 
         try
         {
-            var features = featureService.GetFeaturesForApplication(new ApplicationDto(applicationName));
+            var features = featureRepository.GetFeaturesWithUsageForApplication(new ApplicationDto(applicationName));
             apiLogger.LogDebug("Returning {Count} feature(s) for app {AppName}", features.Count, applicationName);
             return Results.Ok(features);
         }
@@ -145,7 +144,7 @@ app.MapGet("/applications/{applicationName}/features/", (string applicationName,
             return Results.BadRequest(new BadHttpRequestException(exception.Message));
         }
     })
-    .WithDescription("Used by manager to list application features.")
+    .WithDescription("Used by manager to list application features with usage metadata (LastUsedAt, UsesLast7Days).")
     .WithTags("Manager");
 
 app.MapGet("/applications/{applicationName}/features/{featureName}/state/", (string applicationName, string featureName, IFeatureRepository featureRepository) =>

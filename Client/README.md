@@ -97,6 +97,18 @@ if (await featureManager.IsFeatureEnabledAsync("DarkMode"))
 
 `AddFeatureFlags` also takes the list of features to manage.
 
+## Lifecycle on the Node
+
+Registration is **append-only** on the Node. New features are inserted; features missing from the payload are NOT deleted at registration time, so two services that accidentally share an `applicationName` cannot wipe each other's flags. Every registration and every state read bumps `LastUsedAt` on the feature and upserts today's row in the per-day usage counter.
+
+A background sweep on the Node periodically marks features (and applications) whose `LastUsedAt` is older than the configured stale threshold (default 30 days) as `PendingDeletion`. Flags in `PendingDeletion`:
+
+- Disappear from the normal `/applications/{app}/features` listing
+- Are **auto-restored** if the client reads or re-registers them
+- Can be permanently deleted by an admin through the Manager UI (with a 409-on-race guard so a stale dialog cannot delete a freshly-restored flag)
+
+So from the client's perspective: flags removed from your application code disappear automatically after the threshold passes without any uses. Flags still actively read survive indefinitely without redeploys.
+
 ## Resilience
 
 The client caches feature states locally. If the Node service becomes unreachable, the client falls back to cached values, ensuring your application continues to function.

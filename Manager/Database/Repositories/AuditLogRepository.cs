@@ -25,13 +25,29 @@ internal class AuditLogRepository : IAuditLogRepository
         _context.SaveChanges();
     }
 
-    public List<AuditLogDto> GetRecentEntries(int count, int offset)
+    public List<AuditLogDto> GetRecentEntries(int count, int offset, string? action = null)
     {
-        return _context.AuditLogs
+        var query = _context.AuditLogs.AsQueryable();
+
+        if (!string.IsNullOrEmpty(action))
+        {
+            query = query.Where(e => e.Action == action);
+        }
+
+        return query
             .OrderByDescending(e => e.Timestamp)
             .Skip(offset)
             .Take(count)
             .Select(e => new AuditLogDto(e.Id, e.Username, e.Action, e.Details, e.Timestamp))
+            .ToList();
+    }
+
+    public List<string> GetDistinctActions()
+    {
+        return _context.AuditLogs
+            .Select(e => e.Action)
+            .Distinct()
+            .OrderBy(a => a)
             .ToList();
     }
 }

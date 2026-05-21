@@ -105,7 +105,7 @@ internal sealed class NodeService
         }
     }
 
-    public async Task<List<FeatureDto>> GetFeaturesForApplicationAsync(int nodeId, string appName, CancellationToken ct = default)
+    public async Task<List<FeatureWithUsageDto>> GetFeaturesForApplicationAsync(int nodeId, string appName, CancellationToken ct = default)
     {
         var node = _nodeRepository.GetNodeById(nodeId);
         if (node is null)
@@ -117,7 +117,7 @@ internal sealed class NodeService
 
         try
         {
-            var features = await _httpClient.GetFromJsonAsync<List<FeatureDto>>(url, ct);
+            var features = await _httpClient.GetFromJsonAsync<List<FeatureWithUsageDto>>(url, ct);
             _logger.LogDebug("Retrieved {Count} feature(s) for app {AppName} from node {NodeId}", features?.Count ?? 0, appName, nodeId);
             return features ?? [];
         }

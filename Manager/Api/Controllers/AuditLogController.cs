@@ -17,10 +17,19 @@ internal class AuditLogController : ControllerBase
     }
 
     [HttpGet]
-    public IActionResult Get([FromQuery] int count = 50, [FromQuery] int offset = 0)
+    public IActionResult Get(
+        [FromQuery] int count = 50,
+        [FromQuery] int offset = 0,
+        [FromQuery] string? action = null)
     {
         if (count <= 0) count = 50;
         if (offset < 0) offset = 0;
-        return Ok(_auditLog.GetRecentEntries(count, offset));
+        return Ok(_auditLog.GetRecentEntries(count, offset, action));
+    }
+
+    [HttpGet("actions")]
+    public IActionResult GetActions()
+    {
+        return Ok(_auditLog.GetDistinctActions());
     }
 }

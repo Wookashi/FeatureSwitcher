@@ -42,6 +42,7 @@ import {
   KeyOutlined,
   DeleteOutlined,
   ExclamationCircleOutlined,
+  AuditOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 
@@ -72,6 +73,21 @@ interface CellRendererProps {
   onClick?: () => void;
 }
 
+function formatRelativeTime(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return iso;
+  const diffMs = Date.now() - then;
+  const minutes = Math.round(diffMs / 60_000);
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  const days = Math.round(hours / 24);
+  if (days < 30) return `${days} day${days === 1 ? '' : 's'} ago`;
+  const months = Math.round(days / 30);
+  return `${months} month${months === 1 ? '' : 's'} ago`;
+}
+
 function CellRenderer({ state, onClick }: CellRendererProps) {
   if (!state || state.kind === 'loading') {
     return (
@@ -98,10 +114,26 @@ function CellRenderer({ state, onClick }: CellRendererProps) {
   }
 
   const isEnabled = state.value;
+  const action = onClick ? (isEnabled ? 'Click to disable' : 'Click to enable') : 'View only';
+  const tooltip = (
+    <div style={{ minWidth: 180 }}>
+      <div>{action}</div>
+      {state.lastUsedAt && (
+        <div style={{ marginTop: 4, opacity: 0.85 }}>
+          Last used: {formatRelativeTime(state.lastUsedAt)}
+        </div>
+      )}
+      {typeof state.usesLast7Days === 'number' && (
+        <div style={{ opacity: 0.85 }}>
+          Uses (7d): {state.usesLast7Days.toLocaleString()}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <Flex justify="center">
-      <Tooltip title={onClick ? (isEnabled ? 'Click to disable' : 'Click to enable') : 'View only'}>
+      <Tooltip title={tooltip}>
         <Tag
           color={isEnabled ? 'success' : 'error'}
           icon={isEnabled ? <CheckOutlined /> : <CloseOutlined />}
@@ -405,6 +437,15 @@ export default function FeatureMatrixPage() {
                   type="text"
                   icon={<TeamOutlined />}
                   onClick={() => navigate('/users')}
+                />
+              </Tooltip>
+            )}
+            {isAdmin && (
+              <Tooltip title="Audit Log">
+                <Button
+                  type="text"
+                  icon={<AuditOutlined />}
+                  onClick={() => navigate('/audit-log')}
                 />
               </Tooltip>
             )}

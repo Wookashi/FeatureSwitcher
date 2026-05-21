@@ -57,6 +57,21 @@ If nodes start before setup is completed, they will log an authentication error 
 | **Editor** | No | No | Yes | Yes | Assigned nodes only |
 | **Viewer** | No | No | No | Yes | Assigned nodes only |
 
+### Flag Lifecycle
+
+Registration on the Node is **append-only**: re-registering an application never deletes flags missing from the payload, so two services accidentally sharing an `applicationName` cannot wipe each other's data. The Node tracks `LastUsedAt` per flag and a per-day usage counter; the Feature Matrix shows the relative last-used time and 7-day use count in each cell's tooltip.
+
+A background sweep marks flags (and applications) that have not been registered or read for `FeatureStaleAfter` (default **30 days**) as `PendingDeletion`. Pending items disappear from the normal matrix view, auto-restore when an app reads or re-registers them, and become available for permanent deletion through an Admin-only dialog reachable from the warning-icon badge in the header. Permanent deletion is recorded in the Audit Log.
+
+Both knobs are configurable per node via `NodeConfiguration` (`FeatureStaleAfter` and `FeatureCleanupInterval`, default 24h sweep cadence), set in `appsettings.json` or via env vars (e.g., `NodeConfiguration__FeatureStaleAfter=7.00:00:00`).
+
+### Audit Log
+
+Admin actions are recorded to an audit log accessible from the header (audit icon, Admin only). Current actions:
+- `ToggleFeature` — feature state changed via the UI
+- `FeaturePermanentlyDeleted` — flag removed from the pending-deletion dialog
+- `ApplicationPermanentlyDeleted` — application removed from the pending-deletion dialog
+
 ## Contributing
 
 By submitting a pull request, you agree to the

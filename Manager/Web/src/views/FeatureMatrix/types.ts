@@ -13,6 +13,8 @@ export interface ApplicationDto {
 export interface FeatureDto {
   name: string;
   state: boolean;
+  lastUsedAt?: string;
+  usesLast7Days?: number;
 }
 
 export interface NodeStateDto {
@@ -21,9 +23,14 @@ export interface NodeStateDto {
 }
 
 // Cell state for the matrix
+export interface CellUsage {
+  lastUsedAt?: string;
+  usesLast7Days?: number;
+}
+
 export type CellState =
   | { kind: 'loading' }
-  | { kind: 'value'; value: boolean }
+  | ({ kind: 'value'; value: boolean } & CellUsage)
   | { kind: 'unknown'; reason?: string };
 
 // Row in the feature matrix table
