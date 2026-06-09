@@ -45,6 +45,28 @@ namespace Wookashi.FeatureSwitcher.Node.Database.Migrations
                     b.ToTable("Applications");
                 });
 
+            modelBuilder.Entity("Wookashi.FeatureSwitcher.Node.Database.Entities.ApplicationFeatureEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ApplicationId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("FeatureId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FeatureId");
+
+                    b.HasIndex("ApplicationId", "FeatureId")
+                        .IsUnique();
+
+                    b.ToTable("ApplicationFeatures");
+                });
+
             modelBuilder.Entity("Wookashi.FeatureSwitcher.Node.Database.Entities.FeatureEntity", b =>
                 {
                     b.Property<int>("Id")
@@ -102,6 +124,25 @@ namespace Wookashi.FeatureSwitcher.Node.Database.Migrations
                     b.ToTable("FeatureUsage");
                 });
 
+            modelBuilder.Entity("Wookashi.FeatureSwitcher.Node.Database.Entities.ApplicationFeatureEntity", b =>
+                {
+                    b.HasOne("Wookashi.FeatureSwitcher.Node.Database.Entities.ApplicationEntity", "Application")
+                        .WithMany("ApplicationFeatures")
+                        .HasForeignKey("ApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Wookashi.FeatureSwitcher.Node.Database.Entities.FeatureEntity", "Feature")
+                        .WithMany("ApplicationFeatures")
+                        .HasForeignKey("FeatureId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Application");
+
+                    b.Navigation("Feature");
+                });
+
             modelBuilder.Entity("Wookashi.FeatureSwitcher.Node.Database.Entities.FeatureEntity", b =>
                 {
                     b.HasOne("Wookashi.FeatureSwitcher.Node.Database.Entities.ApplicationEntity", "Application")
@@ -126,7 +167,14 @@ namespace Wookashi.FeatureSwitcher.Node.Database.Migrations
 
             modelBuilder.Entity("Wookashi.FeatureSwitcher.Node.Database.Entities.ApplicationEntity", b =>
                 {
+                    b.Navigation("ApplicationFeatures");
+
                     b.Navigation("Features");
+                });
+
+            modelBuilder.Entity("Wookashi.FeatureSwitcher.Node.Database.Entities.FeatureEntity", b =>
+                {
+                    b.Navigation("ApplicationFeatures");
                 });
 #pragma warning restore 612, 618
         }

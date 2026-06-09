@@ -22,4 +22,5 @@ public class ApplicationEntity
     public DateTime LastUsedAt { get; set; } = DateTime.UtcNow;
 
     public IEnumerable<FeatureEntity> Features { get; set; } = new List<FeatureEntity>();
+    public IEnumerable<ApplicationFeatureEntity> ApplicationFeatures { get; set; } = new List<ApplicationFeatureEntity>();
 }

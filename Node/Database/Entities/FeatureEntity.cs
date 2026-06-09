@@ -30,4 +30,6 @@ public sealed class FeatureEntity
 
     [ForeignKey(nameof(ApplicationId))]
     public required ApplicationEntity Application { get; set; }
+
+    public IEnumerable<ApplicationFeatureEntity> ApplicationFeatures { get; set; } = new List<ApplicationFeatureEntity>();
 }
