@@ -27,19 +27,25 @@ internal sealed class FeatureRepository : IFeatureRepository
 
     public List<FeatureDto> GetFeaturesForApplication(ApplicationDto application)
     {
-        return _context.Features
-            .Where(feature => feature.Application.Name == application.Name
-                              && feature.Status == EntityStatus.Active)
-            .Select(feature => new FeatureDto(feature.Name, feature.IsEnabled))
+        return _context.ApplicationFeatures
+            .Where(link => link.Application.Name == application.Name
+                           && link.Feature.Status == EntityStatus.Active)
+            .Select(link => new FeatureDto(link.Feature.Name, link.Feature.IsEnabled))
             .ToList();
     }
 
     public List<FeatureWithUsageDto> GetFeaturesWithUsageForApplication(ApplicationDto application)
     {
-        var features = _context.Features
-            .Where(feature => feature.Application.Name == application.Name
-                              && feature.Status == EntityStatus.Active)
-            .Select(f => new { f.Id, f.Name, f.IsEnabled, f.LastUsedAt })
+        var features = _context.ApplicationFeatures
+            .Where(link => link.Application.Name == application.Name
+                           && link.Feature.Status == EntityStatus.Active)
+            .Select(link => new
+            {
+                link.Feature.Id,
+                link.Feature.Name,
+                link.Feature.IsEnabled,
+                link.Feature.LastUsedAt
+            })
             .ToList();
 
         if (features.Count == 0)
@@ -69,10 +75,7 @@ internal sealed class FeatureRepository : IFeatureRepository
 
     public bool GetFeatureState(ApplicationDto application, string featureName)
     {
-        var featureEntity = _context.Features
-            .FirstOrDefault(feature => feature.Application.Name == application.Name
-                                       && feature.Name == featureName
-                                       && feature.Status == EntityStatus.Active);
+        var featureEntity = FindFeatureForApplication(application.Name, featureName, EntityStatus.Active);
 
         return featureEntity?.IsEnabled ?? throw new FeatureNotFoundException("Feature not found");
     }
@@ -108,27 +111,41 @@ internal sealed class FeatureRepository : IFeatureRepository
             applicationEntity.LastUsedAt = now;
         }
 
-        var existingFeatures = _context.Features
-            .Where(f => f.ApplicationId == applicationEntity.Id)
+        var existingLinks = _context.ApplicationFeatures
+            .Include(link => link.Feature)
+            .Where(link => link.ApplicationId == applicationEntity.Id)
             .ToList();
 
         foreach (var incoming in features)
         {
-            var existing = existingFeatures.FirstOrDefault(f => f.Name == incoming.Name);
+            var existingLink = existingLinks.FirstOrDefault(link => link.Feature.Name == incoming.Name);
+            var existing = existingLink?.Feature;
+
             if (existing is null)
             {
-                var fresh = new FeatureEntity
+                existing = _context.Features
+                    .FirstOrDefault(f => f.ApplicationId == applicationEntity.Id && f.Name == incoming.Name);
+
+                if (existing is null)
                 {
-                    Name = incoming.Name,
-                    IsEnabled = incoming.State,
-                    Status = EntityStatus.Active,
-                    LastUsedAt = now,
-                    Application = applicationEntity,
-                };
-                _context.Features.Add(fresh);
+                    existing = new FeatureEntity
+                    {
+                        Name = incoming.Name,
+                        IsEnabled = incoming.State,
+                        Status = EntityStatus.Active,
+                        LastUsedAt = now,
+                        Application = applicationEntity,
+                    };
+                    _context.Features.Add(existing);
+                    _context.SaveChanges();
+                }
+
+                _context.ApplicationFeatures.Add(new ApplicationFeatureEntity
+                {
+                    ApplicationId = applicationEntity.Id,
+                    FeatureId = existing.Id,
+                });
                 _context.SaveChanges();
-                UpsertUsage(fresh.Id, today);
-                continue;
             }
 
             if (existing.Status == EntityStatus.PendingDeletion)
@@ -146,10 +163,7 @@ internal sealed class FeatureRepository : IFeatureRepository
 
     public void UpdateFeature(ApplicationDto application, FeatureDto featureDto)
     {
-        var featureEntity = _context.Features
-            .FirstOrDefault(feature => feature.Application.Name == application.Name
-                                       && feature.Name == featureDto.Name
-                                       && feature.Status == EntityStatus.Active);
+        var featureEntity = FindFeatureForApplication(application.Name, featureDto.Name, EntityStatus.Active);
 
         if (featureEntity is null)
         {
@@ -162,15 +176,18 @@ internal sealed class FeatureRepository : IFeatureRepository
 
     public void RecordFeatureUsage(ApplicationDto application, string featureName)
     {
-        var feature = _context.Features
-            .Include(f => f.Application)
-            .FirstOrDefault(f => f.Application.Name == application.Name && f.Name == featureName);
+        var link = _context.ApplicationFeatures
+            .Include(l => l.Application)
+            .Include(l => l.Feature)
+            .FirstOrDefault(l => l.Application.Name == application.Name && l.Feature.Name == featureName);
 
-        if (feature is null)
+        if (link is null)
         {
             return;
         }
 
+        var feature = link.Feature;
+        var applicationEntity = link.Application;
         var now = DateTime.UtcNow;
         var today = now.Date;
 
@@ -181,12 +198,12 @@ internal sealed class FeatureRepository : IFeatureRepository
         }
         feature.LastUsedAt = now;
 
-        if (feature.Application.Status == EntityStatus.PendingDeletion)
+        if (applicationEntity.Status == EntityStatus.PendingDeletion)
         {
-            feature.Application.Status = EntityStatus.Active;
-            feature.Application.PendingDeletionSince = null;
+            applicationEntity.Status = EntityStatus.Active;
+            applicationEntity.PendingDeletionSince = null;
         }
-        feature.Application.LastUsedAt = now;
+        applicationEntity.LastUsedAt = now;
 
         _context.SaveChanges();
         UpsertUsage(feature.Id, today);
@@ -219,12 +236,13 @@ internal sealed class FeatureRepository : IFeatureRepository
     {
         var now = DateTime.UtcNow;
         var candidates = _context.Applications
-            .Include(a => a.Features)
+            .Include(a => a.ApplicationFeatures)
+            .ThenInclude(link => link.Feature)
             .Where(a => a.Status == EntityStatus.Active && a.LastUsedAt < threshold)
             .ToList();
 
         var stale = candidates
-            .Where(a => a.Features.All(f => f.Status == EntityStatus.PendingDeletion))
+            .Where(a => a.ApplicationFeatures.All(link => link.Feature.Status == EntityStatus.PendingDeletion))
             .ToList();
 
         foreach (var app in stale)
@@ -245,14 +263,13 @@ internal sealed class FeatureRepository : IFeatureRepository
 
     public List<PendingFeatureDto> GetPendingFeatures()
     {
-        return _context.Features
-            .Include(f => f.Application)
-            .Where(f => f.Status == EntityStatus.PendingDeletion)
-            .Select(f => new PendingFeatureDto(
-                f.Application.Name,
-                f.Name,
-                f.LastUsedAt,
-                f.PendingDeletionSince!.Value))
+        return _context.ApplicationFeatures
+            .Where(link => link.Feature.Status == EntityStatus.PendingDeletion)
+            .Select(link => new PendingFeatureDto(
+                link.Application.Name,
+                link.Feature.Name,
+                link.Feature.LastUsedAt,
+                link.Feature.PendingDeletionSince!.Value))
             .ToList();
     }
 
@@ -271,8 +288,7 @@ internal sealed class FeatureRepository : IFeatureRepository
 
     public DeletionResultDto PermanentlyDeleteFeature(string applicationName, string featureName)
     {
-        var feature = _context.Features
-            .FirstOrDefault(f => f.Application.Name == applicationName && f.Name == featureName);
+        var feature = FindFeatureForApplication(applicationName, featureName);
 
         if (feature is null)
         {
@@ -298,7 +314,8 @@ internal sealed class FeatureRepository : IFeatureRepository
     public DeletionResultDto PermanentlyDeleteApplication(string applicationName)
     {
         var application = _context.Applications
-            .Include(a => a.Features)
+            .Include(a => a.ApplicationFeatures)
+            .ThenInclude(link => link.Feature)
             .FirstOrDefault(a => a.Name == applicationName);
 
         if (application is null)
@@ -315,7 +332,7 @@ internal sealed class FeatureRepository : IFeatureRepository
 
         var result = new DeletionResultDto(application.LastUsedAt, application.PendingDeletionSince!.Value);
 
-        // Features (and their usage rows) cascade via FK.
+        // Features (and their usage rows) cascade via the legacy FK while it still exists.
         _context.Applications.Remove(application);
         _context.SaveChanges();
 
@@ -344,5 +361,23 @@ internal sealed class FeatureRepository : IFeatureRepository
         }
 
         _context.SaveChanges();
+    }
+
+    private FeatureEntity? FindFeatureForApplication(
+        string applicationName,
+        string featureName,
+        EntityStatus? requiredStatus = null)
+    {
+        var query = _context.ApplicationFeatures
+            .Where(link => link.Application.Name == applicationName && link.Feature.Name == featureName);
+
+        if (requiredStatus is not null)
+        {
+            query = query.Where(link => link.Feature.Status == requiredStatus);
+        }
+
+        return query
+            .Select(link => link.Feature)
+            .FirstOrDefault();
     }
 }
