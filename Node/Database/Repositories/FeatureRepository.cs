@@ -124,7 +124,7 @@ internal sealed class FeatureRepository : IFeatureRepository
             if (existing is null)
             {
                 existing = _context.Features
-                    .FirstOrDefault(f => f.ApplicationId == applicationEntity.Id && f.Name == incoming.Name);
+                    .FirstOrDefault(f => f.Name == incoming.Name);
 
                 if (existing is null)
                 {
@@ -134,7 +134,6 @@ internal sealed class FeatureRepository : IFeatureRepository
                         IsEnabled = incoming.State,
                         Status = EntityStatus.Active,
                         LastUsedAt = now,
-                        Application = applicationEntity,
                     };
                     _context.Features.Add(existing);
                     _context.SaveChanges();
@@ -314,8 +313,6 @@ internal sealed class FeatureRepository : IFeatureRepository
     public DeletionResultDto PermanentlyDeleteApplication(string applicationName)
     {
         var application = _context.Applications
-            .Include(a => a.ApplicationFeatures)
-            .ThenInclude(link => link.Feature)
             .FirstOrDefault(a => a.Name == applicationName);
 
         if (application is null)
@@ -332,7 +329,24 @@ internal sealed class FeatureRepository : IFeatureRepository
 
         var result = new DeletionResultDto(application.LastUsedAt, application.PendingDeletionSince!.Value);
 
-        // Features (and their usage rows) cascade via the legacy FK while it still exists.
+        var links = _context.ApplicationFeatures
+            .Include(link => link.Feature)
+            .Where(link => link.ApplicationId == application.Id)
+            .ToList();
+
+        foreach (var link in links)
+        {
+            var hasOtherApplications = _context.ApplicationFeatures
+                .Any(other => other.FeatureId == link.FeatureId && other.ApplicationId != application.Id);
+
+            _context.ApplicationFeatures.Remove(link);
+
+            if (!hasOtherApplications)
+            {
+                _context.Features.Remove(link.Feature);
+            }
+        }
+
         _context.Applications.Remove(application);
         _context.SaveChanges();
 
