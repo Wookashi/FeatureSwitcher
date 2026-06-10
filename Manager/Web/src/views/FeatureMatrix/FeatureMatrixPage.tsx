@@ -199,22 +199,40 @@ export default function FeatureMatrixPage() {
 
   const stats = useMemo(() => {
     const applications = new Set(rows.map((r) => r.application));
+    const sharedFeatures = new Set<string>();
+    const appsByFeatureAndNode = new Map<string, Map<string, Set<string>>>();
     let enabledCount = 0;
     let disabledCount = 0;
 
     rows.forEach((row) => {
-      Object.values(row.cells).forEach((cell) => {
+      Object.entries(row.cells).forEach(([nodeName, cell]) => {
         if (cell?.kind === 'value') {
           if (cell.value) enabledCount++;
           else disabledCount++;
+
+          if (!appsByFeatureAndNode.has(row.feature)) {
+            appsByFeatureAndNode.set(row.feature, new Map());
+          }
+          const nodeApps = appsByFeatureAndNode.get(row.feature)!;
+          if (!nodeApps.has(nodeName)) {
+            nodeApps.set(nodeName, new Set());
+          }
+          nodeApps.get(nodeName)!.add(row.application);
         }
       });
+    });
+
+    appsByFeatureAndNode.forEach((nodeApps, feature) => {
+      if (Array.from(nodeApps.values()).some((apps) => apps.size > 1)) {
+        sharedFeatures.add(feature);
+      }
     });
 
     return {
       nodes: nodes.length,
       applications: applications.size,
       features: rows.length,
+      shared: sharedFeatures.size,
       enabled: enabledCount,
       disabled: disabledCount,
     };
@@ -610,7 +628,7 @@ export default function FeatureMatrixPage() {
         >
           {/* Stats Cards */}
           <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-            <Col xs={24} sm={12} lg={6}>
+            <Col xs={24} sm={12} lg={4}>
               <Card bordered={false} size="small">
                 <Statistic
                   title={<Text type="secondary">Nodes</Text>}
@@ -620,7 +638,7 @@ export default function FeatureMatrixPage() {
                 />
               </Card>
             </Col>
-            <Col xs={24} sm={12} lg={6}>
+            <Col xs={24} sm={12} lg={4}>
               <Card bordered={false} size="small">
                 <Statistic
                   title={<Text type="secondary">Applications</Text>}
@@ -630,7 +648,18 @@ export default function FeatureMatrixPage() {
                 />
               </Card>
             </Col>
-            <Col xs={24} sm={12} lg={6}>
+            <Col xs={24} sm={12} lg={4}>
+              <Card bordered={false} size="small">
+                <Statistic
+                  title={<Text type="secondary">Shared</Text>}
+                  value={stats.shared}
+                  prefix={<FlagOutlined style={{ color: token.colorPrimary }} />}
+                  loading={isLoading}
+                  valueStyle={{ color: token.colorPrimary }}
+                />
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} lg={4}>
               <Card bordered={false} size="small">
                 <Statistic
                   title={<Text type="secondary">Enabled</Text>}
@@ -641,7 +670,7 @@ export default function FeatureMatrixPage() {
                 />
               </Card>
             </Col>
-            <Col xs={24} sm={12} lg={6}>
+            <Col xs={24} sm={12} lg={4}>
               <Card bordered={false} size="small">
                 <Statistic
                   title={<Text type="secondary">Disabled</Text>}
