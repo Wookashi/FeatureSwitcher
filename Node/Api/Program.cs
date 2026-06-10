@@ -71,7 +71,7 @@ if (app.Environment.IsDevelopment())
 
 if (dbConnectionString != string.Empty)
 {
-    app.MigrateDatabase();
+    app.MigrateDatabase(logger);
 }
 
 app.UseHttpsRedirection();
