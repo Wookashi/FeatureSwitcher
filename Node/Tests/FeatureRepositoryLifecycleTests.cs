@@ -22,9 +22,10 @@ public sealed class FeatureRepositoryLifecycleTests
         var repository = scope.ServiceProvider.GetRequiredService<IFeatureRepository>();
         var context = scope.ServiceProvider.GetRequiredService<IFeaturesDataContext>();
 
-        var appA = new ApplicationDto("AppA");
-        var appB = new ApplicationDto("AppB");
-        var sharedFeature = new FeatureDto("SharedCheckout", true);
+        var id = Guid.NewGuid().ToString("N");
+        var appA = new ApplicationDto($"DeleteAppA-{id}");
+        var appB = new ApplicationDto($"DeleteAppB-{id}");
+        var sharedFeature = new FeatureDto($"DeleteSharedCheckout-{id}", true);
 
         repository.RegisterApplication(appA, [sharedFeature]);
         repository.RegisterApplication(appB, [sharedFeature]);
@@ -52,8 +53,8 @@ public sealed class FeatureRepositoryLifecycleTests
         Assert.Throws<FeatureNotFoundException>(() =>
             repository.GetFeatureState(appA, sharedFeature.Name));
         Assert.True(repository.GetFeatureState(appB, sharedFeature.Name));
-        Assert.Single(context.Features);
-        Assert.Single(context.ApplicationFeatures);
+        Assert.Single(context.Features.Where(feature => feature.Name == sharedFeature.Name));
+        Assert.Single(context.ApplicationFeatures.Where(link => link.Feature.Name == sharedFeature.Name));
     }
 
     [Fact]
@@ -67,9 +68,10 @@ public sealed class FeatureRepositoryLifecycleTests
 
         var repository = scope.ServiceProvider.GetRequiredService<IFeatureRepository>();
 
-        var appA = new ApplicationDto("AppA");
-        var appB = new ApplicationDto("AppB");
-        var sharedFeature = new FeatureDto("SharedCheckout", true);
+        var id = Guid.NewGuid().ToString("N");
+        var appA = new ApplicationDto($"UpdateAppA-{id}");
+        var appB = new ApplicationDto($"UpdateAppB-{id}");
+        var sharedFeature = new FeatureDto($"UpdateSharedCheckout-{id}", true);
 
         repository.RegisterApplication(appA, [sharedFeature]);
         repository.RegisterApplication(appB, [sharedFeature]);
