@@ -21,4 +21,12 @@ public sealed class ApplicationFeatureEntity
 
     [ForeignKey(nameof(FeatureId))]
     public FeatureEntity Feature { get; set; } = null!;
+
+    [Required]
+    public EntityStatus Status { get; set; } = EntityStatus.Active;
+
+    public DateTime? PendingDeletionSince { get; set; }
+
+    [Required]
+    public DateTime LastUsedAt { get; set; } = DateTime.UtcNow;
 }

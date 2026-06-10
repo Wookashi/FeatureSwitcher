@@ -37,7 +37,7 @@ public interface IFeatureRepository
     // ---- Sweep ----
 
     /// <summary>
-    /// Marks every Active feature whose LastUsedAt is older than the threshold as PendingDeletion.
+    /// Marks every Active application-feature link whose LastUsedAt is older than the threshold as PendingDeletion.
     /// Returns the number transitioned.
     /// </summary>
     public int MarkStaleFeaturesPending(DateTime threshold);

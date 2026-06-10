@@ -29,6 +29,7 @@ internal sealed class FeatureRepository : IFeatureRepository
     {
         return _context.ApplicationFeatures
             .Where(link => link.Application.Name == application.Name
+                           && link.Status == EntityStatus.Active
                            && link.Feature.Status == EntityStatus.Active)
             .Select(link => new FeatureDto(link.Feature.Name, link.Feature.IsEnabled))
             .ToList();
@@ -38,13 +39,14 @@ internal sealed class FeatureRepository : IFeatureRepository
     {
         var features = _context.ApplicationFeatures
             .Where(link => link.Application.Name == application.Name
+                           && link.Status == EntityStatus.Active
                            && link.Feature.Status == EntityStatus.Active)
             .Select(link => new
             {
                 link.Feature.Id,
                 link.Feature.Name,
                 link.Feature.IsEnabled,
-                link.Feature.LastUsedAt
+                link.LastUsedAt
             })
             .ToList();
 
@@ -143,8 +145,19 @@ internal sealed class FeatureRepository : IFeatureRepository
                 {
                     ApplicationId = applicationEntity.Id,
                     FeatureId = existing.Id,
+                    Status = EntityStatus.Active,
+                    LastUsedAt = now,
                 });
                 _context.SaveChanges();
+            }
+            else
+            {
+                if (existingLink!.Status == EntityStatus.PendingDeletion)
+                {
+                    existingLink.Status = EntityStatus.Active;
+                    existingLink.PendingDeletionSince = null;
+                }
+                existingLink.LastUsedAt = now;
             }
 
             if (existing.Status == EntityStatus.PendingDeletion)
@@ -178,7 +191,8 @@ internal sealed class FeatureRepository : IFeatureRepository
         var link = _context.ApplicationFeatures
             .Include(l => l.Application)
             .Include(l => l.Feature)
-            .FirstOrDefault(l => l.Application.Name == application.Name && l.Feature.Name == featureName);
+            .FirstOrDefault(l => l.Application.Name == application.Name
+                                 && l.Feature.Name == featureName);
 
         if (link is null)
         {
@@ -189,6 +203,13 @@ internal sealed class FeatureRepository : IFeatureRepository
         var applicationEntity = link.Application;
         var now = DateTime.UtcNow;
         var today = now.Date;
+
+        if (link.Status == EntityStatus.PendingDeletion)
+        {
+            link.Status = EntityStatus.Active;
+            link.PendingDeletionSince = null;
+        }
+        link.LastUsedAt = now;
 
         if (feature.Status == EntityStatus.PendingDeletion)
         {
@@ -213,14 +234,14 @@ internal sealed class FeatureRepository : IFeatureRepository
     public int MarkStaleFeaturesPending(DateTime threshold)
     {
         var now = DateTime.UtcNow;
-        var stale = _context.Features
-            .Where(f => f.Status == EntityStatus.Active && f.LastUsedAt < threshold)
+        var stale = _context.ApplicationFeatures
+            .Where(link => link.Status == EntityStatus.Active && link.LastUsedAt < threshold)
             .ToList();
 
-        foreach (var feature in stale)
+        foreach (var link in stale)
         {
-            feature.Status = EntityStatus.PendingDeletion;
-            feature.PendingDeletionSince = now;
+            link.Status = EntityStatus.PendingDeletion;
+            link.PendingDeletionSince = now;
         }
 
         if (stale.Count > 0)
@@ -241,7 +262,7 @@ internal sealed class FeatureRepository : IFeatureRepository
             .ToList();
 
         var stale = candidates
-            .Where(a => a.ApplicationFeatures.All(link => link.Feature.Status == EntityStatus.PendingDeletion))
+            .Where(a => a.ApplicationFeatures.All(link => link.Status == EntityStatus.PendingDeletion))
             .ToList();
 
         foreach (var app in stale)
@@ -263,12 +284,12 @@ internal sealed class FeatureRepository : IFeatureRepository
     public List<PendingFeatureDto> GetPendingFeatures()
     {
         return _context.ApplicationFeatures
-            .Where(link => link.Feature.Status == EntityStatus.PendingDeletion)
+            .Where(link => link.Status == EntityStatus.PendingDeletion)
             .Select(link => new PendingFeatureDto(
                 link.Application.Name,
                 link.Feature.Name,
-                link.Feature.LastUsedAt,
-                link.Feature.PendingDeletionSince!.Value))
+                link.LastUsedAt,
+                link.PendingDeletionSince!.Value))
             .ToList();
     }
 
@@ -287,24 +308,35 @@ internal sealed class FeatureRepository : IFeatureRepository
 
     public DeletionResultDto PermanentlyDeleteFeature(string applicationName, string featureName)
     {
-        var feature = FindFeatureForApplication(applicationName, featureName);
+        var link = _context.ApplicationFeatures
+            .Include(applicationFeature => applicationFeature.Feature)
+            .FirstOrDefault(applicationFeature => applicationFeature.Application.Name == applicationName
+                                                  && applicationFeature.Feature.Name == featureName);
 
-        if (feature is null)
+        if (link is null)
         {
             throw new FeatureNotFoundException(
                 $"Feature '{featureName}' not found on application '{applicationName}'.");
         }
 
-        if (feature.Status != EntityStatus.PendingDeletion)
+        if (link.Status != EntityStatus.PendingDeletion)
         {
             throw new FeatureNotPendingDeletionException(
                 $"Feature '{featureName}' on application '{applicationName}' is not in PendingDeletion state.");
         }
 
-        var result = new DeletionResultDto(feature.LastUsedAt, feature.PendingDeletionSince!.Value);
+        var result = new DeletionResultDto(link.LastUsedAt, link.PendingDeletionSince!.Value);
 
-        // FeatureUsage rows cascade via FK.
-        _context.Features.Remove(feature);
+        var hasOtherApplications = _context.ApplicationFeatures
+            .Any(other => other.FeatureId == link.FeatureId && other.ApplicationId != link.ApplicationId);
+
+        _context.ApplicationFeatures.Remove(link);
+
+        if (!hasOtherApplications)
+        {
+            _context.Features.Remove(link.Feature);
+        }
+
         _context.SaveChanges();
 
         return result;
@@ -383,7 +415,9 @@ internal sealed class FeatureRepository : IFeatureRepository
         EntityStatus? requiredStatus = null)
     {
         var query = _context.ApplicationFeatures
-            .Where(link => link.Application.Name == applicationName && link.Feature.Name == featureName);
+            .Where(link => link.Application.Name == applicationName
+                           && link.Feature.Name == featureName
+                           && link.Status == EntityStatus.Active);
 
         if (requiredStatus is not null)
         {
