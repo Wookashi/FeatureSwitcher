@@ -231,7 +231,7 @@ internal sealed class FeatureRepository : IFeatureRepository
 
     // ---- Sweep ----
 
-    public int MarkStaleFeaturesPending(DateTime threshold)
+    public int MarkStaleApplicationFeaturesPending(DateTime threshold)
     {
         var now = DateTime.UtcNow;
         var stale = _context.ApplicationFeatures

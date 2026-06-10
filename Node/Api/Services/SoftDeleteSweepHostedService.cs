@@ -5,9 +5,9 @@ using Wookashi.FeatureSwitcher.Node.Api.Configuration;
 namespace Wookashi.FeatureSwitcher.Node.Api.Services;
 
 /// <summary>
-/// Periodically marks features (and then applications) as PendingDeletion when they have not been
-/// registered or read for longer than the configured stale threshold. Features that are read again
-/// before permanent deletion are auto-restored at read time by <see cref="FeatureService"/>.
+/// Periodically marks application-feature links (and then applications) as PendingDeletion when they
+/// have not been registered or read for longer than the configured stale threshold. Links that are
+/// read again before permanent deletion are auto-restored at read time by <see cref="FeatureService"/>.
 /// </summary>
 internal sealed class SoftDeleteSweepHostedService : BackgroundService
 {
@@ -63,14 +63,14 @@ internal sealed class SoftDeleteSweepHostedService : BackgroundService
 
         var threshold = DateTime.UtcNow - staleAfter;
 
-        var featuresMarked = repository.MarkStaleFeaturesPending(threshold);
+        var applicationFeaturesMarked = repository.MarkStaleApplicationFeaturesPending(threshold);
         var appsMarked = repository.MarkStaleApplicationsPending(threshold);
 
-        if (featuresMarked > 0 || appsMarked > 0)
+        if (applicationFeaturesMarked > 0 || appsMarked > 0)
         {
             _logger.LogInformation(
-                "Soft-delete sweep marked {FeaturesMarked} feature(s) and {AppsMarked} application(s) as PendingDeletion (threshold {Threshold:o})",
-                featuresMarked, appsMarked, threshold);
+                "Soft-delete sweep marked {ApplicationFeaturesMarked} application-feature link(s) and {AppsMarked} application(s) as PendingDeletion (threshold {Threshold:o})",
+                applicationFeaturesMarked, appsMarked, threshold);
         }
         else
         {
