@@ -44,12 +44,43 @@ public sealed class FeatureRepositoryLifecycleTests
         Assert.Equal(sharedFeature.Name, pendingFeature.FeatureName);
         Assert.Equal(staleLastUsedAt, pendingFeature.LastUsedAt);
 
-        repository.PermanentlyDeleteFeature(appA.Name, sharedFeature.Name);
+        var deletionResult = repository.PermanentlyDeleteFeature(appA.Name, sharedFeature.Name);
+
+        Assert.Equal(1, deletionResult.RemovedApplicationFeatureLinks);
+        Assert.Equal(0, deletionResult.DeletedFeatures);
 
         Assert.Throws<FeatureNotFoundException>(() =>
             repository.GetFeatureState(appA, sharedFeature.Name));
         Assert.True(repository.GetFeatureState(appB, sharedFeature.Name));
         Assert.Single(context.Features);
         Assert.Single(context.ApplicationFeatures);
+    }
+
+    [Fact]
+    public void UpdateFeature_ReturnsSharedScope_WhenFeatureIsUsedByMultipleApplications()
+    {
+        var services = new ServiceCollection();
+        services.AddDatabase(string.Empty);
+
+        using var provider = services.BuildServiceProvider();
+        using var scope = provider.CreateScope();
+
+        var repository = scope.ServiceProvider.GetRequiredService<IFeatureRepository>();
+
+        var appA = new ApplicationDto("AppA");
+        var appB = new ApplicationDto("AppB");
+        var sharedFeature = new FeatureDto("SharedCheckout", true);
+
+        repository.RegisterApplication(appA, [sharedFeature]);
+        repository.RegisterApplication(appB, [sharedFeature]);
+
+        var result = repository.UpdateFeature(appA, new FeatureDto(sharedFeature.Name, false));
+
+        Assert.Equal(sharedFeature.Name, result.FeatureName);
+        Assert.False(result.State);
+        Assert.Equal(2, result.AffectedApplications);
+        Assert.True(result.IsShared);
+        Assert.False(repository.GetFeatureState(appA, sharedFeature.Name));
+        Assert.False(repository.GetFeatureState(appB, sharedFeature.Name));
     }
 }

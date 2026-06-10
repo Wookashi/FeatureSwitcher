@@ -173,7 +173,7 @@ internal sealed class FeatureRepository : IFeatureRepository
         _context.SaveChanges();
     }
 
-    public void UpdateFeature(ApplicationDto application, FeatureDto featureDto)
+    public FeatureUpdateResultDto UpdateFeature(ApplicationDto application, FeatureDto featureDto)
     {
         var featureEntity = FindFeatureForApplication(application.Name, featureDto.Name, EntityStatus.Active);
 
@@ -183,7 +183,14 @@ internal sealed class FeatureRepository : IFeatureRepository
         }
 
         featureEntity.IsEnabled = featureDto.State;
+        var affectedApplications = _context.ApplicationFeatures
+            .Count(link => link.FeatureId == featureEntity.Id
+                           && link.Status == EntityStatus.Active
+                           && link.Application.Status == EntityStatus.Active);
+
         _context.SaveChanges();
+
+        return new FeatureUpdateResultDto(featureDto.Name, featureDto.State, affectedApplications);
     }
 
     public void RecordFeatureUsage(ApplicationDto application, string featureName)
@@ -325,10 +332,14 @@ internal sealed class FeatureRepository : IFeatureRepository
                 $"Feature '{featureName}' on application '{applicationName}' is not in PendingDeletion state.");
         }
 
-        var result = new DeletionResultDto(link.LastUsedAt, link.PendingDeletionSince!.Value);
-
         var hasOtherApplications = _context.ApplicationFeatures
             .Any(other => other.FeatureId == link.FeatureId && other.ApplicationId != link.ApplicationId);
+        var deletedFeatures = hasOtherApplications ? 0 : 1;
+        var result = new DeletionResultDto(
+            link.LastUsedAt,
+            link.PendingDeletionSince!.Value,
+            removedApplicationFeatureLinks: 1,
+            deletedFeatures);
 
         _context.ApplicationFeatures.Remove(link);
 
@@ -359,12 +370,11 @@ internal sealed class FeatureRepository : IFeatureRepository
                 $"Application '{applicationName}' is not in PendingDeletion state.");
         }
 
-        var result = new DeletionResultDto(application.LastUsedAt, application.PendingDeletionSince!.Value);
-
         var links = _context.ApplicationFeatures
             .Include(link => link.Feature)
             .Where(link => link.ApplicationId == application.Id)
             .ToList();
+        var deletedFeatures = 0;
 
         foreach (var link in links)
         {
@@ -375,9 +385,16 @@ internal sealed class FeatureRepository : IFeatureRepository
 
             if (!hasOtherApplications)
             {
+                deletedFeatures++;
                 _context.Features.Remove(link.Feature);
             }
         }
+
+        var result = new DeletionResultDto(
+            application.LastUsedAt,
+            application.PendingDeletionSince!.Value,
+            removedApplicationFeatureLinks: links.Count,
+            deletedFeatures);
 
         _context.Applications.Remove(application);
         _context.SaveChanges();

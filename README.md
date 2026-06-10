@@ -68,9 +68,9 @@ Both knobs are configurable per node via `NodeConfiguration` (`FeatureStaleAfter
 ### Audit Log
 
 Admin actions are recorded to an audit log accessible from the header (audit icon, Admin only). Current actions:
-- `ToggleFeature` — feature state changed via the UI
-- `FeaturePermanentlyDeleted` — flag removed from the pending-deletion dialog
-- `ApplicationPermanentlyDeleted` — application removed from the pending-deletion dialog
+- `ToggleFeature` — feature state changed via the UI, including whether it was shared
+- `FeaturePermanentlyDeleted` — application-feature link removed from the pending-deletion dialog; the global flag is deleted only when no other application references it
+- `ApplicationPermanentlyDeleted` — application removed from the pending-deletion dialog, including how many feature links and orphaned global flags were removed
 
 ## Contributing
 

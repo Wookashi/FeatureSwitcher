@@ -172,9 +172,10 @@ internal class NodesController : ControllerBase
         if (response.StatusCode == HttpStatusCode.OK)
         {
             var body = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<DeletionResultDto>(body, JsonOptions);
             _auditLog.AddEntry(username, "FeaturePermanentlyDeleted",
-                $"{featureName} in {appName} on node {nodeId}. Deletion metadata: {body}");
-            return Ok(JsonSerializer.Deserialize<DeletionResultDto>(body, JsonOptions));
+                $"{featureName} link removed from {appName} on node {nodeId}. Global features deleted: {result?.DeletedFeatures ?? 0}. Removed links: {result?.RemovedApplicationFeatureLinks ?? 0}. Last used: {result?.LastUsedAt:o}. Pending since: {result?.PendingDeletionSince:o}");
+            return Ok(result);
         }
 
         return response.StatusCode switch
@@ -198,9 +199,10 @@ internal class NodesController : ControllerBase
         if (response.StatusCode == HttpStatusCode.OK)
         {
             var body = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<DeletionResultDto>(body, JsonOptions);
             _auditLog.AddEntry(username, "ApplicationPermanentlyDeleted",
-                $"{appName} on node {nodeId}. Deletion metadata: {body}");
-            return Ok(JsonSerializer.Deserialize<DeletionResultDto>(body, JsonOptions));
+                $"{appName} removed from node {nodeId}. Removed feature links: {result?.RemovedApplicationFeatureLinks ?? 0}. Global features deleted: {result?.DeletedFeatures ?? 0}. Last used: {result?.LastUsedAt:o}. Pending since: {result?.PendingDeletionSince:o}");
+            return Ok(result);
         }
 
         return response.StatusCode switch
@@ -236,8 +238,14 @@ internal class NodesController : ControllerBase
 
         if (response.StatusCode == HttpStatusCode.OK)
         {
+            var body = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<FeatureUpdateResultDto>(body, JsonOptions);
+            var scope = result?.IsShared == true
+                ? $"shared flag; affected active applications: {result.AffectedApplications}"
+                : "single-application flag";
+
             _auditLog.AddEntry(username, "ToggleFeature",
-                $"{featureName} in {appName} on node {nodeId} set to {featureState.State}");
+                $"{featureName} on node {nodeId} set to {featureState.State} via {appName} ({scope})");
         }
         else
         {

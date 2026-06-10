@@ -33,9 +33,9 @@ internal sealed class FeatureService
         return _featureRepository.GetFeatureState(application, featureName);
     }
 
-    internal void UpdateFeature(ApplicationDto application, FeatureDto feature)
+    internal FeatureUpdateResultDto UpdateFeature(ApplicationDto application, FeatureDto feature)
     {
-        _featureRepository.UpdateFeature(application, feature);
+        return _featureRepository.UpdateFeature(application, feature);
     }
 
     internal List<ApplicationDto> GetApplications()
