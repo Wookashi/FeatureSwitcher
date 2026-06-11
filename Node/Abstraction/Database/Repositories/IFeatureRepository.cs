@@ -26,7 +26,7 @@ public interface IFeatureRepository
     /// </summary>
     public void RegisterApplication(ApplicationDto application, List<FeatureDto> features);
 
-    public void UpdateFeature(ApplicationDto application, FeatureDto featureDto);
+    public FeatureUpdateResultDto UpdateFeature(ApplicationDto application, FeatureDto featureDto);
 
     /// <summary>
     /// Records a single use for the given (app, feature) pair on today's UTC date. If the feature
@@ -37,10 +37,10 @@ public interface IFeatureRepository
     // ---- Sweep ----
 
     /// <summary>
-    /// Marks every Active feature whose LastUsedAt is older than the threshold as PendingDeletion.
+    /// Marks every Active application-feature link whose LastUsedAt is older than the threshold as PendingDeletion.
     /// Returns the number transitioned.
     /// </summary>
-    public int MarkStaleFeaturesPending(DateTime threshold);
+    public int MarkStaleApplicationFeaturesPending(DateTime threshold);
 
     /// <summary>
     /// Marks every Active application as PendingDeletion when (a) it has no Active features and
@@ -56,15 +56,17 @@ public interface IFeatureRepository
     // ---- Permanent deletion (race-protected) ----
 
     /// <summary>
-    /// Permanently removes a feature and all its usage rows. Throws
+    /// Permanently removes an application-feature link. The global feature is removed only when
+    /// no other application references it. Throws
     /// <see cref="Wookashi.FeatureSwitcher.Node.Abstraction.Infrastructure.Exceptions.FeatureNotPendingDeletionException"/>
     /// if the feature is not currently in PendingDeletion state (it was restored by a recent use).
     /// </summary>
     public DeletionResultDto PermanentlyDeleteFeature(string applicationName, string featureName);
 
     /// <summary>
-    /// Permanently removes an application and all its features and usage rows. Same race-protection
-    /// behavior as <see cref="PermanentlyDeleteFeature"/>.
+    /// Permanently removes an application and its application-feature links. Global features are
+    /// removed only when no other application references them. Same race-protection behavior as
+    /// <see cref="PermanentlyDeleteFeature"/>.
     /// </summary>
     public DeletionResultDto PermanentlyDeleteApplication(string applicationName);
 }

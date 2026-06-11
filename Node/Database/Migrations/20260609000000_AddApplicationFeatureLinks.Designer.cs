@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Wookashi.FeatureSwitcher.Node.Database;
 
@@ -10,9 +11,11 @@ using Wookashi.FeatureSwitcher.Node.Database;
 namespace Wookashi.FeatureSwitcher.Node.Database.Migrations
 {
     [DbContext(typeof(FeaturesDataContext))]
-    partial class FeaturesDataContextModelSnapshot : ModelSnapshot
+    [Migration("20260609000000_AddApplicationFeatureLinks")]
+    partial class AddApplicationFeatureLinks
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.7");
@@ -57,15 +60,6 @@ namespace Wookashi.FeatureSwitcher.Node.Database.Migrations
                     b.Property<int>("FeatureId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTime>("LastUsedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("PendingDeletionSince")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("INTEGER");
-
                     b.HasKey("Id");
 
                     b.HasIndex("FeatureId");
@@ -80,6 +74,9 @@ namespace Wookashi.FeatureSwitcher.Node.Database.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ApplicationId")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsEnabled")
@@ -101,7 +98,7 @@ namespace Wookashi.FeatureSwitcher.Node.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Name")
+                    b.HasIndex("ApplicationId", "Name")
                         .IsUnique();
 
                     b.ToTable("Features");
@@ -149,6 +146,17 @@ namespace Wookashi.FeatureSwitcher.Node.Database.Migrations
                     b.Navigation("Feature");
                 });
 
+            modelBuilder.Entity("Wookashi.FeatureSwitcher.Node.Database.Entities.FeatureEntity", b =>
+                {
+                    b.HasOne("Wookashi.FeatureSwitcher.Node.Database.Entities.ApplicationEntity", "Application")
+                        .WithMany("Features")
+                        .HasForeignKey("ApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Application");
+                });
+
             modelBuilder.Entity("Wookashi.FeatureSwitcher.Node.Database.Entities.FeatureUsageEntity", b =>
                 {
                     b.HasOne("Wookashi.FeatureSwitcher.Node.Database.Entities.FeatureEntity", "Feature")
@@ -163,6 +171,8 @@ namespace Wookashi.FeatureSwitcher.Node.Database.Migrations
             modelBuilder.Entity("Wookashi.FeatureSwitcher.Node.Database.Entities.ApplicationEntity", b =>
                 {
                     b.Navigation("ApplicationFeatures");
+
+                    b.Navigation("Features");
                 });
 
             modelBuilder.Entity("Wookashi.FeatureSwitcher.Node.Database.Entities.FeatureEntity", b =>

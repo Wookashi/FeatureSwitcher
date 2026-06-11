@@ -1,1 +1,0 @@
-import{g as t,r as n}from"./index-_nWqTkXk.js";async function h(s,e){const o=t(),a=new Headers(e==null?void 0:e.headers);o&&a.set("Authorization",`Bearer ${o}`);const r=await fetch(s,{...e,headers:a});return r.status===401&&(n(),window.location.href="/login"),r}export{h as a};

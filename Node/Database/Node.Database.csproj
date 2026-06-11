@@ -25,6 +25,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <InternalsVisibleTo Include="Node.Database.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
       <ProjectReference Include="..\Abstraction\Node.Abstraction.csproj" />
     </ItemGroup>
 

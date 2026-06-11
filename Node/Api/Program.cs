@@ -71,7 +71,7 @@ if (app.Environment.IsDevelopment())
 
 if (dbConnectionString != string.Empty)
 {
-    app.MigrateDatabase();
+    app.MigrateDatabase(logger);
 }
 
 app.UseHttpsRedirection();
@@ -176,9 +176,11 @@ app.MapPut("/applications/{applicationName}/features/{featureName}",
             try
             {
                 var feature = new FeatureDto(featureName, featureState.State);
-                featureService.UpdateFeature(new ApplicationDto(applicationName), feature);
-                apiLogger.LogInformation("Feature {FeatureName} in app {AppName} updated to {State}", featureName, applicationName, featureState.State);
-                return Results.Ok();
+                var result = featureService.UpdateFeature(new ApplicationDto(applicationName), feature);
+                apiLogger.LogInformation(
+                    "Feature {FeatureName} updated to {State} from app {AppName}; affected active application(s): {AffectedApplications}",
+                    featureName, featureState.State, applicationName, result.AffectedApplications);
+                return Results.Ok(result);
             }
             catch (FeatureNotFoundException)
             {

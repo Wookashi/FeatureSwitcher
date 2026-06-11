@@ -94,6 +94,34 @@ export function useFeatureMatrix(): UseFeatureMatrixResult {
     []
   );
 
+  const updateFeatureCellsForNode = useCallback(
+    (feature: string, nodeName: string, newValue: boolean) => {
+      setRows((prevRows) =>
+        prevRows.map((row) => {
+          if (row.feature !== feature) {
+            return row;
+          }
+
+          const cell = row.cells[nodeName];
+          if (cell?.kind !== 'value' && cell?.kind !== 'loading') {
+            return row;
+          }
+
+          return {
+            ...row,
+            cells: {
+              ...row.cells,
+              [nodeName]: cell.kind === 'value'
+                ? { ...cell, value: newValue }
+                : { kind: 'value', value: newValue },
+            },
+          };
+        })
+      );
+    },
+    []
+  );
+
   const fetchFeatures = useCallback(
     async (nodeId: number, nodeName: string, applicationName: string, signal: AbortSignal) => {
       const endpoint = `/api/nodes/${nodeId}/applications/${encodeURIComponent(applicationName)}/features`;
@@ -310,17 +338,18 @@ export function useFeatureMatrix(): UseFeatureMatrixResult {
           throw new Error(`HTTP ${response.status}`);
         }
 
-        // Update cache
+        // Update cache for every application that has this shared feature on the node.
         const nodeCache = cacheRef.current.get(nodeName);
         if (nodeCache) {
-          const appCache = nodeCache.get(application);
-          if (appCache) {
+          nodeCache.forEach((appCache) => {
+            if (!appCache.has(feature)) {
+              return;
+            }
             appCache.set(feature, newValue);
-          }
+          });
         }
 
-        // Update cell with new value
-        updateRowCell(application, feature, nodeName, { kind: 'value', value: newValue });
+        updateFeatureCellsForNode(feature, nodeName, newValue);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
         addError(endpoint, message);
@@ -328,7 +357,7 @@ export function useFeatureMatrix(): UseFeatureMatrixResult {
         updateRowCell(application, feature, nodeName, { kind: 'unknown', reason: message });
       }
     },
-    [addError, updateRowCell]
+    [addError, updateFeatureCellsForNode, updateRowCell]
   );
 
   const deleteNode = useCallback(

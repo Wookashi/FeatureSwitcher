@@ -1,10 +1,9 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
 namespace Wookashi.FeatureSwitcher.Node.Database.Entities;
 
-[Index(nameof(ApplicationId), nameof(Name), IsUnique = true)]
+[Index(nameof(Name), IsUnique = true)]
 public sealed class FeatureEntity
 {
     [Key]
@@ -25,9 +24,5 @@ public sealed class FeatureEntity
     [Required]
     public DateTime LastUsedAt { get; set; } = DateTime.UtcNow;
 
-    [Required]
-    public int ApplicationId { get; set; }
-
-    [ForeignKey(nameof(ApplicationId))]
-    public required ApplicationEntity Application { get; set; }
+    public IEnumerable<ApplicationFeatureEntity> ApplicationFeatures { get; set; } = new List<ApplicationFeatureEntity>();
 }

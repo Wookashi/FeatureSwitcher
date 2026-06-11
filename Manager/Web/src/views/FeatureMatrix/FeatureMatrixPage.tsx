@@ -20,6 +20,7 @@ import {
   Statistic,
   Divider,
   Flex,
+  Modal,
   Popconfirm,
   theme as antTheme,
 } from 'antd';
@@ -69,6 +70,11 @@ interface TreeRow {
   feature: string;
   cells: Record<string, CellState>;
   children?: TreeRow[];
+}
+
+interface SharedFeatureInfo {
+  apps: string[];
+  nodes: string[];
 }
 
 interface CellRendererProps {
@@ -193,26 +199,87 @@ export default function FeatureMatrixPage() {
 
   const stats = useMemo(() => {
     const applications = new Set(rows.map((r) => r.application));
+    const sharedFeatures = new Set<string>();
+    const appsByFeatureAndNode = new Map<string, Map<string, Set<string>>>();
     let enabledCount = 0;
     let disabledCount = 0;
 
     rows.forEach((row) => {
-      Object.values(row.cells).forEach((cell) => {
+      Object.entries(row.cells).forEach(([nodeName, cell]) => {
         if (cell?.kind === 'value') {
           if (cell.value) enabledCount++;
           else disabledCount++;
+
+          if (!appsByFeatureAndNode.has(row.feature)) {
+            appsByFeatureAndNode.set(row.feature, new Map());
+          }
+          const nodeApps = appsByFeatureAndNode.get(row.feature)!;
+          if (!nodeApps.has(nodeName)) {
+            nodeApps.set(nodeName, new Set());
+          }
+          nodeApps.get(nodeName)!.add(row.application);
         }
       });
+    });
+
+    appsByFeatureAndNode.forEach((nodeApps, feature) => {
+      if (Array.from(nodeApps.values()).some((apps) => apps.size > 1)) {
+        sharedFeatures.add(feature);
+      }
     });
 
     return {
       nodes: nodes.length,
       applications: applications.size,
       features: rows.length,
+      shared: sharedFeatures.size,
       enabled: enabledCount,
       disabled: disabledCount,
     };
   }, [nodes, rows]);
+
+  const sharedFeatureInfo = useMemo(() => {
+    const byFeature = new Map<string, Map<string, Set<string>>>();
+
+    rows.forEach((row) => {
+      Object.entries(row.cells).forEach(([nodeName, cell]) => {
+        if (cell?.kind !== 'value') {
+          return;
+        }
+
+        if (!byFeature.has(row.feature)) {
+          byFeature.set(row.feature, new Map());
+        }
+        const nodeApps = byFeature.get(row.feature)!;
+        if (!nodeApps.has(nodeName)) {
+          nodeApps.set(nodeName, new Set());
+        }
+        nodeApps.get(nodeName)!.add(row.application);
+      });
+    });
+
+    const result = new Map<string, SharedFeatureInfo>();
+    byFeature.forEach((nodeApps, feature) => {
+      const sharedNodes = Array.from(nodeApps.entries())
+        .filter(([, apps]) => apps.size > 1);
+
+      if (sharedNodes.length === 0) {
+        return;
+      }
+
+      const apps = new Set<string>();
+      sharedNodes.forEach(([, nodeAppSet]) => {
+        nodeAppSet.forEach((app) => apps.add(app));
+      });
+
+      result.set(feature, {
+        apps: Array.from(apps).sort((a, b) => a.localeCompare(b)),
+        nodes: sharedNodes.map(([nodeName]) => nodeName).sort((a, b) => a.localeCompare(b)),
+      });
+    });
+
+    return result;
+  }, [rows]);
 
   const filteredRows = useMemo(() => {
     let result = rows;
@@ -292,7 +359,18 @@ export default function FeatureMatrixPage() {
             );
           }
           return (
-            <Text code style={{ fontSize: 13, marginLeft: 8 }}>{text}</Text>
+            <Space size={6} style={{ marginLeft: 8 }}>
+              <Text code style={{ fontSize: 13 }}>{text}</Text>
+              {sharedFeatureInfo.has(record.feature) && (
+                <Tooltip
+                  title={`Shared by ${sharedFeatureInfo.get(record.feature)!.apps.join(', ')}`}
+                >
+                  <Tag color="blue" style={{ borderRadius: 6, margin: 0 }}>
+                    Shared
+                  </Tag>
+                </Tooltip>
+              )}
+            </Space>
           );
         },
       },
@@ -401,14 +479,34 @@ export default function FeatureMatrixPage() {
           return <CellRenderer state={{ kind: 'unknown', reason }} />;
         }
         const handleClick = (cellState?.kind === 'value' && canToggle)
-          ? () => toggleFeatureState(node.id, node.name, record.application, record.feature, cellState.value)
+          ? () => {
+              const sharedInfo = sharedFeatureInfo.get(record.feature);
+              if (!sharedInfo || !sharedInfo.nodes.includes(node.name)) {
+                toggleFeatureState(node.id, node.name, record.application, record.feature, cellState.value);
+                return;
+              }
+
+              Modal.confirm({
+                title: `Change shared feature "${record.feature}"?`,
+                content: (
+                  <div>
+                    <div>This feature is used by: {sharedInfo.apps.join(', ')}.</div>
+                    <div style={{ marginTop: 8 }}>Changing it here updates the same flag for all linked applications on this node.</div>
+                  </div>
+                ),
+                okText: cellState.value ? 'Disable' : 'Enable',
+                okButtonProps: { danger: cellState.value },
+                cancelText: 'Cancel',
+                onOk: () => toggleFeatureState(node.id, node.name, record.application, record.feature, cellState.value),
+              });
+            }
           : undefined;
         return <CellRenderer state={cellState} onClick={handleClick} />;
       },
     }));
 
     return [...baseColumns, ...nodeColumns];
-  }, [orderedNodes, nodes, unreachableNodes, nodeStates, isLoading, toggleFeatureState, canToggle, isAdmin, deleteNode, moveLeft, moveRight, canMoveLeft, canMoveRight]);
+  }, [orderedNodes, nodes, unreachableNodes, nodeStates, isLoading, toggleFeatureState, canToggle, isAdmin, deleteNode, moveLeft, moveRight, canMoveLeft, canMoveRight, sharedFeatureInfo]);
 
   const isDark = themeMode === 'dark';
 
@@ -530,7 +628,7 @@ export default function FeatureMatrixPage() {
         >
           {/* Stats Cards */}
           <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-            <Col xs={24} sm={12} lg={6}>
+            <Col xs={24} sm={12} lg={4}>
               <Card bordered={false} size="small">
                 <Statistic
                   title={<Text type="secondary">Nodes</Text>}
@@ -540,7 +638,7 @@ export default function FeatureMatrixPage() {
                 />
               </Card>
             </Col>
-            <Col xs={24} sm={12} lg={6}>
+            <Col xs={24} sm={12} lg={4}>
               <Card bordered={false} size="small">
                 <Statistic
                   title={<Text type="secondary">Applications</Text>}
@@ -550,7 +648,18 @@ export default function FeatureMatrixPage() {
                 />
               </Card>
             </Col>
-            <Col xs={24} sm={12} lg={6}>
+            <Col xs={24} sm={12} lg={4}>
+              <Card bordered={false} size="small">
+                <Statistic
+                  title={<Text type="secondary">Shared</Text>}
+                  value={stats.shared}
+                  prefix={<FlagOutlined style={{ color: token.colorPrimary }} />}
+                  loading={isLoading}
+                  valueStyle={{ color: token.colorPrimary }}
+                />
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} lg={4}>
               <Card bordered={false} size="small">
                 <Statistic
                   title={<Text type="secondary">Enabled</Text>}
@@ -561,7 +670,7 @@ export default function FeatureMatrixPage() {
                 />
               </Card>
             </Col>
-            <Col xs={24} sm={12} lg={6}>
+            <Col xs={24} sm={12} lg={4}>
               <Card bordered={false} size="small">
                 <Statistic
                   title={<Text type="secondary">Disabled</Text>}
@@ -652,6 +761,10 @@ export default function FeatureMatrixPage() {
                 <Space size={4}>
                   <Tag color="default" style={{ borderRadius: 6 }}>N/A</Tag>
                   <Text type="secondary">Not available</Text>
+                </Space>
+                <Space size={4}>
+                  <Tag color="blue" style={{ borderRadius: 6 }}>Shared</Tag>
+                  <Text type="secondary">Used by multiple applications</Text>
                 </Space>
               </Space>
             </Flex>

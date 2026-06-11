@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Wookashi.FeatureSwitcher.Node.Database;
 
@@ -10,9 +11,11 @@ using Wookashi.FeatureSwitcher.Node.Database;
 namespace Wookashi.FeatureSwitcher.Node.Database.Migrations
 {
     [DbContext(typeof(FeaturesDataContext))]
-    partial class FeaturesDataContextModelSnapshot : ModelSnapshot
+    [Migration("20260609001000_GroupFeaturesByName")]
+    partial class GroupFeaturesByName
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.7");
@@ -55,15 +58,6 @@ namespace Wookashi.FeatureSwitcher.Node.Database.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("FeatureId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("LastUsedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("PendingDeletionSince")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("Status")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");

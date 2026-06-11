@@ -135,7 +135,7 @@ export function PendingDeletionModal({ open, onClose, pending }: PendingDeletion
       title={
         <Space>
           <ExclamationCircleOutlined style={{ color: '#faad14' }} />
-          <span>Flags Pending Permanent Deletion</span>
+          <span>Items Pending Permanent Deletion</span>
           {totalCount > 0 && <Tag color="warning">{totalCount}</Tag>}
         </Space>
       }
@@ -180,8 +180,8 @@ export function PendingDeletionModal({ open, onClose, pending }: PendingDeletion
       )}
 
       <Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
-        These flags and applications have not been registered or read for the configured stale threshold.
-        Reading them again from your application restores them automatically.
+        These application-feature links and applications have not been registered or read for the configured stale threshold.
+        Reading a feature again from its application restores that application-feature link automatically.
       </Text>
 
       {isLoading && totalCount === 0 ? (
@@ -233,7 +233,7 @@ export function PendingDeletionModal({ open, onClose, pending }: PendingDeletion
                 {g.features.length > 0 && (
                   <div>
                     <Title level={5} style={{ marginTop: 0 }}>
-                      <Space><FlagOutlined /> Features</Space>
+                      <Space><FlagOutlined /> Application features</Space>
                     </Title>
                     <Table<PendingFeatureItem>
                       size="small"
