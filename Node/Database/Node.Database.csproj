@@ -25,7 +25,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <InternalsVisibleTo Include="Node.Database.Tests" />
+      <InternalsVisibleTo Include="Wookashi.FeatureSwitcher.Node.Database.Tests" />
     </ItemGroup>
 
     <ItemGroup>

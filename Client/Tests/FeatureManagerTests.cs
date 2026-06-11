@@ -2,12 +2,10 @@ using System.Net;
 using System.Text.Json;
 using Moq;
 using Moq.Protected;
-using Wookashi.FeatureSwitcher.Client.Abstraction;
 using Wookashi.FeatureSwitcher.Client.Abstraction.Exceptions;
 using Wookashi.FeatureSwitcher.Client.Abstraction.Models;
-using Wookashi.FeatureSwitcher.Client.Implementation;
 
-namespace Client.Implementation.Tests;
+namespace Wookashi.FeatureSwitcher.Client.Implementation.Tests;
 
 public class FeatureManagerTests
 {

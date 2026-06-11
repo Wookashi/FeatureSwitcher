@@ -6,8 +6,8 @@
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
-        <RootNamespace>Node.Database.Tests</RootNamespace>
-        <AssemblyName>Node.Database.Tests</AssemblyName>
+        <RootNamespace>Wookashi.FeatureSwitcher.Node.Database.Tests</RootNamespace>
+        <AssemblyName>Wookashi.FeatureSwitcher.Node.Database.Tests</AssemblyName>
     </PropertyGroup>
 
     <ItemGroup>

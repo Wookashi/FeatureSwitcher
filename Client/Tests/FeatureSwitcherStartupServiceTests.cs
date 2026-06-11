@@ -1,12 +1,11 @@
 using System.Net;
-using System.Net.Http;
 using Moq;
 using Moq.Protected;
 using Wookashi.FeatureSwitcher.Client.Abstraction.Exceptions;
 using Wookashi.FeatureSwitcher.Client.Abstraction.Models;
 using Wookashi.FeatureSwitcher.Client.Implementation;
 
-namespace Client.Implementation.Tests;
+namespace Wookashi.FeatureSwitcher.Client.Implementation.Tests;
 
 public class FeatureSwitcherStartupServiceTests
 {

@@ -1,6 +1,4 @@
-using Wookashi.FeatureSwitcher.Client.Implementation;
-
-namespace Client.Implementation.Tests;
+namespace Wookashi.FeatureSwitcher.Client.Implementation.Tests;
 
 public class FeatureStateModelTests
 {

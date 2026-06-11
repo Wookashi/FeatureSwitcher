@@ -7,7 +7,7 @@ using Wookashi.FeatureSwitcher.Client.Abstraction;
 using Wookashi.FeatureSwitcher.Client.Abstraction.Models;
 using Wookashi.FeatureSwitcher.Client.Implementation;
 
-namespace Client.Implementation.Tests;
+namespace Wookashi.FeatureSwitcher.Client.Implementation.Tests;
 
 public class ConfigureServicesExtensionsTests
 {

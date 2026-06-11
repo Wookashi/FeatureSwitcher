@@ -1,6 +1,6 @@
 using Wookashi.FeatureSwitcher.Client.Abstraction.Exceptions;
 
-namespace Client.Implementation.Tests;
+namespace Wookashi.FeatureSwitcher.Client.Implementation.Tests;
 
 public class ExceptionTests
 {

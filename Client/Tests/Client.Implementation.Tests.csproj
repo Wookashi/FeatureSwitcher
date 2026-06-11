@@ -7,9 +7,9 @@
 
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
-        <RootNamespace>Client.Implementation.Tests</RootNamespace>
+        <RootNamespace>Wookashi.FeatureSwitcher.Client.Implementation.Tests</RootNamespace>
         <LangVersion>default</LangVersion>
-        <AssemblyName>Client.Implementation.Tests</AssemblyName>
+        <AssemblyName>Wookashi.FeatureSwitcher.Client.Implementation.Tests</AssemblyName>
     </PropertyGroup>
 
     <ItemGroup>
