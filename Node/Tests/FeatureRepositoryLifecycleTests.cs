@@ -2,11 +2,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Wookashi.FeatureSwitcher.Node.Abstraction.Database.Dtos;
 using Wookashi.FeatureSwitcher.Node.Abstraction.Database.Repositories;
 using Wookashi.FeatureSwitcher.Node.Abstraction.Infrastructure.Exceptions;
-using Wookashi.FeatureSwitcher.Node.Database;
-using Wookashi.FeatureSwitcher.Node.Database.Entities;
 using Wookashi.FeatureSwitcher.Node.Database.Extensions;
 
-namespace Node.Database.Tests;
+namespace Wookashi.FeatureSwitcher.Node.Database.Tests;
 
 public sealed class FeatureRepositoryLifecycleTests
 {

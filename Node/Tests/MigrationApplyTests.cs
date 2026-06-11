@@ -1,9 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Wookashi.FeatureSwitcher.Node.Database;
 
-namespace Node.Database.Tests;
+namespace Wookashi.FeatureSwitcher.Node.Database.Tests;
 
 public sealed class MigrationApplyTests
 {

@@ -2,10 +2,9 @@ using System.Data.Common;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
-using Wookashi.FeatureSwitcher.Node.Database;
 using Wookashi.FeatureSwitcher.Node.Database.Extensions;
 
-namespace Node.Database.Tests;
+namespace Wookashi.FeatureSwitcher.Node.Database.Tests;
 
 public sealed class MigrationLockSafeguardTests
 {
