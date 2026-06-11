@@ -14,6 +14,17 @@ Docker container should be placed very close to client apps.
 ### Manager
 User interface used to manipulate features.
 
+## Shared Flags
+
+Flags are grouped by name on each Node. When multiple applications register the
+same flag name, they share one global flag state, while each application keeps
+its own application-feature link for lifecycle tracking.
+
+The Manager Feature Matrix highlights shared flags with a `Shared` tag and shows
+a `Shared` counter in the summary cards. Changing a shared flag from any
+application cell updates the global flag state and therefore affects every
+application on that Node that registered the same flag name.
+
 ## How to run?
 
 Run from the repository root:
@@ -59,9 +70,13 @@ If nodes start before setup is completed, they will log an authentication error 
 
 ### Flag Lifecycle
 
-Registration on the Node is **append-only**: re-registering an application never deletes flags missing from the payload, so two services accidentally sharing an `applicationName` cannot wipe each other's data. The Node tracks `LastUsedAt` per flag and a per-day usage counter; the Feature Matrix shows the relative last-used time and 7-day use count in each cell's tooltip.
+Registration on the Node is **append-only**: re-registering an application never deletes flags missing from the payload, so two services accidentally sharing an `applicationName` cannot wipe each other's data. The application decides which flags it registers; there are no manual link/unlink actions in the Manager.
 
-A background sweep marks flags (and applications) that have not been registered or read for `FeatureStaleAfter` (default **30 days**) as `PendingDeletion`. Pending items disappear from the normal matrix view, auto-restore when an app reads or re-registers them, and become available for permanent deletion through an Admin-only dialog reachable from the warning-icon badge in the header. Permanent deletion is recorded in the Audit Log.
+The Node tracks `LastUsedAt` per application-feature link and keeps a per-day usage counter per global flag. The Feature Matrix shows the link-level last-used time and the 7-day use count in each cell's tooltip.
+
+A background sweep marks stale application-feature links, and then applications with no active links, as `PendingDeletion` when their `LastUsedAt` is older than `FeatureStaleAfter` (default **30 days**). Pending items disappear from the normal matrix view, auto-restore when an app reads or re-registers them, and become available for permanent deletion through an Admin-only dialog reachable from the warning-icon badge in the header.
+
+Permanent deletion of a pending flag removes the application-feature link. The global flag row is deleted only when no other application still references it. Permanent deletion is recorded in the Audit Log.
 
 Both knobs are configurable per node via `NodeConfiguration` (`FeatureStaleAfter` and `FeatureCleanupInterval`, default 24h sweep cadence), set in `appsettings.json` or via env vars (e.g., `NodeConfiguration__FeatureStaleAfter=7.00:00:00`).
 

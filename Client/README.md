@@ -97,17 +97,32 @@ if (await featureManager.IsFeatureEnabledAsync("DarkMode"))
 
 `AddFeatureFlags` also takes the list of features to manage.
 
+## Shared Flags
+
+Flags are shared by name on the Node. If two applications register a feature
+with the same name, they both reference the same global flag state. Changing the
+flag in the Manager from one application affects every application on that Node
+that registered the same flag name.
+
+The client does not manually attach or detach applications from flags. The list
+passed to `AddFeatureFlags` or `FeatureManager` is the source of truth for the
+application-feature links maintained by the Node.
+
 ## Lifecycle on the Node
 
-Registration is **append-only** on the Node. New features are inserted; features missing from the payload are NOT deleted at registration time, so two services that accidentally share an `applicationName` cannot wipe each other's flags. Every registration and every state read bumps `LastUsedAt` on the feature and upserts today's row in the per-day usage counter.
+Registration is **append-only** on the Node. New application-feature links are inserted; features missing from the payload are NOT deleted at registration time, so two services that accidentally share an `applicationName` cannot wipe each other's flags.
 
-A background sweep on the Node periodically marks features (and applications) whose `LastUsedAt` is older than the configured stale threshold (default 30 days) as `PendingDeletion`. Flags in `PendingDeletion`:
+Every registration and every state read bumps `LastUsedAt` on the application-feature link and upserts today's row in the per-day usage counter for the global flag.
+
+A background sweep on the Node periodically marks application-feature links whose `LastUsedAt` is older than the configured stale threshold (default 30 days) as `PendingDeletion`. Applications with no active links can also be marked as `PendingDeletion`. Flags in `PendingDeletion`:
 
 - Disappear from the normal `/applications/{app}/features` listing
 - Are **auto-restored** if the client reads or re-registers them
 - Can be permanently deleted by an admin through the Manager UI (with a 409-on-race guard so a stale dialog cannot delete a freshly-restored flag)
 
-So from the client's perspective: flags removed from your application code disappear automatically after the threshold passes without any uses. Flags still actively read survive indefinitely without redeploys.
+Permanent deletion removes the application-feature link. The global flag is deleted only when no other application still references it.
+
+So from the client's perspective: flags removed from your application code disappear from that application automatically after the threshold passes without any uses. Shared flags still used by other applications keep their global state.
 
 ## Resilience
 
