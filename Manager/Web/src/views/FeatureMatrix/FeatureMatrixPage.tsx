@@ -216,15 +216,10 @@ export default function FeatureMatrixPage() {
     const applications = new Set(rows.map((r) => r.application));
     const sharedFeatures = new Set<string>();
     const appsByFeatureAndNode = new Map<string, Map<string, Set<string>>>();
-    let enabledCount = 0;
-    let disabledCount = 0;
 
     rows.forEach((row) => {
       Object.entries(row.cells).forEach(([nodeName, cell]) => {
         if (cell?.kind === 'value') {
-          if (cell.value) enabledCount++;
-          else disabledCount++;
-
           if (!appsByFeatureAndNode.has(row.feature)) {
             appsByFeatureAndNode.set(row.feature, new Map());
           }
@@ -248,8 +243,6 @@ export default function FeatureMatrixPage() {
       applications: applications.size,
       features: rows.length,
       shared: sharedFeatures.size,
-      enabled: enabledCount,
-      disabled: disabledCount,
     };
   }, [nodes, rows]);
 
@@ -643,7 +636,7 @@ export default function FeatureMatrixPage() {
         >
           {/* Stats Cards */}
           <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-            <Col xs={24} sm={12} lg={4}>
+            <Col xs={24} sm={8} lg={8}>
               <Card bordered={false} size="small">
                 <Statistic
                   title={<Text type="secondary">Nodes</Text>}
@@ -653,7 +646,7 @@ export default function FeatureMatrixPage() {
                 />
               </Card>
             </Col>
-            <Col xs={24} sm={12} lg={4}>
+            <Col xs={24} sm={8} lg={8}>
               <Card bordered={false} size="small">
                 <Statistic
                   title={<Text type="secondary">Applications</Text>}
@@ -663,7 +656,7 @@ export default function FeatureMatrixPage() {
                 />
               </Card>
             </Col>
-            <Col xs={24} sm={12} lg={4}>
+            <Col xs={24} sm={8} lg={8}>
               <Card bordered={false} size="small">
                 <Statistic
                   title={<Text type="secondary">Shared</Text>}
@@ -671,28 +664,6 @@ export default function FeatureMatrixPage() {
                   prefix={<FlagOutlined style={{ color: token.colorPrimary }} />}
                   loading={isLoading}
                   valueStyle={{ color: token.colorPrimary }}
-                />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={4}>
-              <Card bordered={false} size="small">
-                <Statistic
-                  title={<Text type="secondary">Enabled</Text>}
-                  value={stats.enabled}
-                  prefix={<CheckOutlined style={{ color: '#52c41a' }} />}
-                  loading={isLoading}
-                  valueStyle={{ color: '#52c41a' }}
-                />
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={4}>
-              <Card bordered={false} size="small">
-                <Statistic
-                  title={<Text type="secondary">Disabled</Text>}
-                  value={stats.disabled}
-                  prefix={<CloseOutlined style={{ color: '#ff4d4f' }} />}
-                  loading={isLoading}
-                  valueStyle={{ color: '#ff4d4f' }}
                 />
               </Card>
             </Col>
