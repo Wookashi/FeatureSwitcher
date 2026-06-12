@@ -663,7 +663,6 @@ export default function FeatureMatrixPage() {
                   value={stats.shared}
                   prefix={<FlagOutlined style={{ color: token.colorPrimary }} />}
                   loading={isLoading}
-                  valueStyle={{ color: token.colorPrimary }}
                 />
               </Card>
             </Col>
