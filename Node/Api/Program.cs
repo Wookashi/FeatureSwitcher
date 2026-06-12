@@ -60,8 +60,6 @@ logger.LogInformation("Manager Username: {Username}", string.IsNullOrEmpty(manag
 logger.LogInformation("Database: {ConnectionString}", string.IsNullOrEmpty(dbConnectionString) ? "(in-memory)" : $"{dbConnectionString} (configured)");
 logger.LogInformation("============================");
 
-var apiLogger = loggerFactory.CreateLogger("Node.Api");
-
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -84,12 +82,12 @@ app.UseHealthCheck(
 app.MapPost("/applications",
         (ApplicationRegistrationRequestModel registerModel, IFeatureRepository featureRepository) =>
         {
-            apiLogger.LogDebug("Registering app {AppName} for environment {Environment} with {FeatureCount} feature(s)",
+            logger.LogDebug("Registering app {AppName} for environment {Environment} with {FeatureCount} feature(s)",
                 registerModel.AppName, registerModel.Environment, registerModel.Features?.Count ?? 0);
 
             if (registerModel.Environment != nodeEnvironment)
             {
-                apiLogger.LogError("Environment mismatch: node is '{NodeEnv}', request is '{ReqEnv}' for app {AppName}",
+                logger.LogError("Environment mismatch: node is '{NodeEnv}', request is '{ReqEnv}' for app {AppName}",
                     nodeEnvironment, registerModel.Environment, registerModel.AppName);
                 return Results.Problem(
                     title: "Environment mismatch",
@@ -100,7 +98,7 @@ app.MapPost("/applications",
             var featureService = new FeatureService(featureRepository);
             featureService.RegisterApplication(new ApplicationDto(registerModel.AppName), registerModel.Features ?? []);
 
-            apiLogger.LogInformation("App {AppName} registered successfully", registerModel.AppName);
+            logger.LogInformation("App {AppName} registered successfully", registerModel.AppName);
             return Results.Created();
         })
     .WithDescription("Used to register application by app client. Adds or updates app data in node database.")
@@ -110,18 +108,18 @@ app.MapPost("/applications",
 
 app.MapGet("/applications", (IFeatureRepository featureRepository) =>
     {
-        apiLogger.LogDebug("Listing applications");
+        logger.LogDebug("Listing applications");
         var featureService = new FeatureService(featureRepository);
 
         try
         {
             var apps = featureService.GetApplications();
-            apiLogger.LogDebug("Returning {Count} application(s)", apps.Count);
+            logger.LogDebug("Returning {Count} application(s)", apps.Count);
             return Results.Ok(apps);
         }
         catch (IncorrectEnvironmentException exception)
         {
-            apiLogger.LogError(exception, "Incorrect environment while listing applications");
+            logger.LogError(exception, "Incorrect environment while listing applications");
             return Results.BadRequest(new BadHttpRequestException(exception.Message));
         }
     })
@@ -130,17 +128,17 @@ app.MapGet("/applications", (IFeatureRepository featureRepository) =>
 
 app.MapGet("/applications/{applicationName}/features/", (string applicationName, IFeatureRepository featureRepository) =>
     {
-        apiLogger.LogDebug("Listing features (with usage) for app {AppName}", applicationName);
+        logger.LogDebug("Listing features (with usage) for app {AppName}", applicationName);
 
         try
         {
             var features = featureRepository.GetFeaturesWithUsageForApplication(new ApplicationDto(applicationName));
-            apiLogger.LogDebug("Returning {Count} feature(s) for app {AppName}", features.Count, applicationName);
+            logger.LogDebug("Returning {Count} feature(s) for app {AppName}", features.Count, applicationName);
             return Results.Ok(features);
         }
         catch (ApplicationNotFoundException exception)
         {
-            apiLogger.LogWarning("App {AppName} not found while listing features: {Message}", applicationName, exception.Message);
+            logger.LogWarning("App {AppName} not found while listing features: {Message}", applicationName, exception.Message);
             return Results.BadRequest(new BadHttpRequestException(exception.Message));
         }
     })
@@ -149,17 +147,17 @@ app.MapGet("/applications/{applicationName}/features/", (string applicationName,
 
 app.MapGet("/applications/{applicationName}/features/{featureName}/state/", (string applicationName, string featureName, IFeatureRepository featureRepository) =>
     {
-        apiLogger.LogDebug("Getting state of feature {FeatureName} for app {AppName}", featureName, applicationName);
+        logger.LogDebug("Getting state of feature {FeatureName} for app {AppName}", featureName, applicationName);
         var featureService = new FeatureService(featureRepository);
         try
         {
             var state = featureService.GetFeatureState(new ApplicationDto(applicationName), featureName);
-            apiLogger.LogDebug("Feature {FeatureName} in app {AppName} is {State}", featureName, applicationName, state);
+            logger.LogDebug("Feature {FeatureName} in app {AppName} is {State}", featureName, applicationName, state);
             return Results.Ok(state);
         }
         catch (FeatureNotFoundException)
         {
-            apiLogger.LogWarning("Feature {FeatureName} not found in app {AppName}", featureName, applicationName);
+            logger.LogWarning("Feature {FeatureName} not found in app {AppName}", featureName, applicationName);
             return Results.NotFound();
         }
     })
@@ -171,20 +169,20 @@ app.MapGet("/applications/{applicationName}/features/{featureName}/state/", (str
 app.MapPut("/applications/{applicationName}/features/{featureName}",
         (string applicationName, string featureName, FeatureStateModel featureState, IFeatureRepository featureRepository) =>
         {
-            apiLogger.LogDebug("Setting feature {FeatureName} in app {AppName} to {State}", featureName, applicationName, featureState.State);
+            logger.LogDebug("Setting feature {FeatureName} in app {AppName} to {State}", featureName, applicationName, featureState.State);
             var featureService = new FeatureService(featureRepository);
             try
             {
                 var feature = new FeatureDto(featureName, featureState.State);
                 var result = featureService.UpdateFeature(new ApplicationDto(applicationName), feature);
-                apiLogger.LogInformation(
+                logger.LogInformation(
                     "Feature {FeatureName} updated to {State} from app {AppName}; affected active application(s): {AffectedApplications}",
                     featureName, featureState.State, applicationName, result.AffectedApplications);
                 return Results.Ok(result);
             }
             catch (FeatureNotFoundException)
             {
-                apiLogger.LogWarning("Feature {FeatureName} not found in app {AppName} while updating state", featureName, applicationName);
+                logger.LogWarning("Feature {FeatureName} not found in app {AppName} while updating state", featureName, applicationName);
                 return Results.NotFound();
             }
         })
@@ -195,7 +193,7 @@ app.MapPut("/applications/{applicationName}/features/{featureName}",
 
 app.MapGet("/pending-deletion/features", (IFeatureRepository featureRepository) =>
     {
-        apiLogger.LogDebug("Listing features pending deletion");
+        logger.LogDebug("Listing features pending deletion");
         var featureService = new FeatureService(featureRepository);
         var pending = featureService.GetPendingFeatures();
         return Results.Ok(pending);
@@ -205,7 +203,7 @@ app.MapGet("/pending-deletion/features", (IFeatureRepository featureRepository) 
 
 app.MapGet("/pending-deletion/applications", (IFeatureRepository featureRepository) =>
     {
-        apiLogger.LogDebug("Listing applications pending deletion");
+        logger.LogDebug("Listing applications pending deletion");
         var featureService = new FeatureService(featureRepository);
         var pending = featureService.GetPendingApplications();
         return Results.Ok(pending);
@@ -216,24 +214,24 @@ app.MapGet("/pending-deletion/applications", (IFeatureRepository featureReposito
 app.MapDelete("/applications/{applicationName}/features/{featureName}/pending",
         (string applicationName, string featureName, IFeatureRepository featureRepository) =>
         {
-            apiLogger.LogDebug("Permanently deleting feature {FeatureName} in app {AppName}", featureName, applicationName);
+            logger.LogDebug("Permanently deleting feature {FeatureName} in app {AppName}", featureName, applicationName);
             var featureService = new FeatureService(featureRepository);
             try
             {
                 var result = featureService.PermanentlyDeleteFeature(applicationName, featureName);
-                apiLogger.LogInformation(
+                logger.LogInformation(
                     "Feature {FeatureName} in app {AppName} permanently deleted (last used {LastUsedAt:o}, pending since {PendingSince:o})",
                     featureName, applicationName, result.LastUsedAt, result.PendingDeletionSince);
                 return Results.Ok(result);
             }
             catch (FeatureNotFoundException)
             {
-                apiLogger.LogWarning("Feature {FeatureName} not found in app {AppName} during permanent deletion", featureName, applicationName);
+                logger.LogWarning("Feature {FeatureName} not found in app {AppName} during permanent deletion", featureName, applicationName);
                 return Results.NotFound();
             }
             catch (FeatureNotPendingDeletionException ex)
             {
-                apiLogger.LogInformation(
+                logger.LogInformation(
                     "Permanent deletion of {FeatureName} in {AppName} skipped — feature was restored: {Message}",
                     featureName, applicationName, ex.Message);
                 return Results.Conflict(new { ex.Message });
@@ -248,24 +246,24 @@ app.MapDelete("/applications/{applicationName}/features/{featureName}/pending",
 app.MapDelete("/applications/{applicationName}/pending",
         (string applicationName, IFeatureRepository featureRepository) =>
         {
-            apiLogger.LogDebug("Permanently deleting app {AppName}", applicationName);
+            logger.LogDebug("Permanently deleting app {AppName}", applicationName);
             var featureService = new FeatureService(featureRepository);
             try
             {
                 var result = featureService.PermanentlyDeleteApplication(applicationName);
-                apiLogger.LogInformation(
+                logger.LogInformation(
                     "Application {AppName} permanently deleted (last used {LastUsedAt:o}, pending since {PendingSince:o})",
                     applicationName, result.LastUsedAt, result.PendingDeletionSince);
                 return Results.Ok(result);
             }
             catch (ApplicationNotFoundException)
             {
-                apiLogger.LogWarning("Application {AppName} not found during permanent deletion", applicationName);
+                logger.LogWarning("Application {AppName} not found during permanent deletion", applicationName);
                 return Results.NotFound();
             }
             catch (FeatureNotPendingDeletionException ex)
             {
-                apiLogger.LogInformation(
+                logger.LogInformation(
                     "Permanent deletion of app {AppName} skipped — application was restored: {Message}",
                     applicationName, ex.Message);
                 return Results.Conflict(new { ex.Message });
