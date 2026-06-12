@@ -80,6 +80,7 @@ public sealed class FeatureRepositoryLifecycleTests
         Assert.False(result.State);
         Assert.Equal(2, result.AffectedApplications);
         Assert.True(result.IsShared);
+        Assert.Equal(new[] { appA.Name, appB.Name }.OrderBy(n => n), result.AffectedApplicationNames);
         Assert.False(repository.GetFeatureState(appA, sharedFeature.Name));
         Assert.False(repository.GetFeatureState(appB, sharedFeature.Name));
     }

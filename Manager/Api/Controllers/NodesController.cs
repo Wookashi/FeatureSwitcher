@@ -241,7 +241,7 @@ internal class NodesController : ControllerBase
             var body = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<FeatureUpdateResultDto>(body, JsonOptions);
             var scope = result?.IsShared == true
-                ? $"shared flag; affected active applications: {result.AffectedApplications}"
+                ? $"shared flag; affected active applications: {result.AffectedApplications} ({string.Join(", ", result.AffectedApplicationNames)})"
                 : "single-application flag";
 
             _auditLog.AddEntry(username, "ToggleFeature",

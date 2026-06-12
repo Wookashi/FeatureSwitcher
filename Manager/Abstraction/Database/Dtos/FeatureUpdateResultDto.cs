@@ -6,4 +6,5 @@ public sealed class FeatureUpdateResultDto
     public bool State { get; set; }
     public int AffectedApplications { get; set; }
     public bool IsShared { get; set; }
+    public IReadOnlyList<string> AffectedApplicationNames { get; set; } = [];
 }

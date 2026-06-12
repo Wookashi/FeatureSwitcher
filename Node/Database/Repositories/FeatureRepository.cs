@@ -183,14 +183,17 @@ internal sealed class FeatureRepository : IFeatureRepository
         }
 
         featureEntity.IsEnabled = featureDto.State;
-        var affectedApplications = _context.ApplicationFeatures
-            .Count(link => link.FeatureId == featureEntity.Id
+        var affectedApplicationNames = _context.ApplicationFeatures
+            .Where(link => link.FeatureId == featureEntity.Id
                            && link.Status == EntityStatus.Active
-                           && link.Application.Status == EntityStatus.Active);
+                           && link.Application.Status == EntityStatus.Active)
+            .Select(link => link.Application.Name)
+            .OrderBy(name => name)
+            .ToList();
 
         _context.SaveChanges();
 
-        return new FeatureUpdateResultDto(featureDto.Name, featureDto.State, affectedApplications);
+        return new FeatureUpdateResultDto(featureDto.Name, featureDto.State, affectedApplicationNames);
     }
 
     public void RecordFeatureUsage(ApplicationDto application, string featureName)
