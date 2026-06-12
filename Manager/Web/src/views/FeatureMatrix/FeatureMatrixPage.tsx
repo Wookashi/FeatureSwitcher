@@ -22,6 +22,7 @@ import {
   Flex,
   Modal,
   Popconfirm,
+  Dropdown,
   theme as antTheme,
 } from 'antd';
 import {
@@ -162,16 +163,30 @@ function CellRenderer({ state, onClick }: CellRendererProps) {
   );
 }
 
-function hasDifferences(row: FeatureMatrixRow, nodeNames: string[]): boolean {
-  const values: boolean[] = [];
+type DiffMode = 'off' | 'value' | 'all';
+
+function hasDifferences(row: FeatureMatrixRow, nodeNames: string[], mode: DiffMode): boolean {
+  // Each comparable cell is reduced to a state token. In 'value' mode only
+  // on/off cells count (N/A is ignored). In 'all' mode N/A becomes its own
+  // state, so a feature that is present on some nodes but missing on others
+  // counts as a difference too. A node renders "N/A" both for an explicit
+  // `unknown` cell and for a missing cell entry (see the column render), so
+  // both must map to the same 'na' token here to mirror what the user sees.
+  const states: string[] = [];
   for (const nodeName of nodeNames) {
     const cell = row.cells[nodeName];
     if (cell?.kind === 'value') {
-      values.push(cell.value);
+      states.push(cell.value ? 'on' : 'off');
+    } else if (cell?.kind === 'loading') {
+      // Still loading — don't let a transient state register as a difference.
+      continue;
+    } else if (mode === 'all') {
+      // `unknown` cell or no cell at all → rendered as N/A.
+      states.push('na');
     }
   }
-  if (values.length < 2) return false;
-  return values.some((v) => v !== values[0]);
+  if (states.length < 2) return false;
+  return states.some((s) => s !== states[0]);
 }
 
 export default function FeatureMatrixPage() {
@@ -182,7 +197,7 @@ export default function FeatureMatrixPage() {
   const { nodes, rows, errors, unreachableNodes, nodeStates, isLoadingNodes, isLoading, refresh, toggleFeatureState, deleteNode } = useFeatureMatrix();
 
   const [searchText, setSearchText] = useState('');
-  const [showOnlyDifferences, setShowOnlyDifferences] = useState(false);
+  const [diffMode, setDiffMode] = useState<DiffMode>('off');
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [pendingDeletionOpen, setPendingDeletionOpen] = useState(false);
   const pendingDeletion = usePendingDeletion(isAdmin);
@@ -293,12 +308,12 @@ export default function FeatureMatrixPage() {
       );
     }
 
-    if (showOnlyDifferences) {
-      result = result.filter((row) => hasDifferences(row, nodeNames));
+    if (diffMode !== 'off') {
+      result = result.filter((row) => hasDifferences(row, nodeNames, diffMode));
     }
 
     return result;
-  }, [rows, searchText, showOnlyDifferences, nodeNames]);
+  }, [rows, searchText, diffMode, nodeNames]);
 
   // Convert flat rows to tree structure grouped by application
   const treeData = useMemo(() => {
@@ -725,15 +740,28 @@ export default function FeatureMatrixPage() {
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
                   />
-                  <Tooltip title="Show only features with different states across nodes">
-                    <Button
-                      icon={<FilterOutlined />}
-                      type={showOnlyDifferences ? 'primary' : 'default'}
-                      onClick={() => setShowOnlyDifferences(!showOnlyDifferences)}
-                    >
-                      Differences
-                    </Button>
-                  </Tooltip>
+                  <Dropdown
+                    trigger={['click']}
+                    menu={{
+                      selectable: true,
+                      selectedKeys: [diffMode],
+                      items: [
+                        { key: 'off', label: 'Show all features' },
+                        { key: 'value', label: 'Differences (On/Off only)' },
+                        { key: 'all', label: 'Differences (including N/A)' },
+                      ],
+                      onClick: ({ key }) => setDiffMode(key as DiffMode),
+                    }}
+                  >
+                    <Tooltip title="Filter features by differing states across nodes">
+                      <Button
+                        icon={<FilterOutlined />}
+                        type={diffMode !== 'off' ? 'primary' : 'default'}
+                      >
+                        {diffMode === 'all' ? 'Differences (incl. N/A)' : 'Differences'}
+                      </Button>
+                    </Tooltip>
+                  </Dropdown>
                   <Button
                     type="primary"
                     icon={<ReloadOutlined spin={isLoading} />}
