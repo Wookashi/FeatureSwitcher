@@ -14,6 +14,10 @@
       <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.9" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.9" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.9" />
+      <!-- Pin the native SQLite bundle to 3.0.x (SQLite 3.50.4) to remediate CVE-2025-6965;
+           the transitive 2.1.11 ships a vulnerable SQLite < 3.50.2. v3 has no SQLitePCLRaw.core
+           API changes, so it stays compatible with Microsoft.Data.Sqlite. -->
+      <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.9">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
