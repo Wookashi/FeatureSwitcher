@@ -637,7 +637,7 @@ export default function FeatureMatrixPage() {
           {/* Stats Cards */}
           <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
             <Col xs={24} sm={8} lg={8}>
-              <Card bordered={false} size="small">
+              <Card variant="borderless" size="small">
                 <Statistic
                   title={<Text type="secondary">Nodes</Text>}
                   value={stats.nodes}
@@ -647,7 +647,7 @@ export default function FeatureMatrixPage() {
               </Card>
             </Col>
             <Col xs={24} sm={8} lg={8}>
-              <Card bordered={false} size="small">
+              <Card variant="borderless" size="small">
                 <Statistic
                   title={<Text type="secondary">Applications</Text>}
                   value={stats.applications}
@@ -657,7 +657,7 @@ export default function FeatureMatrixPage() {
               </Card>
             </Col>
             <Col xs={24} sm={8} lg={8}>
-              <Card bordered={false} size="small">
+              <Card variant="borderless" size="small">
                 <Statistic
                   title={<Text type="secondary">Shared</Text>}
                   value={stats.shared}
@@ -694,7 +694,7 @@ export default function FeatureMatrixPage() {
 
           {/* Main Table Card */}
           <Card
-            bordered={false}
+            variant="borderless"
             title={
               <Flex justify="space-between" align="center" wrap="wrap" gap={12}>
                 <Space size="middle">

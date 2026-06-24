@@ -371,7 +371,7 @@ export default function UserManagementPage() {
         onCancel={() => { createForm.resetFields(); setCreateOpen(false); }}
         confirmLoading={createLoading}
         okText="Create"
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={createForm} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item
@@ -417,7 +417,7 @@ export default function UserManagementPage() {
         onCancel={() => { editForm.resetFields(); setEditOpen(false); setEditingUser(null); }}
         confirmLoading={editLoading}
         okText="Save"
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={editForm} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item

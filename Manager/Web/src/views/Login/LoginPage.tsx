@@ -116,7 +116,7 @@ export default function LoginPage() {
 
         <Card
           style={{ width: 380, maxWidth: '90vw' }}
-          bordered={false}
+          variant="borderless"
         >
           <Flex vertical align="center" gap={8} style={{ marginBottom: 24 }}>
             <FlagOutlined style={{ fontSize: 32, color: '#1677ff' }} />

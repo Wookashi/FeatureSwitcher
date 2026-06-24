@@ -61,7 +61,7 @@ export default function ChangePasswordModal({ open, onClose }: ChangePasswordMod
       onCancel={() => { form.resetFields(); onClose(); }}
       confirmLoading={loading}
       okText="Change Password"
-      destroyOnClose
+      destroyOnHidden
     >
       <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
         <Form.Item
