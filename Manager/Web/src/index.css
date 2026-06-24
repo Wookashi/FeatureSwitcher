@@ -1,0 +1,12 @@
+/* Global reset: removes the browser-default body margin (the white border around
+   the app) and ensures the full-height (100vh) page layouts fill the viewport
+   exactly, so no scrollbar appears unless the content genuinely overflows. */
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  min-height: 100vh;
+}
