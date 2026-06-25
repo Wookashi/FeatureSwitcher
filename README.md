@@ -27,6 +27,11 @@ application on that Node that registered the same flag name.
 
 ## How to run?
 
+> **Full instructions:** see **[docs/RUNNING.md](./docs/RUNNING.md)** for a complete,
+> step-by-step guide covering Docker Compose, plain `docker run` (Manager + Node on a
+> shared network), local development without Docker, a configuration reference, and
+> troubleshooting. The quick start below is the short version.
+
 Run from the repository root:
 ```bash
 docker-compose up --build
