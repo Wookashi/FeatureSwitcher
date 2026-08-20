@@ -27,10 +27,6 @@
     </Target>
     
     <ItemGroup>
-      <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.10" />
-    </ItemGroup>
-    
-    <ItemGroup>
         <None Include="Images\nuget.png">
             <Pack>True</Pack>
             <PackagePath>\</PackagePath>

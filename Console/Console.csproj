@@ -13,7 +13,7 @@
 
     <ItemGroup>
       <PackageReference Include="Bogus" Version="35.6.5" />
-      <PackageReference Include="Spectre.Console" Version="0.57.0" />
+      <PackageReference Include="Spectre.Console" Version="0.57.2" />
     </ItemGroup>
 
     <ItemGroup>
