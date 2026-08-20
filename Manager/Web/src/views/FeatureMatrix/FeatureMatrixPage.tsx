@@ -489,17 +489,25 @@ export default function FeatureMatrixPage() {
         const handleClick = (cellState?.kind === 'value' && canToggle)
           ? () => {
               const sharedInfo = sharedFeatureInfo.get(record.feature);
-              if (!sharedInfo || !sharedInfo.nodes.includes(node.name)) {
-                toggleFeatureState(node.id, node.name, record.application, record.feature, cellState.value);
-                return;
-              }
+              const isShared = Boolean(sharedInfo && sharedInfo.nodes.includes(node.name));
+              const actionLabel = cellState.value ? 'disable' : 'enable';
 
               Modal.confirm({
-                title: `Change shared feature "${record.feature}"?`,
-                content: (
+                title: isShared
+                  ? `Change shared feature "${record.feature}"?`
+                  : `${cellState.value ? 'Disable' : 'Enable'} "${record.feature}"?`,
+                content: isShared ? (
                   <div>
-                    <div>This feature is used by: {sharedInfo.apps.join(', ')}.</div>
+                    <div>
+                      Are you sure you want to {actionLabel} <Text code>{record.feature}</Text> on node "{node.name}"?
+                    </div>
+                    <div style={{ marginTop: 8 }}>This feature is used by: {sharedInfo!.apps.join(', ')}.</div>
                     <div style={{ marginTop: 8 }}>Changing it here updates the same flag for all linked applications on this node.</div>
+                  </div>
+                ) : (
+                  <div>
+                    Are you sure you want to {actionLabel} <Text code>{record.feature}</Text> for{' '}
+                    <Text strong>{record.application}</Text> on node "{node.name}"?
                   </div>
                 ),
                 okText: cellState.value ? 'Disable' : 'Enable',
