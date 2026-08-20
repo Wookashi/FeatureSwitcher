@@ -38,6 +38,38 @@ import { useAppVersion } from '../../version/useAppVersion';
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 
+const ROLE_DESCRIPTIONS: Record<string, string> = {
+  Admin: 'Full access — manages users and nodes, can view and toggle every feature flag on every node.',
+  Editor: 'Can view and toggle feature flags on the nodes they have been granted access to. Cannot manage users or nodes.',
+  Viewer: 'Read-only access to feature flags on the nodes they have been granted access to. Cannot toggle flags.',
+};
+
+const ROLE_OPTIONS = [
+  { value: 'Admin', label: 'Admin' },
+  { value: 'Editor', label: 'Editor' },
+  { value: 'Viewer', label: 'Viewer' },
+];
+
+function RoleOptionLabel({ role }: { role: string }) {
+  return (
+    <div style={{ padding: '2px 0' }}>
+      <div>{role}</div>
+      <Text type="secondary" style={{ fontSize: 12, whiteSpace: 'normal' }}>
+        {ROLE_DESCRIPTIONS[role]}
+      </Text>
+    </div>
+  );
+}
+
+function RoleDescriptionHint({ role }: { role: string | undefined }) {
+  if (!role || !ROLE_DESCRIPTIONS[role]) return null;
+  return (
+    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: -12, marginBottom: 16 }}>
+      {ROLE_DESCRIPTIONS[role]}
+    </Text>
+  );
+}
+
 interface UserRecord {
   id: number;
   username: string;
@@ -393,11 +425,14 @@ export default function UserManagementPage() {
             label="Role"
             rules={[{ required: true, message: 'Required' }]}
           >
-            <Select placeholder="Select role">
-              <Select.Option value="Admin">Admin</Select.Option>
-              <Select.Option value="Editor">Editor</Select.Option>
-              <Select.Option value="Viewer">Viewer</Select.Option>
-            </Select>
+            <Select
+              placeholder="Select role"
+              options={ROLE_OPTIONS}
+              optionRender={(option) => <RoleOptionLabel role={option.data.value as string} />}
+            />
+          </Form.Item>
+          <Form.Item noStyle shouldUpdate={(prev, cur) => prev.role !== cur.role}>
+            {({ getFieldValue }) => <RoleDescriptionHint role={getFieldValue('role')} />}
           </Form.Item>
           <Form.Item name="nodeIds" label="Accessible Nodes">
             <Select mode="multiple" placeholder="Select nodes (Admins have access to all)">
@@ -425,11 +460,13 @@ export default function UserManagementPage() {
             label="Role"
             rules={[{ required: true, message: 'Required' }]}
           >
-            <Select>
-              <Select.Option value="Admin">Admin</Select.Option>
-              <Select.Option value="Editor">Editor</Select.Option>
-              <Select.Option value="Viewer">Viewer</Select.Option>
-            </Select>
+            <Select
+              options={ROLE_OPTIONS}
+              optionRender={(option) => <RoleOptionLabel role={option.data.value as string} />}
+            />
+          </Form.Item>
+          <Form.Item noStyle shouldUpdate={(prev, cur) => prev.role !== cur.role}>
+            {({ getFieldValue }) => <RoleDescriptionHint role={getFieldValue('role')} />}
           </Form.Item>
           <Form.Item name="nodeIds" label="Accessible Nodes">
             <Select mode="multiple" placeholder="Select nodes (Admins have access to all)">
