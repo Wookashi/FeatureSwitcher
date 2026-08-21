@@ -26,7 +26,7 @@ internal sealed class AuthService
         return BCrypt.Net.BCrypt.Verify(password, hash);
     }
 
-    public (string Token, DateTime ExpiresAt, string Role) GenerateToken(string username)
+    public (string Token, DateTime ExpiresAt, bool IsSystemAdmin) GenerateToken(string username)
     {
         var user = _userRepository.GetUserByUsername(username);
         if (user is null)
@@ -36,12 +36,15 @@ internal sealed class AuthService
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var expiresAt = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationMinutes);
 
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Name, user.Username),
-            new Claim(ClaimTypes.Role, user.Role)
+            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new(ClaimTypes.Name, user.Username),
         };
+        if (user.IsSystemAdmin)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, "Admin"));
+        }
 
         var token = new JwtSecurityToken(
             issuer: _jwtSettings.Issuer,
@@ -50,6 +53,6 @@ internal sealed class AuthService
             expires: expiresAt,
             signingCredentials: credentials);
 
-        return (new JwtSecurityTokenHandler().WriteToken(token), expiresAt, user.Role);
+        return (new JwtSecurityTokenHandler().WriteToken(token), expiresAt, user.IsSystemAdmin);
     }
 }

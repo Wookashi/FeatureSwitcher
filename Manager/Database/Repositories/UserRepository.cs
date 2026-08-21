@@ -54,16 +54,15 @@ internal class UserRepository : IUserRepository
             .ToList();
     }
 
-    public UserDto CreateUser(string username, string passwordHash, string role, List<int> nodeIds)
+    public UserDto CreateUser(string username, string passwordHash, bool isSystemAdmin, List<NodeAccessDto> nodeAccess)
     {
-        var parsedRole = Enum.Parse<UserRoleEnum>(role);
         var now = DateTime.UtcNow;
 
         var user = new UserEntity
         {
             Username = username,
             PasswordHash = passwordHash,
-            RoleEnum = parsedRole,
+            IsSystemAdmin = isSystemAdmin,
             CreatedAt = now,
             UpdatedAt = now,
         };
@@ -71,34 +70,35 @@ internal class UserRepository : IUserRepository
         _context.Users.Add(user);
         _context.SaveChanges();
 
-        foreach (var nodeId in nodeIds)
+        foreach (var access in nodeAccess)
         {
             _context.UserNodeAccess.Add(new UserNodeAccessEntity
             {
                 UserId = user.Id,
-                NodeId = nodeId,
+                NodeId = access.NodeId,
+                RoleEnum = Enum.Parse<NodeRoleEnum>(access.Role),
             });
         }
 
         _context.SaveChanges();
 
-        return new UserDto(user.Id, user.Username, user.RoleEnum.ToString(), user.CreatedAt, user.UpdatedAt, nodeIds);
+        return new UserDto(user.Id, user.Username, user.IsSystemAdmin, user.CreatedAt, user.UpdatedAt, nodeAccess);
     }
 
-    public UserDto UpdateUser(int id, string? role, List<int>? nodeIds)
+    public UserDto UpdateUser(int id, bool? isSystemAdmin, List<NodeAccessDto>? nodeAccess)
     {
         var user = _context.Users
             .Include(u => u.NodeAccess)
             .Single(u => u.Id == id);
 
-        if (role is not null)
+        if (isSystemAdmin is not null)
         {
-            user.RoleEnum = Enum.Parse<UserRoleEnum>(role);
+            user.IsSystemAdmin = isSystemAdmin.Value;
         }
 
         user.UpdatedAt = DateTime.UtcNow;
 
-        if (nodeIds is not null)
+        if (nodeAccess is not null)
         {
             var existingAccess = _context.UserNodeAccess.Where(a => a.UserId == id).ToList();
             foreach (var access in existingAccess)
@@ -106,24 +106,25 @@ internal class UserRepository : IUserRepository
                 _context.UserNodeAccess.Remove(access);
             }
 
-            foreach (var nodeId in nodeIds)
+            foreach (var access in nodeAccess)
             {
                 _context.UserNodeAccess.Add(new UserNodeAccessEntity
                 {
                     UserId = id,
-                    NodeId = nodeId,
+                    NodeId = access.NodeId,
+                    RoleEnum = Enum.Parse<NodeRoleEnum>(access.Role),
                 });
             }
         }
 
         _context.SaveChanges();
 
-        var updatedNodeIds = _context.UserNodeAccess
+        var updatedNodeAccess = _context.UserNodeAccess
             .Where(a => a.UserId == id)
-            .Select(a => a.NodeId)
+            .Select(a => new NodeAccessDto(a.NodeId, a.RoleEnum.ToString()))
             .ToList();
 
-        return new UserDto(user.Id, user.Username, user.RoleEnum.ToString(), user.CreatedAt, user.UpdatedAt, updatedNodeIds);
+        return new UserDto(user.Id, user.Username, user.IsSystemAdmin, user.CreatedAt, user.UpdatedAt, updatedNodeAccess);
     }
 
     public void UpdatePassword(int id, string passwordHash)
@@ -154,14 +155,22 @@ internal class UserRepository : IUserRepository
             .ToList();
     }
 
+    public NodeRoleEnum? GetNodeRole(int userId, int nodeId)
+    {
+        return _context.UserNodeAccess
+            .Where(a => a.UserId == userId && a.NodeId == nodeId)
+            .Select(a => (NodeRoleEnum?)a.RoleEnum)
+            .SingleOrDefault();
+    }
+
     private static UserDto ToDto(UserEntity u)
     {
         return new UserDto(
             u.Id,
             u.Username,
-            u.RoleEnum.ToString(),
+            u.IsSystemAdmin,
             u.CreatedAt,
             u.UpdatedAt,
-            u.NodeAccess.Select(a => a.NodeId).ToList());
+            u.NodeAccess.Select(a => new NodeAccessDto(a.NodeId, a.RoleEnum.ToString())).ToList());
     }
 }

@@ -12,7 +12,7 @@ public static class ClaimsExtensions
         public string GetUserName()
             => user.FindFirst(ClaimTypes.Name)?.Value ?? "";
 
-        public string GetUserRole()
-            => user.FindFirst(ClaimTypes.Role)?.Value ?? "";
+        public bool IsSystemAdmin()
+            => user.IsInRole("Admin");
     }
 }

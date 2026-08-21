@@ -38,45 +38,23 @@ import { useAppVersion } from '../../version/useAppVersion';
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 
-const ROLE_DESCRIPTIONS: Record<string, string> = {
-  Admin: 'Full access — manages users and nodes, can view and toggle every feature flag on every node.',
-  Editor: 'Can view and toggle feature flags on the nodes they have been granted access to. Cannot manage users or nodes.',
-  Viewer: 'Read-only access to feature flags on the nodes they have been granted access to. Cannot toggle flags.',
-};
-
-const ROLE_OPTIONS = [
-  { value: 'Admin', label: 'Admin' },
-  { value: 'Editor', label: 'Editor' },
+const NODE_ROLE_OPTIONS = [
   { value: 'Viewer', label: 'Viewer' },
+  { value: 'Editor', label: 'Editor' },
 ];
 
-function RoleOptionLabel({ role }: { role: string }) {
-  return (
-    <div style={{ padding: '2px 0' }}>
-      <div>{role}</div>
-      <Text type="secondary" style={{ fontSize: 12, whiteSpace: 'normal' }}>
-        {ROLE_DESCRIPTIONS[role]}
-      </Text>
-    </div>
-  );
-}
-
-function RoleDescriptionHint({ role }: { role: string | undefined }) {
-  if (!role || !ROLE_DESCRIPTIONS[role]) return null;
-  return (
-    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: -12, marginBottom: 16 }}>
-      {ROLE_DESCRIPTIONS[role]}
-    </Text>
-  );
+interface NodeAccessRecord {
+  nodeId: number;
+  role: string;
 }
 
 interface UserRecord {
   id: number;
   username: string;
-  role: string;
+  isSystemAdmin: boolean;
   createdAt: string;
   updatedAt: string;
-  accessibleNodeIds: number[];
+  nodeAccess: NodeAccessRecord[];
 }
 
 interface NodeRecord {
@@ -85,16 +63,57 @@ interface NodeRecord {
   address: string;
 }
 
+interface NodeAccessFormValue {
+  nodeId: number;
+  role?: 'Viewer' | 'Editor';
+}
+
 interface CreateFormValues {
   username: string;
   password: string;
-  role: string;
-  nodeIds: number[];
+  isSystemAdmin: boolean;
+  nodeAccess: NodeAccessFormValue[];
 }
 
 interface EditFormValues {
-  role: string;
-  nodeIds: number[];
+  isSystemAdmin: boolean;
+  nodeAccess: NodeAccessFormValue[];
+}
+
+function NodeAccessEditor({ nodes, disabled }: { nodes: NodeRecord[]; disabled: boolean }) {
+  if (disabled) {
+    return <Text type="secondary">System admins have access to all nodes.</Text>;
+  }
+  if (nodes.length === 0) {
+    return <Text type="secondary">No nodes registered yet.</Text>;
+  }
+  return (
+    <Form.List name="nodeAccess">
+      {(fields) => (
+        <Space direction="vertical" style={{ width: '100%' }}>
+          {fields.map((field) => {
+            const node = nodes[field.name];
+            return (
+              <Flex key={field.key} align="center" gap={12} justify="space-between">
+                <Text>{node?.name}</Text>
+                <Form.Item name={[field.name, 'role']} noStyle>
+                  <Select
+                    allowClear
+                    placeholder="No access"
+                    style={{ width: 160 }}
+                    options={NODE_ROLE_OPTIONS}
+                  />
+                </Form.Item>
+                <Form.Item name={[field.name, 'nodeId']} noStyle hidden>
+                  <Input type="hidden" />
+                </Form.Item>
+              </Flex>
+            );
+          })}
+        </Space>
+      )}
+    </Form.List>
+  );
 }
 
 export default function UserManagementPage() {
@@ -136,6 +155,11 @@ export default function UserManagementPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const toNodeAccessPayload = (nodeAccess: NodeAccessFormValue[]) =>
+    nodeAccess
+      .filter((a): a is Required<NodeAccessFormValue> => Boolean(a.role))
+      .map((a) => ({ nodeId: a.nodeId, role: a.role }));
+
   const handleCreate = async () => {
     try {
       const values = await createForm.validateFields();
@@ -144,7 +168,12 @@ export default function UserManagementPage() {
       const response = await authFetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(values),
+        body: JSON.stringify({
+          username: values.username,
+          password: values.password,
+          isSystemAdmin: values.isSystemAdmin,
+          nodeAccess: toNodeAccessPayload(values.nodeAccess ?? []),
+        }),
       });
 
       if (!response.ok) {
@@ -173,7 +202,10 @@ export default function UserManagementPage() {
       const response = await authFetch(`/api/users/${editingUser.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(values),
+        body: JSON.stringify({
+          isSystemAdmin: values.isSystemAdmin,
+          nodeAccess: toNodeAccessPayload(values.nodeAccess ?? []),
+        }),
       });
 
       if (!response.ok) {
@@ -205,11 +237,23 @@ export default function UserManagementPage() {
     fetchData();
   };
 
+  const nodeAccessForNodes = (existing: NodeAccessRecord[]): NodeAccessFormValue[] =>
+    nodes.map((n) => ({
+      nodeId: n.id,
+      role: existing.find((a) => a.nodeId === n.id)?.role as 'Viewer' | 'Editor' | undefined,
+    }));
+
+  const openCreate = () => {
+    createForm.resetFields();
+    createForm.setFieldsValue({ isSystemAdmin: false, nodeAccess: nodeAccessForNodes([]) });
+    setCreateOpen(true);
+  };
+
   const openEdit = (record: UserRecord) => {
     setEditingUser(record);
     editForm.setFieldsValue({
-      role: record.role,
-      nodeIds: record.accessibleNodeIds,
+      isSystemAdmin: record.isSystemAdmin,
+      nodeAccess: nodeAccessForNodes(record.nodeAccess),
     });
     setEditOpen(true);
   };
@@ -228,14 +272,7 @@ export default function UserManagementPage() {
     }
   })();
 
-  const roleColor = (role: string) => {
-    switch (role) {
-      case 'Admin': return 'red';
-      case 'Editor': return 'blue';
-      case 'Viewer': return 'green';
-      default: return 'default';
-    }
-  };
+  const nodeRoleColor = (role: string) => (role === 'Editor' ? 'blue' : 'green');
 
   const columns: ColumnsType<UserRecord> = [
     {
@@ -251,22 +288,25 @@ export default function UserManagementPage() {
     },
     {
       title: 'Role',
-      dataIndex: 'role',
+      dataIndex: 'isSystemAdmin',
       key: 'role',
       width: 120,
-      render: (role: string) => <Tag color={roleColor(role)}>{role}</Tag>,
+      render: (isSystemAdmin: boolean) =>
+        isSystemAdmin ? <Tag color="red">Admin</Tag> : <Text type="secondary">—</Text>,
     },
     {
-      title: 'Accessible Nodes',
-      dataIndex: 'accessibleNodeIds',
-      key: 'nodes',
-      render: (ids: number[], record: UserRecord) => {
-        if (record.role === 'Admin') return <Text type="secondary">All nodes</Text>;
-        if (ids.length === 0) return <Text type="secondary">None</Text>;
+      title: 'Node Access',
+      dataIndex: 'nodeAccess',
+      key: 'nodeAccess',
+      render: (nodeAccess: NodeAccessRecord[], record: UserRecord) => {
+        if (record.isSystemAdmin) return <Text type="secondary">All nodes</Text>;
+        if (nodeAccess.length === 0) return <Text type="secondary">None</Text>;
         return (
           <Space wrap>
-            {ids.map((id) => (
-              <Tag key={id}>{nodeMap.get(id) ?? `Node #${id}`}</Tag>
+            {nodeAccess.map((a) => (
+              <Tag key={a.nodeId} color={nodeRoleColor(a.role)}>
+                {nodeMap.get(a.nodeId) ?? `Node #${a.nodeId}`}: {a.role}
+              </Tag>
             ))}
           </Space>
         );
@@ -364,7 +404,7 @@ export default function UserManagementPage() {
             <Button
               type="primary"
               icon={<UserAddOutlined />}
-              onClick={() => { createForm.resetFields(); setCreateOpen(true); }}
+              onClick={openCreate}
             >
               Add User
             </Button>
@@ -420,26 +460,18 @@ export default function UserManagementPage() {
           >
             <Input.Password placeholder="Password" />
           </Form.Item>
-          <Form.Item
-            name="role"
-            label="Role"
-            rules={[{ required: true, message: 'Required' }]}
-          >
-            <Select
-              placeholder="Select role"
-              options={ROLE_OPTIONS}
-              optionRender={(option) => <RoleOptionLabel role={option.data.value as string} />}
-            />
+          <Form.Item name="isSystemAdmin" label="System Admin" valuePropName="checked">
+            <Switch />
           </Form.Item>
-          <Form.Item noStyle shouldUpdate={(prev, cur) => prev.role !== cur.role}>
-            {({ getFieldValue }) => <RoleDescriptionHint role={getFieldValue('role')} />}
-          </Form.Item>
-          <Form.Item name="nodeIds" label="Accessible Nodes">
-            <Select mode="multiple" placeholder="Select nodes (Admins have access to all)">
-              {nodes.map((n) => (
-                <Select.Option key={n.id} value={n.id}>{n.name}</Select.Option>
-              ))}
-            </Select>
+          <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: -12, marginBottom: 16 }}>
+            Full access — manages users and nodes, can view and toggle every feature flag on every node.
+          </Text>
+          <Form.Item label="Node Access">
+            <Form.Item noStyle shouldUpdate={(prev, cur) => prev.isSystemAdmin !== cur.isSystemAdmin}>
+              {({ getFieldValue }) => (
+                <NodeAccessEditor nodes={nodes} disabled={Boolean(getFieldValue('isSystemAdmin'))} />
+              )}
+            </Form.Item>
           </Form.Item>
         </Form>
       </Modal>
@@ -455,25 +487,18 @@ export default function UserManagementPage() {
         destroyOnHidden
       >
         <Form form={editForm} layout="vertical" style={{ marginTop: 16 }}>
-          <Form.Item
-            name="role"
-            label="Role"
-            rules={[{ required: true, message: 'Required' }]}
-          >
-            <Select
-              options={ROLE_OPTIONS}
-              optionRender={(option) => <RoleOptionLabel role={option.data.value as string} />}
-            />
+          <Form.Item name="isSystemAdmin" label="System Admin" valuePropName="checked">
+            <Switch />
           </Form.Item>
-          <Form.Item noStyle shouldUpdate={(prev, cur) => prev.role !== cur.role}>
-            {({ getFieldValue }) => <RoleDescriptionHint role={getFieldValue('role')} />}
-          </Form.Item>
-          <Form.Item name="nodeIds" label="Accessible Nodes">
-            <Select mode="multiple" placeholder="Select nodes (Admins have access to all)">
-              {nodes.map((n) => (
-                <Select.Option key={n.id} value={n.id}>{n.name}</Select.Option>
-              ))}
-            </Select>
+          <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: -12, marginBottom: 16 }}>
+            Full access — manages users and nodes, can view and toggle every feature flag on every node.
+          </Text>
+          <Form.Item label="Node Access">
+            <Form.Item noStyle shouldUpdate={(prev, cur) => prev.isSystemAdmin !== cur.isSystemAdmin}>
+              {({ getFieldValue }) => (
+                <NodeAccessEditor nodes={nodes} disabled={Boolean(getFieldValue('isSystemAdmin'))} />
+              )}
+            </Form.Item>
           </Form.Item>
         </Form>
       </Modal>

@@ -1,3 +1,4 @@
+using Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Enums;
 using Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Repositories;
 
 namespace Wookashi.FeatureSwitcher.Manager.Api.Services;
@@ -11,15 +12,28 @@ internal sealed class NodeAccessService
         _userRepository = userRepository;
     }
 
-    public bool CanAccessNode(int userId, string role, int nodeId)
+    public bool CanAccessNode(int userId, bool isSystemAdmin, int nodeId)
     {
-        if (role == "Admin") return true;
+        if (isSystemAdmin) return true;
         return _userRepository.HasAccessToNode(userId, nodeId);
     }
 
-    public List<int> GetAccessibleNodeIds(int userId, string role)
+    public bool CanEditNode(int userId, bool isSystemAdmin, int nodeId)
     {
-        if (role == "Admin") return [];
+        if (isSystemAdmin) return true;
+        return _userRepository.GetNodeRole(userId, nodeId) == NodeRoleEnum.Editor;
+    }
+
+    public List<int> GetAccessibleNodeIds(int userId, bool isSystemAdmin)
+    {
+        if (isSystemAdmin) return [];
         return _userRepository.GetAccessibleNodeIds(userId);
+    }
+
+    public Dictionary<int, string> GetAccessibleNodesWithRoles(int userId, bool isSystemAdmin)
+    {
+        if (isSystemAdmin) return [];
+        return GetAccessibleNodeIds(userId, isSystemAdmin)
+            .ToDictionary(nodeId => nodeId, nodeId => _userRepository.GetNodeRole(userId, nodeId)?.ToString() ?? "Viewer");
     }
 }

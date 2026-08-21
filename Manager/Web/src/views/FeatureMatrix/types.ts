@@ -3,6 +3,7 @@ export interface NodeDto {
   id: number;
   name: string;
   address: string;
+  role: string;
 }
 
 export interface ApplicationDto {

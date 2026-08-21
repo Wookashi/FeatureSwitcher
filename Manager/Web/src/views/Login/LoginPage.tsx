@@ -20,7 +20,7 @@ import {
   SunOutlined,
   MoonOutlined,
 } from '@ant-design/icons';
-import { setToken, setRole } from '../../auth';
+import { setToken, setIsSystemAdmin } from '../../auth';
 import { useTheme } from '../FeatureMatrix/theme';
 import { useAppVersion } from '../../version/useAppVersion';
 
@@ -75,7 +75,7 @@ export default function LoginPage() {
 
       const data = await response.json();
       setToken(data.token);
-      setRole(data.role);
+      setIsSystemAdmin(data.isSystemAdmin);
       navigate('/', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Network error');

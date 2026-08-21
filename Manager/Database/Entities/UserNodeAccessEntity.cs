@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
+using Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Enums;
 
 namespace Wookashi.FeatureSwitcher.Manager.Database.Entities;
 
@@ -14,4 +15,6 @@ public class UserNodeAccessEntity
 
     public int NodeId { get; set; }
     public NodeEntity Node { get; set; } = null!;
+
+    public NodeRoleEnum RoleEnum { get; set; }
 }

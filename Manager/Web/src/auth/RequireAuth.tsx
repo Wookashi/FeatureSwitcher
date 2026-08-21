@@ -1,21 +1,18 @@
 import { Navigate } from 'react-router-dom';
-import { getToken, isTokenExpired, getRole } from './authToken';
+import { getToken, isTokenExpired, getIsSystemAdmin } from './authToken';
 
 interface RequireAuthProps {
   children: React.ReactNode;
-  requiredRole?: string;
+  requireAdmin?: boolean;
 }
 
-export default function RequireAuth({ children, requiredRole }: RequireAuthProps) {
+export default function RequireAuth({ children, requireAdmin }: RequireAuthProps) {
   if (!getToken() || isTokenExpired()) {
     return <Navigate to="/login" replace />;
   }
 
-  if (requiredRole) {
-    const role = getRole();
-    if (role !== requiredRole) {
-      return <Navigate to="/" replace />;
-    }
+  if (requireAdmin && !getIsSystemAdmin()) {
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;

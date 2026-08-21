@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
-using Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Enums;
 
 namespace Wookashi.FeatureSwitcher.Manager.Database.Entities;
 
@@ -18,7 +17,7 @@ public class UserEntity
     [MaxLength(256)]
     public required string PasswordHash { get; set; }
 
-    public UserRoleEnum RoleEnum { get; set; }
+    public bool IsSystemAdmin { get; set; }
 
     public DateTime CreatedAt { get; set; }
 

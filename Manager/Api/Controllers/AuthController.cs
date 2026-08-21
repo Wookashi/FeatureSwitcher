@@ -40,12 +40,12 @@ internal class AuthController : ControllerBase
             return BadRequest(new { error = "Username and password are required." });
 
         var hash = BCrypt.Net.BCrypt.HashPassword(request.Password);
-        _userRepository.CreateUser(request.Username.Trim(), hash, "Admin", []);
+        _userRepository.CreateUser(request.Username.Trim(), hash, true, []);
 
         _auditLog.AddEntry(request.Username.Trim(), "Setup", "Initial admin account created");
 
-        var (token, expiresAt, role) = _authService.GenerateToken(request.Username.Trim());
-        return Ok(new LoginResponse { Token = token, ExpiresAt = expiresAt, Role = role });
+        var (token, expiresAt, isSystemAdmin) = _authService.GenerateToken(request.Username.Trim());
+        return Ok(new LoginResponse { Token = token, ExpiresAt = expiresAt, IsSystemAdmin = isSystemAdmin });
     }
 
     [HttpPost("login")]
@@ -57,8 +57,8 @@ internal class AuthController : ControllerBase
             return Unauthorized();
         }
 
-        var (token, expiresAt, role) = _authService.GenerateToken(request.Username);
-        return Ok(new LoginResponse { Token = token, ExpiresAt = expiresAt, Role = role });
+        var (token, expiresAt, isSystemAdmin) = _authService.GenerateToken(request.Username);
+        return Ok(new LoginResponse { Token = token, ExpiresAt = expiresAt, IsSystemAdmin = isSystemAdmin });
     }
 
     [HttpGet("me")]

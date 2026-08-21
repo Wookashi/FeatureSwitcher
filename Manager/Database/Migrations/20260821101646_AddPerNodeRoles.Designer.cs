@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Wookashi.FeatureSwitcher.Manager.Database;
 
@@ -10,9 +11,11 @@ using Wookashi.FeatureSwitcher.Manager.Database;
 namespace Wookashi.FeatureSwitcher.Manager.Database.Migrations
 {
     [DbContext(typeof(NodesDataContext))]
-    partial class NodesDataContextModelSnapshot : ModelSnapshot
+    [Migration("20260821101646_AddPerNodeRoles")]
+    partial class AddPerNodeRoles
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.11");

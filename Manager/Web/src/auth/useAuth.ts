@@ -1,16 +1,12 @@
-import { getToken, getRole, isTokenExpired } from './authToken';
+import { getToken, getIsSystemAdmin, isTokenExpired } from './authToken';
 
 export function useAuth() {
   const token = getToken();
   const isAuthenticated = !!token && !isTokenExpired();
-  const role = getRole() ?? '';
+  const isAdmin = getIsSystemAdmin();
 
   return {
     isAuthenticated,
-    role,
-    isAdmin: role === 'Admin',
-    isEditor: role === 'Editor',
-    isViewer: role === 'Viewer',
-    canToggle: role === 'Admin' || role === 'Editor',
+    isAdmin,
   };
 }

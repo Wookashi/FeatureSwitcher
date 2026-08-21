@@ -192,7 +192,7 @@ function hasDifferences(row: FeatureMatrixRow, nodeNames: string[], mode: DiffMo
 export default function FeatureMatrixPage() {
   const [themeMode, toggleTheme] = useTheme();
   const navigate = useNavigate();
-  const { isAdmin, canToggle } = useAuth();
+  const { isAdmin } = useAuth();
   const appVersion = useAppVersion();
   const { nodes, rows, errors, unreachableNodes, nodeStates, isLoadingNodes, isLoading, refresh, toggleFeatureState, deleteNode } = useFeatureMatrix();
 
@@ -486,7 +486,8 @@ export default function FeatureMatrixPage() {
             : 'Feature not present on this node';
           return <CellRenderer state={{ kind: 'unknown', reason }} />;
         }
-        const handleClick = (cellState?.kind === 'value' && canToggle)
+        const canToggleNode = isAdmin || node.role === 'Editor';
+        const handleClick = (cellState?.kind === 'value' && canToggleNode)
           ? () => {
               const sharedInfo = sharedFeatureInfo.get(record.feature);
               const isShared = Boolean(sharedInfo && sharedInfo.nodes.includes(node.name));
@@ -522,7 +523,7 @@ export default function FeatureMatrixPage() {
     }));
 
     return [...baseColumns, ...nodeColumns];
-  }, [orderedNodes, nodes, unreachableNodes, nodeStates, isLoading, toggleFeatureState, canToggle, isAdmin, deleteNode, moveLeft, moveRight, canMoveLeft, canMoveRight, sharedFeatureInfo]);
+  }, [orderedNodes, nodes, unreachableNodes, nodeStates, isLoading, toggleFeatureState, isAdmin, deleteNode, moveLeft, moveRight, canMoveLeft, canMoveRight, sharedFeatureInfo]);
 
   const isDark = themeMode === 'dark';
 

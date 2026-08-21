@@ -31,7 +31,7 @@ export default function App() {
           <Route
             path="/users"
             element={
-              <RequireAuth requiredRole="Admin">
+              <RequireAuth requireAdmin>
                 <UserManagementPage />
               </RequireAuth>
             }
@@ -39,7 +39,7 @@ export default function App() {
           <Route
             path="/audit-log"
             element={
-              <RequireAuth requiredRole="Admin">
+              <RequireAuth requireAdmin>
                 <AuditLogPage />
               </RequireAuth>
             }

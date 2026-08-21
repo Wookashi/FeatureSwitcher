@@ -1,8 +1,7 @@
 namespace Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Enums;
 
-public enum UserRoleEnum
+public enum NodeRoleEnum
 {
     Viewer = 0,
     Editor = 1,
-    Admin = 2,
 }

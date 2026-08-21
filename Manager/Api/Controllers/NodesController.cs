@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Dtos;
 using Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Repositories;
 using Wookashi.FeatureSwitcher.Manager.Api.Extensions;
+using Wookashi.FeatureSwitcher.Manager.Api.Models;
 using Wookashi.FeatureSwitcher.Manager.Api.Services;
 using Wookashi.FeatureSwitcher.Shared.Abstraction.Models;
 
@@ -34,14 +35,32 @@ internal class NodesController : ControllerBase
         var allNodes = _nodeService.GetAllNodes();
 
         var userId = User.GetUserId();
-        var role = User.GetUserRole();
+        var isSystemAdmin = User.IsSystemAdmin();
 
-        if (role == "Admin")
-            return Ok(allNodes);
+        if (isSystemAdmin)
+        {
+            var adminResult = allNodes.Select(n => new NodeWithRoleResponse
+            {
+                Id = n.Id,
+                Name = n.Name,
+                Address = n.Address,
+                Role = "Admin",
+            }).ToList();
+            return Ok(adminResult);
+        }
 
-        var accessibleIds = _nodeAccessService.GetAccessibleNodeIds(userId, role);
-        var filtered = allNodes.Where(n => accessibleIds.Contains(n.Id)).ToList();
-        return Ok(filtered);
+        var rolesByNodeId = _nodeAccessService.GetAccessibleNodesWithRoles(userId, isSystemAdmin);
+        var result = allNodes
+            .Where(n => rolesByNodeId.ContainsKey(n.Id))
+            .Select(n => new NodeWithRoleResponse
+            {
+                Id = n.Id,
+                Name = n.Name,
+                Address = n.Address,
+                Role = rolesByNodeId[n.Id],
+            })
+            .ToList();
+        return Ok(result);
     }
 
     [HttpPut]
@@ -64,9 +83,9 @@ internal class NodesController : ControllerBase
     public async Task<IActionResult> GetApplications(int nodeId)
     {
         var userId = User.GetUserId();
-        var role = User.GetUserRole();
+        var isSystemAdmin = User.IsSystemAdmin();
 
-        if (!_nodeAccessService.CanAccessNode(userId, role, nodeId))
+        if (!_nodeAccessService.CanAccessNode(userId, isSystemAdmin, nodeId))
             return Forbid();
 
         try
@@ -98,8 +117,8 @@ internal class NodesController : ControllerBase
     public async Task<IActionResult> GetFeatures(int nodeId, string appName)
     {
         var userId = User.GetUserId();
-        var role = User.GetUserRole();
-        if (!_nodeAccessService.CanAccessNode(userId, role, nodeId))
+        var isSystemAdmin = User.IsSystemAdmin();
+        if (!_nodeAccessService.CanAccessNode(userId, isSystemAdmin, nodeId))
             return Forbid();
 
         try
@@ -221,15 +240,14 @@ internal class NodesController : ControllerBase
     };
 
     [HttpPut("{nodeId:int}/applications/{appName}/features/{featureName}")]
-    [Authorize(Policy = "EditorOrAdmin")]
     public async Task<IActionResult> SetFeatureState(int nodeId, string appName, string featureName,
         [FromBody] FeatureStateModel featureState)
     {
         var userId = User.GetUserId();
         var username = User.GetUserName();
-        var role = User.GetUserRole();
+        var isSystemAdmin = User.IsSystemAdmin();
 
-        if (!_nodeAccessService.CanAccessNode(userId, role, nodeId))
+        if (!_nodeAccessService.CanEditNode(userId, isSystemAdmin, nodeId))
             return Forbid();
 
         featureState.ChangedBy = username;
