@@ -38,10 +38,27 @@ import { useAppVersion } from '../../version/useAppVersion';
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 
+const ROLE_DESCRIPTIONS: Record<string, string> = {
+  Admin: 'Full access — manages users and nodes, can view and toggle every feature flag on every node.',
+  Editor: 'Can view and toggle feature flags on this node.',
+  Viewer: 'Read-only access to feature flags on this node. Cannot toggle flags.',
+};
+
 const NODE_ROLE_OPTIONS = [
   { value: 'Viewer', label: 'Viewer' },
   { value: 'Editor', label: 'Editor' },
 ];
+
+function RoleOptionLabel({ role }: { role: string }) {
+  return (
+    <div style={{ padding: '2px 0' }}>
+      <div>{role}</div>
+      <Text type="secondary" style={{ fontSize: 12, whiteSpace: 'normal' }}>
+        {ROLE_DESCRIPTIONS[role]}
+      </Text>
+    </div>
+  );
+}
 
 interface NodeAccessRecord {
   nodeId: number;
@@ -100,8 +117,9 @@ function NodeAccessEditor({ nodes, disabled }: { nodes: NodeRecord[]; disabled: 
                   <Select
                     allowClear
                     placeholder="No access"
-                    style={{ width: 160 }}
+                    style={{ width: 220 }}
                     options={NODE_ROLE_OPTIONS}
+                    optionRender={(option) => <RoleOptionLabel role={option.data.value as string} />}
                   />
                 </Form.Item>
                 <Form.Item name={[field.name, 'nodeId']} noStyle hidden>
@@ -464,7 +482,7 @@ export default function UserManagementPage() {
             <Switch />
           </Form.Item>
           <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: -12, marginBottom: 16 }}>
-            Full access — manages users and nodes, can view and toggle every feature flag on every node.
+            {ROLE_DESCRIPTIONS.Admin}
           </Text>
           <Form.Item label="Node Access">
             <Form.Item noStyle shouldUpdate={(prev, cur) => prev.isSystemAdmin !== cur.isSystemAdmin}>
@@ -491,7 +509,7 @@ export default function UserManagementPage() {
             <Switch />
           </Form.Item>
           <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: -12, marginBottom: 16 }}>
-            Full access — manages users and nodes, can view and toggle every feature flag on every node.
+            {ROLE_DESCRIPTIONS.Admin}
           </Text>
           <Form.Item label="Node Access">
             <Form.Item noStyle shouldUpdate={(prev, cur) => prev.isSystemAdmin !== cur.isSystemAdmin}>

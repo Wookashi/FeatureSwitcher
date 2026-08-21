@@ -4,6 +4,7 @@ using Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Dtos;
 using Wookashi.FeatureSwitcher.Manager.Abstraction.Database.Repositories;
 using Wookashi.FeatureSwitcher.Manager.Api.Extensions;
 using Wookashi.FeatureSwitcher.Manager.Api.Models;
+using Wookashi.FeatureSwitcher.Manager.Api.Services;
 
 namespace Wookashi.FeatureSwitcher.Manager.Api.Controllers;
 
@@ -14,11 +15,13 @@ internal class UsersController : ControllerBase
 {
     private readonly IUserRepository _userRepository;
     private readonly IAuditLogRepository _auditLog;
+    private readonly NodeService _nodeService;
 
-    public UsersController(IUserRepository userRepository, IAuditLogRepository auditLog)
+    public UsersController(IUserRepository userRepository, IAuditLogRepository auditLog, NodeService nodeService)
     {
         _userRepository = userRepository;
         _auditLog = auditLog;
+        _nodeService = nodeService;
     }
 
     [HttpGet]
@@ -52,7 +55,9 @@ internal class UsersController : ControllerBase
         var dto = _userRepository.CreateUser(request.Username.Trim(), hash, request.IsSystemAdmin, nodeAccess);
 
         var adminUsername = User.GetUserName();
-        _auditLog.AddEntry(adminUsername, "CreateUser", $"Created user '{dto.Username}' (system admin: {dto.IsSystemAdmin})");
+        var nodeNames = GetNodeNames();
+        var summary = $"system admin: {dto.IsSystemAdmin}; node access: {DescribeNodeAccess(dto.NodeAccess, nodeNames)}";
+        _auditLog.AddEntry(adminUsername, "CreateUser", $"Created user '{dto.Username}' ({summary})");
 
         return Created($"/api/users/{dto.Id}", dto);
     }
@@ -70,7 +75,18 @@ internal class UsersController : ControllerBase
         var dto = _userRepository.UpdateUser(id, request.IsSystemAdmin, nodeAccess);
 
         var adminUsername = User.GetUserName();
-        _auditLog.AddEntry(adminUsername, "UpdateUser", $"Updated user '{dto.Username}'");
+        var changes = new List<string>();
+        if (request.IsSystemAdmin.HasValue && request.IsSystemAdmin.Value != existing.IsSystemAdmin)
+            changes.Add($"system admin: {existing.IsSystemAdmin} -> {request.IsSystemAdmin.Value}");
+        if (nodeAccess is not null)
+        {
+            var nodeAccessDiff = DescribeNodeAccessDiff(existing.NodeAccess, dto.NodeAccess, GetNodeNames());
+            if (nodeAccessDiff is not null)
+                changes.Add($"node access: {nodeAccessDiff}");
+        }
+
+        var summary = changes.Count == 0 ? "no changes" : string.Join("; ", changes);
+        _auditLog.AddEntry(adminUsername, "UpdateUser", $"Updated user '{dto.Username}': {summary}");
 
         return Ok(dto);
     }
@@ -91,4 +107,37 @@ internal class UsersController : ControllerBase
 
         return NoContent();
     }
+
+    private Dictionary<int, string> GetNodeNames()
+        => _nodeService.GetAllNodes().ToDictionary(n => n.Id, n => n.Name);
+
+    private static string DescribeNodeAccess(List<NodeAccessDto> nodeAccess, Dictionary<int, string> nodeNames)
+    {
+        if (nodeAccess.Count == 0) return "none";
+        return string.Join(", ", nodeAccess.Select(a => $"{NodeName(a.NodeId, nodeNames)}={a.Role}"));
+    }
+
+    private static string? DescribeNodeAccessDiff(List<NodeAccessDto> before, List<NodeAccessDto> after, Dictionary<int, string> nodeNames)
+    {
+        var beforeRoles = before.ToDictionary(a => a.NodeId, a => a.Role);
+        var afterRoles = after.ToDictionary(a => a.NodeId, a => a.Role);
+
+        var changes = new List<string>();
+        foreach (var nodeId in beforeRoles.Keys.Union(afterRoles.Keys).OrderBy(id => id))
+        {
+            beforeRoles.TryGetValue(nodeId, out var oldRole);
+            afterRoles.TryGetValue(nodeId, out var newRole);
+            if (oldRole == newRole) continue;
+
+            var name = NodeName(nodeId, nodeNames);
+            if (oldRole is null) changes.Add($"{name}: granted {newRole}");
+            else if (newRole is null) changes.Add($"{name}: access removed (was {oldRole})");
+            else changes.Add($"{name}: {oldRole} -> {newRole}");
+        }
+
+        return changes.Count == 0 ? null : string.Join(", ", changes);
+    }
+
+    private static string NodeName(int nodeId, Dictionary<int, string> nodeNames)
+        => nodeNames.TryGetValue(nodeId, out var name) ? name : $"#{nodeId}";
 }
