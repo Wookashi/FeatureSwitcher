@@ -1,6 +1,7 @@
 using System.Data;
 using System.Globalization;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -11,6 +12,18 @@ namespace Wookashi.FeatureSwitcher.Node.Database.Extensions;
 
 public static class ConfigureServices
 {
+    /// <summary>
+    /// How long a write waits for a lock held by another writer before giving up. This maps to
+    /// <c>SqliteConnectionStringBuilder.DefaultTimeout</c>, which drives
+    /// <c>SqliteCommand.CommandTimeout</c> — confirmed by direct, timed testing to be what actually
+    /// governs Microsoft.Data.Sqlite's internal busy-retry loop (it ignores <c>PRAGMA busy_timeout</c>
+    /// entirely for this purpose; see <see cref="SqliteWalModeInterceptor"/>). Node's writes are
+    /// small, single-row upserts, so this is generous headroom for contention between concurrent
+    /// feature updates and the soft-delete sweep, while still bounding how long a request can be
+    /// stuck waiting on the database.
+    /// </summary>
+    private const int WriteLockTimeoutSeconds = 10;
+
     extension(IServiceCollection services)
     {
         public IServiceCollection AddDatabase(string connectionString)
@@ -23,13 +36,26 @@ public static class ConfigureServices
             }
             else
             {
+                // See SqliteWalModeInterceptor (WAL) and WriteLockTimeoutSeconds (retry-instead-of-
+                // throw on writer contention) for why Node doesn't hand back an unhandled
+                // SqliteException under concurrent feature reads/writes.
                 services.AddDbContext<FeaturesDataContext>(options =>
-                    options.UseSqlite(connectionString));
+                    options.UseSqlite(WithWriteLockTimeout(connectionString))
+                        .AddInterceptors(new SqliteWalModeInterceptor()));
                 services.AddScoped<IFeaturesDataContext, FeaturesDataContext>();
             }
 
             return services.AddScoped<IFeatureRepository, FeatureRepository>();
         }
+    }
+
+    private static string WithWriteLockTimeout(string connectionString)
+    {
+        var builder = new SqliteConnectionStringBuilder(connectionString)
+        {
+            DefaultTimeout = WriteLockTimeoutSeconds,
+        };
+        return builder.ConnectionString;
     }
 
     /// <summary>
