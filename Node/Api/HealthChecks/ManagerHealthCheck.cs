@@ -4,7 +4,9 @@ using Wookashi.FeatureSwitcher.Node.Api.Configuration;
 
 namespace Wookashi.FeatureSwitcher.Node.Api.HealthChecks;
 
-internal sealed class ManagerHealthCheck(IOptions<ManagerSettings> options) : IHealthCheck
+internal sealed class ManagerHealthCheck(
+    IOptions<ManagerSettings> options,
+    IHttpClientFactory httpClientFactory) : IHealthCheck
 {
     private readonly ManagerSettings _options = options.Value;
 
@@ -18,7 +20,7 @@ internal sealed class ManagerHealthCheck(IOptions<ManagerSettings> options) : IH
         };
         try
         {
-            using var client = new HttpClient();
+            var client = httpClientFactory.CreateClient("ManagerHealthCheck");
             var response = await client.GetAsync($"{_options.Url}/health", cancellationToken);
 
             if (response.IsSuccessStatusCode)

@@ -11,9 +11,11 @@ internal sealed class ManagerRegistrationHostedService(
     IOptions<ManagerSettings> managerSettings,
     IOptions<NodeConfiguration> nodeConfiguration,
     IHttpClientFactory httpClientFactory,
-    ILogger<ManagerRegistrationHostedService> logger) : IHostedService
+    ILogger<ManagerRegistrationHostedService> logger) : BackgroundService
 {
-    public async Task StartAsync(CancellationToken cancellationToken)
+    private static readonly TimeSpan MaxRetryDelay = TimeSpan.FromMinutes(5);
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var settings = managerSettings.Value;
         var nodeConfig = nodeConfiguration.Value;
@@ -26,11 +28,10 @@ internal sealed class ManagerRegistrationHostedService(
             return;
         }
 
-        var connected = false;
+        var httpClient = httpClientFactory.CreateClient("Manager");
         var attempt = 0;
-        var httpClient = httpClientFactory.CreateClient();
-        
-        while (!connected)
+
+        while (!stoppingToken.IsCancellationRequested)
         {
             attempt++;
             try
@@ -41,7 +42,7 @@ internal sealed class ManagerRegistrationHostedService(
                     var loginPayload = JsonSerializer.Serialize(new { username = settings.Username, password = settings.Password });
                     var loginContent = new StringContent(loginPayload, Encoding.UTF8, "application/json");
 
-                    var loginResponse = await httpClient.PostAsync($"{settings.Url}/api/auth/login", loginContent, cancellationToken);
+                    var loginResponse = await httpClient.PostAsync($"{settings.Url}/api/auth/login", loginContent, stoppingToken);
 
                     if (!loginResponse.IsSuccessStatusCode)
                     {
@@ -55,7 +56,7 @@ internal sealed class ManagerRegistrationHostedService(
                         return;
                     }
 
-                    var loginJson = await loginResponse.Content.ReadAsStringAsync(cancellationToken);
+                    var loginJson = await loginResponse.Content.ReadAsStringAsync(stoppingToken);
                     var token = JsonDocument.Parse(loginJson).RootElement.GetProperty("token").GetString();
 
                     httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -72,19 +73,35 @@ internal sealed class ManagerRegistrationHostedService(
                     Encoding.UTF8,
                     "application/json");
 
-                await httpClient.PutAsync($"{settings.Url}/api/nodes", content, cancellationToken);
-                connected = true;
+                var registrationResponse = await httpClient.PutAsync($"{settings.Url}/api/nodes", content, stoppingToken);
+
+                if (!registrationResponse.IsSuccessStatusCode)
+                {
+                    throw new HttpRequestException(
+                        $"Manager returned HTTP {(int)registrationResponse.StatusCode} for node registration");
+                }
 
                 logger.LogInformation("Node '{NodeName}' registered with manager at {ManagerUrl}", nodeConfig.Name, settings.Url);
+                return;
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
             }
             catch (Exception ex)
             {
-                var WaitSeconds = attempt + 50;
-                logger.LogWarning(ex, "Failed to register node with manager at {ManagerUrl}, next attempt after {WaitSeconds} seconds", settings.Url, WaitSeconds);
-                Thread.Sleep(WaitSeconds*1000);
+                var waitSeconds = Math.Min(attempt + 50, (int)MaxRetryDelay.TotalSeconds);
+                logger.LogWarning(ex, "Failed to register node with manager at {ManagerUrl}, next attempt after {WaitSeconds} seconds", settings.Url, waitSeconds);
+
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(waitSeconds), stoppingToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
             }
         }
     }
-
-    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

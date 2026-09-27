@@ -32,6 +32,14 @@ var dbConnectionString = builder.Configuration["NodeConfiguration:ConnectionStri
 builder.Services.AddDatabase(dbConnectionString);
 builder.Services.AddHealthCheckElements();
 builder.Services.AddHttpClient();
+builder.Services.AddHttpClient("Manager", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
+builder.Services.AddHttpClient("ManagerHealthCheck", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(5);
+});
 builder.Services.AddHostedService<ManagerRegistrationHostedService>();
 builder.Services.AddHostedService<SoftDeleteSweepHostedService>();
 
