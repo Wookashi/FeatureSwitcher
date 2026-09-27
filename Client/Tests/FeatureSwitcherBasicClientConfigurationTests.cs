@@ -151,4 +151,50 @@ public class FeatureSwitcherBasicClientConfigurationTests
 
         Assert.True(config.AllowStartWithoutNode);
     }
+
+    [Fact]
+    public void Constructor_DefaultsRequestTimeoutToThreeSeconds()
+    {
+        var config = new FeatureSwitcherBasicClientConfiguration(
+            applicationName: "MyApp",
+            environmentName: "Production",
+            nodeAddress: new Uri("http://localhost:8081/"));
+
+        Assert.Equal(TimeSpan.FromSeconds(3), config.RequestTimeout);
+    }
+
+    [Fact]
+    public void Constructor_SetsRequestTimeoutWhenProvided()
+    {
+        var config = new FeatureSwitcherBasicClientConfiguration(
+            applicationName: "MyApp",
+            environmentName: "Production",
+            nodeAddress: new Uri("http://localhost:8081/"),
+            requestTimeout: TimeSpan.FromSeconds(1));
+
+        Assert.Equal(TimeSpan.FromSeconds(1), config.RequestTimeout);
+    }
+
+    [Fact]
+    public void Constructor_DefaultsCircuitBreakDurationToThirtySeconds()
+    {
+        var config = new FeatureSwitcherBasicClientConfiguration(
+            applicationName: "MyApp",
+            environmentName: "Production",
+            nodeAddress: new Uri("http://localhost:8081/"));
+
+        Assert.Equal(TimeSpan.FromSeconds(30), config.CircuitBreakDuration);
+    }
+
+    [Fact]
+    public void Constructor_SetsCircuitBreakDurationWhenProvided()
+    {
+        var config = new FeatureSwitcherBasicClientConfiguration(
+            applicationName: "MyApp",
+            environmentName: "Production",
+            nodeAddress: new Uri("http://localhost:8081/"),
+            circuitBreakDuration: TimeSpan.FromSeconds(60));
+
+        Assert.Equal(TimeSpan.FromSeconds(60), config.CircuitBreakDuration);
+    }
 }

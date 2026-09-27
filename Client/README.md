@@ -94,6 +94,8 @@ if (await featureManager.IsFeatureEnabledAsync("DarkMode"))
 | `environmentName` | Environment name (e.g., Development, Production) |
 | `nodeAddress` | URI of the Feature Switcher Node service |
 | `allowStartWithoutNode` | Optional. When `true`, the host starts even if the Node is unreachable during startup registration. Features serve their `initialState` until the Node becomes reachable. Defaults to `false`. |
+| `requestTimeout` | Optional. Maximum time to wait for a single request to the Node before treating it as unreachable and falling back to the cached state. Defaults to 3 seconds. |
+| `circuitBreakDuration` | Optional. After the Node is found unreachable, how long to keep serving cached state without contacting the Node again. Defaults to 30 seconds. |
 
 `AddFeatureFlags` also takes the list of features to manage.
 
@@ -145,6 +147,27 @@ services.AddFeatureFlags(config, features);
 ```
 
 Only `NodeUnreachableException` is suppressed. `EnvironmentMismatchException` and `RegistrationException` (errors returned by a reachable Node) still abort startup because they indicate misconfiguration rather than a transient connectivity issue.
+
+### Bounded requests and circuit breaker
+
+Every request to the Node (registration and feature-state checks) is bounded by `requestTimeout`
+(default 3 seconds) regardless of the `HttpClient`'s own timeout, so a Node that stops responding
+never blocks your application for longer than that.
+
+If a request to the Node fails or times out, the client opens a circuit breaker for
+`circuitBreakDuration` (default 30 seconds): during that window, `IsFeatureEnabledAsync` returns the
+cached state immediately without contacting the Node again. This keeps a prolonged Node/Manager
+outage from costing every single feature check the full `requestTimeout`. Once the window elapses,
+the next check tries the Node again and closes the breaker on success.
+
+```csharp
+var config = new FeatureSwitcherBasicClientConfiguration(
+    applicationName: "MyApp",
+    environmentName: "Production",
+    nodeAddress: new Uri("http://localhost:8081/"),
+    requestTimeout: TimeSpan.FromSeconds(2),
+    circuitBreakDuration: TimeSpan.FromSeconds(15));
+```
 
 ## Documentation
 

@@ -67,14 +67,18 @@ public class FeatureManagerTests
 
     private static FeatureManager CreateFeatureManager(
         List<IFeatureStateModel> features,
-        Mock<IHttpClientFactory> factoryMock)
+        Mock<IHttpClientFactory> factoryMock,
+        TimeSpan? requestTimeout = null,
+        TimeSpan? circuitBreakDuration = null)
     {
         return new FeatureManager(
             AppName,
             EnvironmentName,
             new Uri(NodeAddress),
             features,
-            factoryMock.Object);
+            factoryMock.Object,
+            requestTimeout: requestTimeout,
+            circuitBreakDuration: circuitBreakDuration);
     }
 
     #region Constructor Tests
@@ -519,6 +523,124 @@ public class FeatureManagerTests
             Times.Once(),
             ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Post),
             ItExpr.IsAny<CancellationToken>());
+    }
+
+    #endregion
+
+    #region Circuit Breaker Tests
+
+    [Fact]
+    public async Task IsFeatureEnabledAsync_OpensCircuit_AfterNodeUnreachable_AndSkipsSubsequentNodeCalls()
+    {
+        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+        SetupRegistrationEndpoint(handlerMock);
+        SetupFeatureStateEndpoint(handlerMock, "TestFlag", featureState: true, HttpStatusCode.InternalServerError);
+        var factoryMock = CreateMockHttpClientFactory(handlerMock);
+
+        var features = new List<IFeatureStateModel>
+        {
+            new FeatureStateModel("TestFlag", initialState: false),
+        };
+        var manager = CreateFeatureManager(features, factoryMock, circuitBreakDuration: TimeSpan.FromSeconds(30));
+        await manager.RegisterFeaturesOnNodeAsync();
+
+        var first = await manager.IsFeatureEnabledAsync("TestFlag");
+        var second = await manager.IsFeatureEnabledAsync("TestFlag");
+
+        Assert.False(first);
+        Assert.False(second);
+
+        handlerMock.Protected().Verify(
+            "SendAsync",
+            Times.Once(),
+            ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Get),
+            ItExpr.IsAny<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task IsFeatureEnabledAsync_ContactsNodeAgain_AfterCircuitBreakDurationElapses()
+    {
+        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+        SetupRegistrationEndpoint(handlerMock);
+        handlerMock
+            .Protected()
+            .SetupSequence<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.Is<HttpRequestMessage>(req =>
+                    req.Method == HttpMethod.Get &&
+                    req.RequestUri != null &&
+                    req.RequestUri.ToString() == $"{NodeAddress}applications/{AppName}/features/TestFlag/state/"
+                ),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.InternalServerError })
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent(JsonSerializer.Serialize(true)),
+            });
+        var factoryMock = CreateMockHttpClientFactory(handlerMock);
+
+        var features = new List<IFeatureStateModel>
+        {
+            new FeatureStateModel("TestFlag", initialState: false),
+        };
+        var manager = CreateFeatureManager(features, factoryMock, circuitBreakDuration: TimeSpan.FromMilliseconds(20));
+        await manager.RegisterFeaturesOnNodeAsync();
+
+        var first = await manager.IsFeatureEnabledAsync("TestFlag");
+        await Task.Delay(TimeSpan.FromMilliseconds(60));
+        var second = await manager.IsFeatureEnabledAsync("TestFlag");
+
+        Assert.False(first);
+        Assert.True(second);
+
+        handlerMock.Protected().Verify(
+            "SendAsync",
+            Times.Exactly(2),
+            ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Get),
+            ItExpr.IsAny<CancellationToken>());
+    }
+
+    #endregion
+
+    #region Request Timeout Tests
+
+    [Fact]
+    public async Task IsFeatureEnabledAsync_FallsBackToCache_WhenNodeResponseExceedsRequestTimeout()
+    {
+        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+        SetupRegistrationEndpoint(handlerMock);
+        handlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.Is<HttpRequestMessage>(req =>
+                    req.Method == HttpMethod.Get &&
+                    req.RequestUri != null &&
+                    req.RequestUri.ToString() == $"{NodeAddress}applications/{AppName}/features/TestFlag/state/"
+                ),
+                ItExpr.IsAny<CancellationToken>())
+            .Returns(async (HttpRequestMessage _, CancellationToken ct) =>
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(500), ct);
+                return new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.OK,
+                    Content = new StringContent(JsonSerializer.Serialize(true)),
+                };
+            });
+        var factoryMock = CreateMockHttpClientFactory(handlerMock);
+
+        var features = new List<IFeatureStateModel>
+        {
+            new FeatureStateModel("TestFlag", initialState: false),
+        };
+        var manager = CreateFeatureManager(features, factoryMock, requestTimeout: TimeSpan.FromMilliseconds(50));
+        await manager.RegisterFeaturesOnNodeAsync();
+
+        var result = await manager.IsFeatureEnabledAsync("TestFlag");
+
+        Assert.False(result);
     }
 
     #endregion

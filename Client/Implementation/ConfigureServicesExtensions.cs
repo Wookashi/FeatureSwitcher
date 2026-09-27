@@ -46,6 +46,10 @@ public static class ConfigureServicesExtensions
         }
 
         services.AddHttpClient();
+        services.AddHttpClient(FeatureManager.NodeHttpClientName, client =>
+        {
+            client.Timeout = configuration.RequestTimeout;
+        });
 
         services.AddSingleton<FeatureManager>(serviceProvider =>
         {
@@ -58,7 +62,9 @@ public static class ConfigureServicesExtensions
                 configuration.NodeAddress,
                 features,
                 httpClientFactory,
-                logger);
+                logger,
+                configuration.RequestTimeout,
+                configuration.CircuitBreakDuration);
         });
 
         services.AddSingleton<IFeatureManager>(sp => sp.GetRequiredService<FeatureManager>());
