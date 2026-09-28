@@ -32,6 +32,40 @@ public sealed class SqliteConcurrencyTests
     }
 
     [Fact]
+    public void Migrate_OnExistingNonWalDatabase_DoesNotThrowReadonly_AndSwitchesToWal()
+    {
+        // Regression: upgrading Node from 1.2.0 (rollback journal) to 1.2.1 crash-looped with
+        // "SQLite Error 8: attempt to write a readonly database". Migrate() calls
+        // SqliteDatabaseCreator.Exists(), which opens a separate Mode=ReadOnly connection that
+        // still runs our interceptors — and switching journal_mode to WAL is a write.
+        var dbPath = TempDbPath();
+        try
+        {
+            using (var conn = Open($"Data Source={dbPath}"))
+            {
+                Execute(conn, "PRAGMA journal_mode='DELETE';");
+                Execute(conn, "CREATE TABLE Legacy (Id INTEGER PRIMARY KEY);");
+            }
+            SqliteConnection.ClearAllPools();
+
+            using var provider = BuildProvider(dbPath);
+            using var scope = provider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<FeaturesDataContext>();
+
+            context.Database.Migrate();
+
+            context.Database.OpenConnection();
+            using var command = context.Database.GetDbConnection().CreateCommand();
+            command.CommandText = "PRAGMA journal_mode;";
+            Assert.Equal("wal", (string)command.ExecuteScalar()!, ignoreCase: true);
+        }
+        finally
+        {
+            CleanUp(dbPath);
+        }
+    }
+
+    [Fact]
     public void AddDatabase_SetsCommandTimeoutTo10Seconds()
     {
         // This is the property that actually governs Microsoft.Data.Sqlite's busy-retry loop —
