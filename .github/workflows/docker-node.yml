@@ -8,12 +8,24 @@ on:
       - "Node/**"
       - "Shared/**"
       - ".github/workflows/docker-node.yml"
+      - ".github/workflows/tests.yml"
+      - ".github/scripts/upgrade-test.sh"
 
   workflow_dispatch:
+    inputs:
+      previous_version:
+        description: "Released version to upgrade from (Docker Hub tag, e.g. 1.2.0)"
+        default: "latest"
+        required: false
 
 jobs:
-  validate:
-    if: github.ref_type == 'branch'
+  tests:
+    if: github.ref_type == 'tag'
+    uses: ./.github/workflows/tests.yml
+
+  # Builds the candidate image and starts it on data written by the currently released image
+  # (Docker Hub 'latest' — what users run today), so upgrade-only failures are caught before release.
+  upgrade-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -23,15 +35,24 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build (no push)
+      - name: Build candidate image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: Node/Dockerfile
           push: false
+          load: true
+          tags: featureswitcher-node:candidate
+
+      - name: Upgrade from previous release
+        run: |
+          bash .github/scripts/upgrade-test.sh node \
+            "${{ secrets.DOCKERHUB_USERNAME }}/featureswitcher-node:${{ inputs.previous_version || 'latest' }}" \
+            featureswitcher-node:candidate
 
   release:
     if: github.ref_type == 'tag'
+    needs: [tests, upgrade-test]
     runs-on: ubuntu-latest
 
     steps:

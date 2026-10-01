@@ -1,0 +1,30 @@
+name: Tests
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  # Called by the Docker workflows so a release image is never pushed with failing tests.
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  dotnet-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      # Test projects are listed explicitly: the solution also contains Manager.Web.esproj,
+      # which needs the JavaScript SDK/npm toolchain and is not part of the .NET test run.
+      - name: Node tests
+        run: dotnet test Node/Tests/Node.Database.Tests.csproj --logger "console;verbosity=normal"
+
+      - name: Client tests
+        run: dotnet test Client/Tests/Client.Implementation.Tests.csproj --logger "console;verbosity=normal"
