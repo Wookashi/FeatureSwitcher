@@ -1,7 +1,10 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
 
 namespace Wookashi.FeatureSwitcher.Manager.Database.Entities;
 
+// Index used by the list ordered by time and by the retention cleanup.
+[Index(nameof(Timestamp))]
 public class AuditLogEntity
 {
     [Key]

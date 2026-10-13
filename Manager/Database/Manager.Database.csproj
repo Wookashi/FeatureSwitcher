@@ -29,6 +29,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <InternalsVisibleTo Include="Wookashi.FeatureSwitcher.Manager.Database.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
       <ProjectReference Include="..\Abstraction\Manager.Abstraction.csproj" />
     </ItemGroup>
 

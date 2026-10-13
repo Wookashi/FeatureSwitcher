@@ -17,4 +17,11 @@ public interface IAuditLogRepository
     /// the filter dropdown on the audit log UI without having to fetch all entries first.
     /// </summary>
     List<string> GetDistinctActions();
+
+    /// <summary>
+    /// Deletes up to <paramref name="batchSize"/> of the oldest entries with a timestamp before
+    /// <paramref name="thresholdUtc"/> and returns how many were deleted. Call repeatedly until it
+    /// returns less than <paramref name="batchSize"/> to delete all of them.
+    /// </summary>
+    int DeleteEntriesOlderThan(DateTime thresholdUtc, int batchSize);
 }

@@ -255,6 +255,7 @@ dotnet run --project Console/Console.csproj
 | `Jwt__Audience` | `FeatureSwitcher` | JWT audience |
 | `Jwt__ExpirationMinutes` | `60` | Token lifetime in minutes |
 | `Database__ConnectionString` | `Data Source=/data/fs_manager.db` | SQLite DB path |
+| `AuditLog__Retention` | `365.00:00:00` | How long audit log entries are kept (`d.hh:mm:ss`); older ones are deleted at startup and daily. `00:00:00` keeps them indefinitely |
 | `ASPNETCORE_ENVIRONMENT` | `Production` | Hosting environment |
 | `TZ` | `Europe/Warsaw` | Timezone |
 

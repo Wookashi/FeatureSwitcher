@@ -67,6 +67,9 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<NodeAccessService>();
 builder.Services.AddScoped<NodeService>();
 
+builder.Services.Configure<AuditLogSettings>(builder.Configuration.GetSection("AuditLog"));
+builder.Services.AddHostedService<AuditLogRetentionHostedService>();
+
 //Console logs configuration
 builder.Logging.ClearProviders();
 builder.Logging.AddConsoleFormatter<MinimalConsoleFormatter, ConsoleFormatterOptions>();

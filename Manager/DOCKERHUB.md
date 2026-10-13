@@ -49,6 +49,7 @@ otherwise the nodes can't authenticate to self-register.
 | `Jwt__Audience` | `FeatureSwitcher` | JWT audience |
 | `Jwt__ExpirationMinutes` | `60` | Token lifetime |
 | `Database__ConnectionString` | `Data Source=/data/fs_manager.db` | SQLite DB path |
+| `AuditLog__Retention` | `365.00:00:00` | Audit log retention (`d.hh:mm:ss`); older entries are deleted at startup and daily. `00:00:00` keeps them indefinitely |
 | `ASPNETCORE_ENVIRONMENT` | `Production` | Hosting environment |
 | `TZ` | `Europe/Warsaw` | Timezone |
 

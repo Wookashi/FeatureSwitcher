@@ -100,6 +100,8 @@ Admin actions are recorded to an audit log accessible from the header (audit ico
 - `FeaturePermanentlyDeleted` — application-feature link removed from the pending-deletion dialog; the global flag is deleted only when no other application references it
 - `ApplicationPermanentlyDeleted` — application removed from the pending-deletion dialog, including how many feature links and orphaned global flags were removed
 
+Entries older than `AuditLog__Retention` (default **365 days**, format `d.hh:mm:ss`) are deleted at Manager startup and then once a day. Set it to `00:00:00` to keep entries indefinitely.
+
 ### Timestamps
 
 All timestamps are stored and returned by the Manager and Node APIs in UTC, as ISO 8601 with the `Z` suffix (e.g. `2026-10-13T18:02:36Z`). The Manager UI shows them in the browser's local time zone. The container time zone (`TZ`) does not affect stored or returned timestamps.

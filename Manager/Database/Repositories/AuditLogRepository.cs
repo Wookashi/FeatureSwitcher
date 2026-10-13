@@ -50,4 +50,22 @@ internal class AuditLogRepository : IAuditLogRepository
             .OrderBy(a => a)
             .ToList();
     }
+
+    public int DeleteEntriesOlderThan(DateTime thresholdUtc, int batchSize)
+    {
+        var expired = _context.AuditLogs
+            .Where(e => e.Timestamp < thresholdUtc)
+            .OrderBy(e => e.Timestamp)
+            .Take(batchSize)
+            .ToList();
+
+        if (expired.Count == 0)
+        {
+            return 0;
+        }
+
+        _context.AuditLogs.RemoveRange(expired);
+        _context.SaveChanges();
+        return expired.Count;
+    }
 }
