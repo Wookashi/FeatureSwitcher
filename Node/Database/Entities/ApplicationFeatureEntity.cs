@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using Wookashi.FeatureSwitcher.Node.Database.Repositories;
 
 namespace Wookashi.FeatureSwitcher.Node.Database.Entities;
 
@@ -29,4 +30,16 @@ public sealed class ApplicationFeatureEntity : IUsageTrackedEntity
 
     [Required]
     public DateTime LastUsedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Description registered by the application for this feature; replaced on every registration.
+    /// </summary>
+    [MaxLength(FeatureDetailsSanitizer.MaxDescriptionLength)]
+    public string? Description { get; set; }
+
+    /// <summary>
+    /// Links registered by the application for this feature, as a JSON array of <c>{ url, title }</c>;
+    /// <c>null</c> when there are none. Replaced on every registration.
+    /// </summary>
+    public string? LinksJson { get; set; }
 }

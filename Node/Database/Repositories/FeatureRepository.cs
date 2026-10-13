@@ -48,7 +48,9 @@ internal sealed class FeatureRepository : IFeatureRepository
                 link.Feature.Id,
                 link.Feature.Name,
                 link.Feature.IsEnabled,
-                link.LastUsedAt
+                link.LastUsedAt,
+                link.Description,
+                link.LinksJson,
             })
             .ToList();
 
@@ -73,7 +75,9 @@ internal sealed class FeatureRepository : IFeatureRepository
                 f.Name,
                 f.IsEnabled,
                 f.LastUsedAt,
-                counts.TryGetValue(f.Id, out var c) ? c : 0))
+                counts.TryGetValue(f.Id, out var c) ? c : 0,
+                f.Description,
+                FeatureDetailsSanitizer.DeserializeLinks(f.LinksJson)))
             .ToList();
     }
 
@@ -170,6 +174,12 @@ internal sealed class FeatureRepository : IFeatureRepository
                 existing.PendingDeletionSince = null;
             }
             existing.LastUsedAt = now;
+
+            // The registration is the source of truth for the application's details: missing details
+            // clear previously registered ones. Unchanged values are not written (EF compares them).
+            link.Description = incoming.Details?.Description;
+            link.LinksJson = FeatureDetailsSanitizer.SerializeLinks(incoming.Details?.Links);
+
             _usageBuffer.Record(link.Id, applicationEntity.Id, existing.Id, now);
         }
 

@@ -1,6 +1,7 @@
 using Wookashi.FeatureSwitcher.Node.Abstraction.Database.Dtos;
 using Wookashi.FeatureSwitcher.Node.Abstraction.Database.Repositories;
 using Wookashi.FeatureSwitcher.Node.Api.Models;
+using Wookashi.FeatureSwitcher.Node.Database.Repositories;
 
 namespace Wookashi.FeatureSwitcher.Node.Api.Services;
 
@@ -17,14 +18,33 @@ internal sealed class FeatureService
     /// Register features for an application. Append-only: new features are created, pending ones
     /// are restored, existing active ones are left alone. Features missing from the payload are
     /// NOT deleted at registration time — a background sweep handles stale-flag cleanup.
+    /// Feature details are brought within the limits instead of rejecting the registration; the
+    /// adjustments are returned per feature so the caller can log them.
     /// </summary>
-    internal void RegisterApplication(ApplicationDto application, List<RegisterFeatureStateModel> featureModels)
+    internal IReadOnlyList<(string FeatureName, IReadOnlyList<string> Problems)> RegisterApplication(
+        ApplicationDto application, List<RegisterFeatureStateModel> featureModels)
     {
+        var adjustments = new List<(string, IReadOnlyList<string>)>();
         var features = featureModels
-            .Select(f => new FeatureDto(f.FeatureName, f.InitialState))
+            .Select(f =>
+            {
+                var problems = new List<string>();
+                var details = FeatureDetailsSanitizer.Sanitize(
+                    new FeatureDetailsDto(
+                        f.Description,
+                        f.Links?.Select(l => new FeatureLinkDto(l?.Url!, l?.Title)).ToList() ?? []),
+                    problems);
+                if (problems.Count > 0)
+                {
+                    adjustments.Add((f.FeatureName, problems));
+                }
+
+                return new FeatureDto(f.FeatureName, f.InitialState) { Details = details };
+            })
             .ToList();
 
         _featureRepository.RegisterApplication(application, features);
+        return adjustments;
     }
 
     internal bool GetFeatureState(ApplicationDto application, string featureName)

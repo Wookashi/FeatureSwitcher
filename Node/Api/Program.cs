@@ -162,7 +162,13 @@ app.MapPost("/applications",
             }
 
             var featureService = new FeatureService(featureRepository);
-            featureService.RegisterApplication(new ApplicationDto(registerModel.AppName), registerModel.Features ?? []);
+            var adjustments = featureService.RegisterApplication(new ApplicationDto(registerModel.AppName), registerModel.Features ?? []);
+            foreach (var (featureName, problems) in adjustments)
+            {
+                logger.LogWarning(
+                    "App {AppName} registered feature {FeatureName} with details outside the limits; they were adjusted: {Problems}",
+                    registerModel.AppName, featureName, string.Join("; ", problems));
+            }
 
             logger.LogInformation("App {AppName} registered successfully", registerModel.AppName);
             return Results.Created();

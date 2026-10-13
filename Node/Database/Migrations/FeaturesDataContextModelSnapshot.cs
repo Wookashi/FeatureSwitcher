@@ -15,7 +15,7 @@ namespace Wookashi.FeatureSwitcher.Node.Database.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.7");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
 
             modelBuilder.Entity("Wookashi.FeatureSwitcher.Node.Database.Entities.ApplicationEntity", b =>
                 {
@@ -54,10 +54,17 @@ namespace Wookashi.FeatureSwitcher.Node.Database.Migrations
                     b.Property<int>("ApplicationId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("FeatureId")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("LastUsedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LinksJson")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("PendingDeletionSince")

@@ -22,7 +22,9 @@ public interface IFeatureRepository
     /// <summary>
     /// Append-only: adds features that don't exist, restores any in PendingDeletion that are in
     /// the payload. Existing Active features are left as-is. Bumps application LastUsedAt and
-    /// restores the application if it was PendingDeletion.
+    /// restores the application if it was PendingDeletion. Replaces the stored details of every
+    /// registered link with <see cref="FeatureDto.Details"/> (expected to be sanitized already);
+    /// <c>null</c> clears them.
     /// </summary>
     public void RegisterApplication(ApplicationDto application, List<FeatureDto> features);
 
