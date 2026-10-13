@@ -42,6 +42,7 @@ builder.Services.AddHttpClient("ManagerHealthCheck", client =>
 });
 builder.Services.AddHostedService<ManagerRegistrationHostedService>();
 builder.Services.AddHostedService<SoftDeleteSweepHostedService>();
+builder.Services.AddHostedService<RuntimeDiagnosticsHostedService>();
 
 //Console logs configuration
 builder.Logging.ClearProviders();
@@ -57,8 +58,11 @@ var nodeEnvironment = nodeConfig?.Environment ?? "FailConfigurationSetting";
 var managerSettings = builder.Configuration.GetSection("ManagerSettings").Get<ManagerSettings>();
 
 var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
-var logger = loggerFactory.CreateLogger("Node.Startup");
+// Category must fall under "Wookashi.FeatureSwitcher" — otherwise the "Default: Warning" filter drops
+// every Information entry logged here, including the endpoint logs below.
+var logger = loggerFactory.CreateLogger("Wookashi.FeatureSwitcher.Node.Api");
 logger.LogInformation("=== Node API Starting ===");
+logger.LogInformation("Version: {Version}", Wookashi.FeatureSwitcher.Node.Api.HealthChecks.ConfigurationExtensions.AppVersion);
 logger.LogInformation("Environment: {Environment}", app.Environment.EnvironmentName);
 logger.LogInformation("Node Environment: {NodeEnvironment}", nodeEnvironment);
 logger.LogInformation("Node Name: {NodeName}", nodeConfig?.Name ?? "(not set)");
@@ -69,6 +73,37 @@ logger.LogInformation("Database: {ConnectionString}", string.IsNullOrEmpty(dbCon
 logger.LogInformation("============================");
 
 // Configure the HTTP request pipeline.
+
+// Outermost: log unhandled exceptions together with the request that caused them (Kestrel's own
+// entry only carries a connection id) and answer with a ProblemDetails 500 instead of an empty one.
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next(context);
+    }
+    catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+    {
+        logger.LogDebug("Request {Method} {Path} aborted by the client", context.Request.Method, context.Request.Path);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Unhandled exception while processing {Method} {Path}", context.Request.Method, context.Request.Path);
+
+        if (context.Response.HasStarted)
+        {
+            throw;
+        }
+
+        context.Response.Clear();
+        await Results.Problem(
+                title: "Internal server error",
+                detail: "The node failed to process the request. See the node logs for details.",
+                statusCode: StatusCodes.Status500InternalServerError)
+            .ExecuteAsync(context);
+    }
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

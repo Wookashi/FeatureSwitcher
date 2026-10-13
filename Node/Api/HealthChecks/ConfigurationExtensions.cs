@@ -5,7 +5,7 @@ namespace Wookashi.FeatureSwitcher.Node.Api.HealthChecks;
 
 internal static class ConfigurationExtensions
 {
-    private static readonly string AppVersion =
+    internal static readonly string AppVersion =
         typeof(ConfigurationExtensions).Assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
             .InformationalVersion?.Split('+')[0] ?? "unknown";

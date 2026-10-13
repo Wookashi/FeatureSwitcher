@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using Wookashi.FeatureSwitcher.Node.Api.Configuration;
+using Wookashi.FeatureSwitcher.Node.Api.Extensions;
 using Wookashi.FeatureSwitcher.Shared.Abstraction.Models;
 
 namespace Wookashi.FeatureSwitcher.Node.Api.Services;
@@ -34,6 +35,12 @@ internal sealed class ManagerRegistrationHostedService(
     /// moment when it comes back.
     /// </summary>
     private const double RetryJitter = 0.15;
+
+    /// <summary>
+    /// Once the schedule reaches its steady cadence, only every N-th failure is logged as a warning
+    /// (12 × 5 min ≈ hourly) so a long outage stays visible without flooding the log.
+    /// </summary>
+    private const int SteadyStateAttemptsPerSummary = 12;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -122,8 +129,8 @@ internal sealed class ManagerRegistrationHostedService(
                 else
                 {
                     logger.LogInformation(
-                        "Node '{NodeName}' registered with manager at {ManagerUrl} after {Attempts} attempts ({Elapsed:g} since first attempt)",
-                        nodeConfig.Name, settings.Url, attempt, outage.Elapsed);
+                        "Node '{NodeName}' registered with manager at {ManagerUrl} after {Attempts} attempts ({Elapsed} since first attempt)",
+                        nodeConfig.Name, settings.Url, attempt, outage.Elapsed.TruncateToSeconds());
                 }
                 return;
             }
@@ -134,9 +141,31 @@ internal sealed class ManagerRegistrationHostedService(
             catch (Exception ex)
             {
                 var delay = GetRetryDelay(attempt, Random.Shared.NextDouble());
-                logger.LogWarning(ex,
-                    "Failed to register node with manager at {ManagerUrl} (attempt {Attempt}, {Elapsed:g} since first attempt), next attempt in {WaitSeconds} seconds",
-                    settings.Url, attempt, outage.Elapsed, (int)delay.TotalSeconds);
+
+                if (attempt < RetrySchedule.Length)
+                {
+                    logger.LogWarning(ex,
+                        "Failed to register node with manager at {ManagerUrl} (attempt {Attempt}, {Elapsed} since first attempt), next attempt in {WaitSeconds} seconds",
+                        settings.Url, attempt, outage.Elapsed.TruncateToSeconds(), (int)delay.TotalSeconds);
+                }
+                else if (attempt == RetrySchedule.Length)
+                {
+                    logger.LogWarning(ex,
+                        "Failed to register node with manager at {ManagerUrl} (attempt {Attempt}, {Elapsed} since first attempt); retrying every {WaitMinutes} minutes, further failures are logged once per hour",
+                        settings.Url, attempt, outage.Elapsed.TruncateToSeconds(), (int)RetrySchedule[^1].TotalMinutes);
+                }
+                else if (attempt % SteadyStateAttemptsPerSummary == 0)
+                {
+                    logger.LogWarning(ex,
+                        "Still unable to register node with manager at {ManagerUrl} (attempt {Attempt}, {Elapsed} since first attempt)",
+                        settings.Url, attempt, outage.Elapsed.TruncateToSeconds());
+                }
+                else
+                {
+                    logger.LogDebug(ex,
+                        "Failed to register node with manager at {ManagerUrl} (attempt {Attempt}), next attempt in {WaitSeconds} seconds",
+                        settings.Url, attempt, (int)delay.TotalSeconds);
+                }
 
                 try
                 {

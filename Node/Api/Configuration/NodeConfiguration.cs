@@ -17,4 +17,11 @@ internal sealed class NodeConfiguration
     /// How often the soft-delete sweep runs. Defaults to 24 hours.
     /// </summary>
     public TimeSpan FeatureCleanupInterval { get; set; } = TimeSpan.FromHours(24);
+
+    /// <summary>
+    /// How often runtime memory/GC statistics are logged. Disabled when not set (or zero) so the log is
+    /// not cluttered by default; enable it (e.g. 00:15:00) when investigating memory issues. The
+    /// one-time runtime summary at startup is always logged.
+    /// </summary>
+    public TimeSpan DiagnosticsInterval { get; set; } = TimeSpan.Zero;
 }

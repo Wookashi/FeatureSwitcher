@@ -48,6 +48,7 @@ docker run -d \
 | `NodeConfiguration__ConnectionString` | `Data Source=/data/fs_node.db` | SQLite DB path |
 | `NodeConfiguration__FeatureStaleAfter` | `30.00:00:00` | Idle time before a flag is marked pending-deletion |
 | `NodeConfiguration__FeatureCleanupInterval` | `1.00:00:00` | How often the soft-delete sweep runs |
+| `NodeConfiguration__DiagnosticsInterval` | _(not set — disabled)_ | How often memory/GC statistics are logged, e.g. `00:15:00`; not set or `00:00:00` disables |
 | `ManagerSettings__Url` | `http://localhost:5033` | URL of the Manager service |
 | `ManagerSettings__Username` | _(empty)_ | Manager admin username for self-registration |
 | `ManagerSettings__Password` | _(empty)_ | Manager admin password for self-registration |

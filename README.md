@@ -85,6 +85,12 @@ Permanent deletion of a pending flag removes the application-feature link. The g
 
 Both knobs are configurable per node via `NodeConfiguration` (`FeatureStaleAfter` and `FeatureCleanupInterval`, default 24h sweep cadence), set in `appsettings.json` or via env vars (e.g., `NodeConfiguration__FeatureStaleAfter=7.00:00:00`).
 
+### Node diagnostics
+
+On startup the Node logs its version, configuration and runtime environment (.NET version, CPU count, GC mode and settings, GC memory limit). Optionally it also logs memory statistics every `DiagnosticsInterval` — **disabled by default** (not set or `00:00:00`); enable it, e.g. `00:15:00`, when investigating memory issues: working set, GC heap size/committed/fragmented memory, an estimate of non-GC (native) memory, GC counts per generation, thread counts and uptime. An entry is raised to a warning when memory approaches the GC memory limit. This makes it possible to tell after an out-of-memory termination whether memory grew steadily or suddenly, and whether in the managed heap or in native memory. Set it via `NodeConfiguration__DiagnosticsInterval`.
+
+Manager availability is logged only when it changes (unavailable / available again after X), not on every `/health` call. Failed registration attempts are logged as warnings while the retry delay ramps up, then once per hour while the Manager stays unavailable.
+
 ### Audit Log
 
 Admin actions are recorded to an audit log accessible from the header (audit icon, Admin only). Current actions:

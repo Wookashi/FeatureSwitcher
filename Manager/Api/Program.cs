@@ -93,8 +93,15 @@ builder.Services.AddAuthorization(options =>
 
 var app = builder.Build();
 
-var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Manager.Startup");
+var appVersion = typeof(Program).Assembly
+    .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+    .InformationalVersion?.Split('+')[0] ?? "unknown";
+
+// Category must fall under "Wookashi.FeatureSwitcher" — otherwise the "Default: Warning" filter drops
+// every Information entry logged here.
+var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Wookashi.FeatureSwitcher.Manager.Api");
 logger.LogInformation("=== Manager API Starting ===");
+logger.LogInformation("Version: {Version}", appVersion);
 logger.LogInformation("Environment: {Environment}", app.Environment.EnvironmentName);
 logger.LogInformation("Database: {ConnectionString}", string.IsNullOrEmpty(dbConnectionString) ? "(in-memory)" : $"{dbConnectionString} (configured)");
 logger.LogInformation("JWT Issuer: {Issuer}, Audience: {Audience}, Expiration: {Expiration} min",
@@ -120,10 +127,6 @@ app.UseStaticFiles();
 
 app.UseAuthentication();
 app.UseAuthorization();
-
-var appVersion = typeof(Program).Assembly
-    .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
-    .InformationalVersion?.Split('+')[0] ?? "unknown";
 
 app.MapGet("/health", () => Results.Ok(new { ok = true, version = appVersion, ts = DateTimeOffset.UtcNow })).ExcludeFromDescription();
 
