@@ -61,10 +61,10 @@ var serviceProvider = new ServiceCollection().AddHttpClient().BuildServiceProvid
 var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
 
 // 2. Define your features
-var features = new List<FeatureStateModel>
+var features = new List<IFeatureStateModel>
 {
-    new("DarkMode", initialState: false),
-    new("NewCheckout", initialState: true),
+    new FeatureStateModel("DarkMode", initialState: false),
+    new FeatureStateModel("NewCheckout", initialState: true),
 };
 
 // 3. Create and initialize
@@ -99,6 +99,83 @@ if (await featureManager.IsFeatureEnabledAsync("DarkMode"))
 
 `AddFeatureFlags` also takes the list of features to manage.
 
+## Describing features
+
+A feature can carry a description and links (ticket, documentation, runbook, dashboard…). The Manager
+shows them when the feature is opened, so whoever switches the flag knows what it does and what
+happens when it is turned off. Both are optional and set in code, next to the feature definition:
+
+```csharp
+new FeatureStateModel("NewCheckout", initialState: true)
+{
+    Description = """
+        Replaces the legacy multi-step checkout with the single-page flow.
+
+        When OFF:
+        - customers are redirected to /checkout/legacy
+        - carts stay compatible with both flows
+        """,
+    Links =
+    [
+        "https://jira.example.com/browse/SHOP-1423",                // just the URL
+        new("Rollout plan", "https://wiki.example.com/rollout"),     // title first, then the URL
+        new Uri(settings.DashboardUrl),                             // a Uri works too
+    ],
+},
+```
+
+### Formatting
+
+The description is plain text — HTML is never rendered — with a few conventions that read well both in
+code and in the Manager:
+
+| In code | In the Manager |
+|---------|----------------|
+| a blank line | starts a new paragraph |
+| lines starting with `- ` | a bullet list |
+| other line breaks | kept as they are |
+| `https://…` in the text | a clickable link |
+
+Use a raw string literal (`"""…"""`) for multi-line text: C# removes the indentation, so the description
+looks the same in code and in the Manager. Line endings, trailing spaces and repeated blank lines are
+normalized, so how the file is edited doesn't matter.
+
+A link without a title is shown as host and path (e.g. `jira.example.com/browse/SHOP-1423`), which is
+often enough; add a title when the URL says little (`new("Runbook", "https://…")`).
+
+### Shared flags
+
+Details belong to the application: when several applications register the same flag, each describes
+its own use of it, and the Manager shows them all. They are sent with every registration, so changing
+or removing them in code updates the Manager on the next start. Different environments can show
+different details while they run different versions of the application.
+
+### Limits
+
+| Field | Limit |
+|-------|-------|
+| Description | 1000 characters after normalization; no control characters other than line breaks and tabs |
+| Links | 5 per feature, no duplicate URLs |
+| Link URL | absolute `http` or `https`, no credentials (`user:password@`), 2048 characters |
+| Link title | optional, single line, 100 characters |
+
+The limits are available as constants in `FeatureDetailsLimits`.
+
+A definition that breaks a limit throws `ArgumentException` as soon as it is created — at application
+startup, or in the first test that builds your feature list — with a message saying which feature and
+what to fix, for example:
+
+```
+Feature 'NewCheckout': description is 1342 characters long, the limit is 1000. Keep the description short and move details to Links.
+Link 'jira.example.com/browse/SHOP-1' must be an absolute http or https URL, e.g. "https://jira.example.com/browse/SHOP-1".
+```
+
+Custom feature types can provide details by implementing `IFeatureDetails` next to
+`IFeatureStateModel`; `FeatureManager` checks them against the same limits when it is created.
+
+Details need a Node and Manager version that supports them; older Nodes accept the registration and
+ignore the details.
+
 ## Shared Flags
 
 Flags are shared by name on the Node. If two applications register a feature
@@ -114,7 +191,7 @@ application-feature links maintained by the Node.
 
 Registration is **append-only** on the Node. New application-feature links are inserted; features missing from the payload are NOT deleted at registration time, so two services that accidentally share an `applicationName` cannot wipe each other's flags.
 
-Every registration and every state read bumps `LastUsedAt` on the application-feature link and upserts today's row in the per-day usage counter for the global flag.
+Every registration and every state read updates `LastUsedAt` on the application-feature link and today's usage counter for the global flag. The Node aggregates these updates in memory and writes them periodically (every minute by default), so usage shown in the Manager can lag slightly.
 
 A background sweep on the Node periodically marks application-feature links whose `LastUsedAt` is older than the configured stale threshold (default 30 days) as `PendingDeletion`. Applications with no active links can also be marked as `PendingDeletion`. Flags in `PendingDeletion`:
 

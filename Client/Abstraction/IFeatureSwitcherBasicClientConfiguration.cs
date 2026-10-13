@@ -1,9 +1,23 @@
 namespace Wookashi.FeatureSwitcher.Client.Abstraction;
 
+/// <summary>
+/// Settings used to connect the application to its Feature Switcher Node.
+/// </summary>
 public interface IFeatureSwitcherBasicClientConfiguration
 {
+    /// <summary>
+    /// Name under which the application registers on the Node and appears in the Manager.
+    /// </summary>
     string ApplicationName { get; }
+
+    /// <summary>
+    /// Environment of the application (e.g. "Development", "Production"); must match the Node's environment.
+    /// </summary>
     string EnvironmentName { get; }
+
+    /// <summary>
+    /// Address of the Feature Switcher Node for this environment.
+    /// </summary>
     Uri NodeAddress { get; }
 
     /// <summary>

@@ -57,6 +57,9 @@ public class FeatureManager : IFeatureManager
     /// </param>
     /// <exception cref="ArgumentNullException">Thrown when required parameters are null.</exception>
     /// <exception cref="FeatureNameCollisionException">Thrown when feature names are not unique.</exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when the details of a feature (<see cref="IFeatureDetails"/>) exceed <see cref="FeatureDetailsLimits"/>.
+    /// </exception>
     public FeatureManager(
         string applicationName,
         string environmentName,
@@ -86,6 +89,18 @@ public class FeatureManager : IFeatureManager
             throw new FeatureNameCollisionException("Feature names must be unique.");
         }
 
+        // FeatureStateModel checks its details when they are set; custom IFeatureDetails implementations
+        // are checked here, so an invalid definition fails at startup instead of being sent to the Node.
+        foreach (var feature in features)
+        {
+            if (feature is IFeatureDetails details)
+            {
+                FeatureDetailsValidator.ValidateDescription(
+                    feature.Name, FeatureDetailsValidator.NormalizeDescription(details.Description));
+                FeatureDetailsValidator.ValidateLinks(feature.Name, details.Links);
+            }
+        }
+
         _features = features;
 
         _logger.LogInformation(
@@ -112,6 +127,15 @@ public class FeatureManager : IFeatureManager
         return IsFeatureEnabledAsync(feature.Name, cancellationToken);
     }
 
+    /// <summary>
+    /// Checks if a feature is enabled.
+    /// Queries the node first; falls back to cached state if unreachable.
+    /// </summary>
+    /// <param name="featureName">Name of the feature to check.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>True if the feature is enabled, false otherwise.</returns>
+    /// <exception cref="FeatureNotRegisteredException">Thrown when the feature was not registered.</exception>
+    /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled.</exception>
     public async Task<bool> IsFeatureEnabledAsync(string featureName, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -171,9 +195,7 @@ public class FeatureManager : IFeatureManager
         {
             AppName = _appName,
             Environment = _environmentName,
-            Features = _features
-                .Select(f => new AppRegistrationModel.RegisterFeatureStateModel(f.Name, f.InitialState))
-                .ToList(),
+            Features = _features.Select(CreateRegistrationFeature).ToList(),
         };
 
         var content = new StringContent(
@@ -222,6 +244,23 @@ public class FeatureManager : IFeatureManager
         _logger.LogInformation(
             "Successfully registered {FeatureCount} feature(s) for app '{AppName}' on node {NodeAddress}",
             _features.Count, _appName, _nodeAddress);
+    }
+
+    private static AppRegistrationModel.RegisterFeatureStateModel CreateRegistrationFeature(IFeatureStateModel feature)
+    {
+        var model = new AppRegistrationModel.RegisterFeatureStateModel(feature.Name, feature.InitialState);
+        if (feature is IFeatureDetails details)
+        {
+            model.Description = FeatureDetailsValidator.NormalizeDescription(details.Description);
+            if (details.Links is { Count: > 0 } links)
+            {
+                model.Links = links
+                    .Select(l => new AppRegistrationModel.RegisterFeatureLinkModel(l.Url.AbsoluteUri, l.Title))
+                    .ToList();
+            }
+        }
+
+        return model;
     }
 
     private async Task<bool> GetFeatureStateFromNodeAsync(string featureName, CancellationToken cancellationToken)

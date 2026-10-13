@@ -1,32 +1,42 @@
-﻿using Bogus;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console;
-using Wookashi.FeatureSwitcher.Client.Abstraction;
 using Wookashi.FeatureSwitcher.Client.Abstraction.Exceptions;
 using Wookashi.FeatureSwitcher.Client.Abstraction.Models;
 using Wookashi.FeatureSwitcher.Client.Implementation;
-using Wookashi.FeatureSwitcher.Console;
 
-// var featureCollection = new Faker<ApplicationFeature>()
-//         .CustomInstantiator(f => new ApplicationFeature(
-//             $"{f.Hacker.Noun()}{f.Random.Number(1, 50)}",
-//             f.Random.Bool(),
-//             new Uri(f.Internet.Url())
-//         ))
-//         .Generate(10)
-//         .Cast<IFeatureStateModel>()
-//         .ToList();
 
+// Description and Links are optional; the Manager shows them when the feature is opened.
 var featureCollection = new List<IFeatureStateModel>
 {
-    new ApplicationFeature("Foo", true, new Uri("https://www.foo.pl")),
-    new ApplicationFeature("Bar", false, new Uri("https://www.bar.pl")),
-    new ApplicationFeature("Test", true, new Uri("https://www.test.pl")),
-    new ApplicationFeature("Function one", false, new Uri("https://www.functionone.pl")),
-    new ApplicationFeature("Function two", true, new Uri("https://www.functiontwo.pl")),
-    new ApplicationFeature("Some other function", false, new Uri("https://www.sof.pl")),
-    new ApplicationFeature("Another test", true, new Uri("https://www.at.pl")),
-    new ApplicationFeature("last function", false, new Uri("https://www.lf.pl")),
+    new FeatureStateModel("Foo", true)
+    {
+        Description = "Shows the new Foo panel on the dashboard.",
+        Links = ["https://www.foo.pl"],
+    },
+    new FeatureStateModel("Bar", false)
+    {
+        Description = """
+            Switches Bar to the new pricing engine.
+
+            When OFF:
+            - prices come from the legacy engine
+            - cached prices are kept, no restart needed
+            """,
+        Links =
+        [
+            new("Specification", "https://www.bar.pl"),
+            "https://www.bar.pl/runbook",
+        ],
+    },
+    new FeatureStateModel("Test", true) { Links = ["https://www.test.pl"] },
+    new FeatureStateModel("Function one", false),
+    new FeatureStateModel("Function two", true)
+    {
+        Description = "Kill switch for function two. Dashboard: https://www.functiontwo.pl/dashboard",
+    },
+    new FeatureStateModel("Some other function", false),
+    new FeatureStateModel("Another test", true),
+    new FeatureStateModel("last function", false),
 };
 
 var serviceProvider = new ServiceCollection().AddHttpClient().BuildServiceProvider();
