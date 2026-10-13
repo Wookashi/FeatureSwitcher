@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -13,7 +15,25 @@ internal sealed class ManagerRegistrationHostedService(
     IHttpClientFactory httpClientFactory,
     ILogger<ManagerRegistrationHostedService> logger) : BackgroundService
 {
-    private static readonly TimeSpan MaxRetryDelay = TimeSpan.FromMinutes(5);
+    /// <summary>
+    /// Stepped retry schedule. The Manager may be unavailable for a long time (planned downtime, outages),
+    /// so the node must be able to wait it out without hammering it: a quick first retry covers
+    /// containers starting together, then a few short retries cover a Manager restart, and after that
+    /// the node settles into a steady 5-minute cadence for as long as the outage lasts.
+    /// </summary>
+    private static readonly TimeSpan[] RetrySchedule =
+    [
+        TimeSpan.FromSeconds(10),
+        TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1),
+        TimeSpan.FromMinutes(3), TimeSpan.FromMinutes(3), TimeSpan.FromMinutes(3),
+        TimeSpan.FromMinutes(5),
+    ];
+
+    /// <summary>
+    /// Random spread applied to each delay so several nodes don't all hit the Manager at the same
+    /// moment when it comes back.
+    /// </summary>
+    private const double RetryJitter = 0.15;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -30,6 +50,7 @@ internal sealed class ManagerRegistrationHostedService(
 
         var httpClient = httpClientFactory.CreateClient("Manager");
         var attempt = 0;
+        var outage = Stopwatch.StartNew();
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -40,11 +61,13 @@ internal sealed class ManagerRegistrationHostedService(
                 if (!string.IsNullOrEmpty(settings.Username) && !string.IsNullOrEmpty(settings.Password))
                 {
                     var loginPayload = JsonSerializer.Serialize(new { username = settings.Username, password = settings.Password });
-                    var loginContent = new StringContent(loginPayload, Encoding.UTF8, "application/json");
+                    using var loginContent = new StringContent(loginPayload, Encoding.UTF8, "application/json");
 
-                    var loginResponse = await httpClient.PostAsync($"{settings.Url}/api/auth/login", loginContent, stoppingToken);
+                    using var loginResponse = await httpClient.PostAsync($"{settings.Url}/api/auth/login", loginContent, stoppingToken);
 
-                    if (!loginResponse.IsSuccessStatusCode)
+                    // Only a definitive credentials rejection stops retrying. Anything else (e.g. 502/503
+                    // from a reverse proxy while the Manager is still starting) is transient.
+                    if (loginResponse.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
                     {
                         logger.LogError(
                             "Authentication with manager failed (HTTP {StatusCode}). " +
@@ -56,8 +79,17 @@ internal sealed class ManagerRegistrationHostedService(
                         return;
                     }
 
+                    if (!loginResponse.IsSuccessStatusCode)
+                    {
+                        throw new HttpRequestException(
+                            $"Manager returned HTTP {(int)loginResponse.StatusCode} for login",
+                            inner: null,
+                            loginResponse.StatusCode);
+                    }
+
                     var loginJson = await loginResponse.Content.ReadAsStringAsync(stoppingToken);
-                    var token = JsonDocument.Parse(loginJson).RootElement.GetProperty("token").GetString();
+                    using var loginDocument = JsonDocument.Parse(loginJson);
+                    var token = loginDocument.RootElement.GetProperty("token").GetString();
 
                     httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
                 }
@@ -68,20 +100,31 @@ internal sealed class ManagerRegistrationHostedService(
                     NodeAddress = new Uri(nodeConfig.Address)
                 };
 
-                var content = new StringContent(
+                using var content = new StringContent(
                     JsonSerializer.Serialize(registrationModel),
                     Encoding.UTF8,
                     "application/json");
 
-                var registrationResponse = await httpClient.PutAsync($"{settings.Url}/api/nodes", content, stoppingToken);
+                using var registrationResponse = await httpClient.PutAsync($"{settings.Url}/api/nodes", content, stoppingToken);
 
                 if (!registrationResponse.IsSuccessStatusCode)
                 {
                     throw new HttpRequestException(
-                        $"Manager returned HTTP {(int)registrationResponse.StatusCode} for node registration");
+                        $"Manager returned HTTP {(int)registrationResponse.StatusCode} for node registration",
+                        inner: null,
+                        registrationResponse.StatusCode);
                 }
 
-                logger.LogInformation("Node '{NodeName}' registered with manager at {ManagerUrl}", nodeConfig.Name, settings.Url);
+                if (attempt == 1)
+                {
+                    logger.LogInformation("Node '{NodeName}' registered with manager at {ManagerUrl}", nodeConfig.Name, settings.Url);
+                }
+                else
+                {
+                    logger.LogInformation(
+                        "Node '{NodeName}' registered with manager at {ManagerUrl} after {Attempts} attempts ({Elapsed:g} since first attempt)",
+                        nodeConfig.Name, settings.Url, attempt, outage.Elapsed);
+                }
                 return;
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -90,12 +133,14 @@ internal sealed class ManagerRegistrationHostedService(
             }
             catch (Exception ex)
             {
-                var waitSeconds = Math.Min(attempt + 50, (int)MaxRetryDelay.TotalSeconds);
-                logger.LogWarning(ex, "Failed to register node with manager at {ManagerUrl}, next attempt after {WaitSeconds} seconds", settings.Url, waitSeconds);
+                var delay = GetRetryDelay(attempt, Random.Shared.NextDouble());
+                logger.LogWarning(ex,
+                    "Failed to register node with manager at {ManagerUrl} (attempt {Attempt}, {Elapsed:g} since first attempt), next attempt in {WaitSeconds} seconds",
+                    settings.Url, attempt, outage.Elapsed, (int)delay.TotalSeconds);
 
                 try
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(waitSeconds), stoppingToken);
+                    await Task.Delay(delay, stoppingToken);
                 }
                 catch (OperationCanceledException)
                 {
@@ -103,5 +148,14 @@ internal sealed class ManagerRegistrationHostedService(
                 }
             }
         }
+    }
+
+    /// <param name="attempt">1-based number of the attempt that just failed.</param>
+    /// <param name="random">Value in [0, 1) used to spread the delay by ±<see cref="RetryJitter"/>.</param>
+    internal static TimeSpan GetRetryDelay(int attempt, double random)
+    {
+        var baseDelay = RetrySchedule[Math.Clamp(attempt - 1, 0, RetrySchedule.Length - 1)];
+        var factor = 1 + (random * 2 - 1) * RetryJitter;
+        return baseDelay * factor;
     }
 }

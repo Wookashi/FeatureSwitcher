@@ -21,7 +21,7 @@ internal sealed class ManagerHealthCheck(
         try
         {
             var client = httpClientFactory.CreateClient("ManagerHealthCheck");
-            var response = await client.GetAsync($"{_options.Url}/health", cancellationToken);
+            using var response = await client.GetAsync($"{_options.Url}/health", cancellationToken);
 
             if (response.IsSuccessStatusCode)
             {
