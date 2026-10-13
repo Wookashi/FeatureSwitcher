@@ -61,6 +61,10 @@ internal sealed class SoftDeleteSweepHostedService : BackgroundService
         using var scope = _scopeFactory.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IFeatureRepository>();
 
+        // Write buffered usage first, so a feature used since the last flush is not judged stale on
+        // outdated LastUsedAt values. If that fails, the sweep is skipped rather than run on them.
+        repository.FlushFeatureUsage();
+
         var threshold = DateTime.UtcNow - staleAfter;
 
         var applicationFeaturesMarked = repository.MarkStaleApplicationFeaturesPending(threshold);

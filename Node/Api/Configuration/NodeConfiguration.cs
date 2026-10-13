@@ -24,4 +24,13 @@ internal sealed class NodeConfiguration
     /// one-time runtime summary at startup is always logged.
     /// </summary>
     public TimeSpan DiagnosticsInterval { get; set; } = TimeSpan.Zero;
+
+    internal static readonly TimeSpan DefaultUsageFlushInterval = TimeSpan.FromSeconds(60);
+
+    /// <summary>
+    /// How often buffered feature usage (LastUsedAt, daily use counts) is written to the database.
+    /// Flag-state reads only record usage in memory, so they never wait for a database write. A hard
+    /// kill loses at most this much usage data; flag states are not affected. Defaults to 60 seconds.
+    /// </summary>
+    public TimeSpan UsageFlushInterval { get; set; } = DefaultUsageFlushInterval;
 }

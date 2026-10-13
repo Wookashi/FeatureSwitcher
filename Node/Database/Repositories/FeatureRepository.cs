@@ -9,10 +9,12 @@ namespace Wookashi.FeatureSwitcher.Node.Database.Repositories;
 internal sealed class FeatureRepository : IFeatureRepository
 {
     private readonly IFeaturesDataContext _context;
+    private readonly FeatureUsageBuffer _usageBuffer;
 
-    public FeatureRepository(IFeaturesDataContext dbContext)
+    public FeatureRepository(IFeaturesDataContext dbContext, FeatureUsageBuffer usageBuffer)
     {
         _context = dbContext;
+        _usageBuffer = usageBuffer;
     }
 
     // ---- Read paths (Active only) ----
@@ -87,7 +89,6 @@ internal sealed class FeatureRepository : IFeatureRepository
     public void RegisterApplication(ApplicationDto application, List<FeatureDto> features)
     {
         var now = DateTime.UtcNow;
-        var today = now.Date;
 
         var applicationEntity = _context.Applications
             .FirstOrDefault(app => app.Name == application.Name);
@@ -122,6 +123,7 @@ internal sealed class FeatureRepository : IFeatureRepository
         {
             var existingLink = existingLinks.FirstOrDefault(link => link.Feature.Name == incoming.Name);
             var existing = existingLink?.Feature;
+            ApplicationFeatureEntity link;
 
             if (existing is null)
             {
@@ -141,23 +143,25 @@ internal sealed class FeatureRepository : IFeatureRepository
                     _context.SaveChanges();
                 }
 
-                _context.ApplicationFeatures.Add(new ApplicationFeatureEntity
+                link = new ApplicationFeatureEntity
                 {
                     ApplicationId = applicationEntity.Id,
                     FeatureId = existing.Id,
                     Status = EntityStatus.Active,
                     LastUsedAt = now,
-                });
+                };
+                _context.ApplicationFeatures.Add(link);
                 _context.SaveChanges();
             }
             else
             {
-                if (existingLink!.Status == EntityStatus.PendingDeletion)
+                link = existingLink!;
+                if (link.Status == EntityStatus.PendingDeletion)
                 {
-                    existingLink.Status = EntityStatus.Active;
-                    existingLink.PendingDeletionSince = null;
+                    link.Status = EntityStatus.Active;
+                    link.PendingDeletionSince = null;
                 }
-                existingLink.LastUsedAt = now;
+                link.LastUsedAt = now;
             }
 
             if (existing.Status == EntityStatus.PendingDeletion)
@@ -166,8 +170,7 @@ internal sealed class FeatureRepository : IFeatureRepository
                 existing.PendingDeletionSince = null;
             }
             existing.LastUsedAt = now;
-            _context.SaveChanges();
-            UpsertUsage(existing.Id, today);
+            _usageBuffer.Record(link.Id, applicationEntity.Id, existing.Id, now);
         }
 
         _context.SaveChanges();
@@ -198,45 +201,59 @@ internal sealed class FeatureRepository : IFeatureRepository
 
     public void RecordFeatureUsage(ApplicationDto application, string featureName)
     {
-        var link = _context.ApplicationFeatures
-            .Include(l => l.Application)
-            .Include(l => l.Feature)
-            .FirstOrDefault(l => l.Application.Name == application.Name
-                                 && l.Feature.Name == featureName);
+        // Hot path (every flag-state read): a single projection query, no write. Only a link that
+        // has to be restored from PendingDeletion is written synchronously, so the state read that
+        // follows sees it as Active.
+        var usage = _context.ApplicationFeatures
+            .Where(l => l.Application.Name == application.Name && l.Feature.Name == featureName)
+            .Select(l => new
+            {
+                l.Id,
+                l.ApplicationId,
+                l.FeatureId,
+                NeedsRestore = l.Status == EntityStatus.PendingDeletion
+                               || l.Feature.Status == EntityStatus.PendingDeletion
+                               || l.Application.Status == EntityStatus.PendingDeletion,
+            })
+            .FirstOrDefault();
 
-        if (link is null)
+        if (usage is null)
         {
             return;
         }
 
-        var feature = link.Feature;
-        var applicationEntity = link.Application;
         var now = DateTime.UtcNow;
-        var today = now.Date;
 
-        if (link.Status == EntityStatus.PendingDeletion)
+        if (usage.NeedsRestore)
         {
-            link.Status = EntityStatus.Active;
-            link.PendingDeletionSince = null;
+            RestoreLink(usage.Id, now);
         }
-        link.LastUsedAt = now;
 
-        if (feature.Status == EntityStatus.PendingDeletion)
+        _usageBuffer.Record(usage.Id, usage.ApplicationId, usage.FeatureId, now);
+    }
+
+    public int FlushFeatureUsage()
+    {
+        lock (_usageBuffer.FlushLock)
         {
-            feature.Status = EntityStatus.Active;
-            feature.PendingDeletionSince = null;
-        }
-        feature.LastUsedAt = now;
+            var entries = _usageBuffer.Drain();
+            if (entries.Count == 0)
+            {
+                return 0;
+            }
 
-        if (applicationEntity.Status == EntityStatus.PendingDeletion)
-        {
-            applicationEntity.Status = EntityStatus.Active;
-            applicationEntity.PendingDeletionSince = null;
-        }
-        applicationEntity.LastUsedAt = now;
+            try
+            {
+                WriteUsage(entries);
+            }
+            catch
+            {
+                _usageBuffer.Requeue(entries);
+                throw;
+            }
 
-        _context.SaveChanges();
-        UpsertUsage(feature.Id, today);
+            return entries.Count;
+        }
     }
 
     // ---- Sweep ----
@@ -407,26 +424,112 @@ internal sealed class FeatureRepository : IFeatureRepository
 
     // ---- Helpers ----
 
-    private void UpsertUsage(int featureId, DateTime usageDay)
+    private void RestoreLink(int applicationFeatureId, DateTime now)
     {
-        var existing = _context.FeatureUsage
-            .FirstOrDefault(u => u.FeatureId == featureId && u.UsageDay == usageDay);
+        var link = _context.ApplicationFeatures
+            .Include(l => l.Application)
+            .Include(l => l.Feature)
+            .FirstOrDefault(l => l.Id == applicationFeatureId);
 
-        if (existing is null)
+        if (link is null)
         {
-            _context.FeatureUsage.Add(new FeatureUsageEntity
-            {
-                FeatureId = featureId,
-                UsageDay = usageDay,
-                UseCount = 1,
-            });
+            return; // Permanently deleted in the meantime.
         }
-        else
+
+        ApplyUse(link, now);
+        ApplyUse(link.Feature, now);
+        ApplyUse(link.Application, now);
+        _context.SaveChanges();
+    }
+
+    /// <summary>
+    /// Writes buffered usage in a single SaveChanges (one transaction): bumps LastUsedAt on links,
+    /// applications and features, and adds the counts to the per-day usage rows. Only one flush runs at
+    /// a time and nothing else writes usage rows, so the read-modify-write of the counters is safe.
+    /// </summary>
+    private void WriteUsage(IReadOnlyDictionary<FeatureUsageBuffer.UsageKey, FeatureUsageBuffer.UsageEntry> entries)
+    {
+        var linkUses = LatestUse(entries, key => key.ApplicationFeatureId);
+        var applicationUses = LatestUse(entries, key => key.ApplicationId);
+        var featureUses = LatestUse(entries, key => key.FeatureId);
+
+        var linkIds = linkUses.Keys.ToList();
+        foreach (var link in _context.ApplicationFeatures.Where(l => linkIds.Contains(l.Id)).ToList())
         {
-            existing.UseCount++;
+            ApplyUse(link, linkUses[link.Id]);
+        }
+
+        var applicationIds = applicationUses.Keys.ToList();
+        foreach (var applicationEntity in _context.Applications.Where(a => applicationIds.Contains(a.Id)).ToList())
+        {
+            ApplyUse(applicationEntity, applicationUses[applicationEntity.Id]);
+        }
+
+        var featureIds = featureUses.Keys.ToList();
+        var features = _context.Features.Where(f => featureIds.Contains(f.Id)).ToList();
+        foreach (var feature in features)
+        {
+            ApplyUse(feature, featureUses[feature.Id]);
+        }
+
+        // Counts for features permanently deleted since they were used have nothing to attach to.
+        var existingFeatureIds = features.Select(f => f.Id).ToHashSet();
+        var dailyCounts = entries
+            .Where(entry => existingFeatureIds.Contains(entry.Key.FeatureId))
+            .GroupBy(entry => (entry.Key.FeatureId, entry.Key.UsageDay))
+            .ToDictionary(group => group.Key, group => group.Sum(entry => entry.Value.Count));
+
+        var days = dailyCounts.Keys.Select(key => key.UsageDay).Distinct().ToList();
+        var usageRows = _context.FeatureUsage
+            .Where(u => featureIds.Contains(u.FeatureId) && days.Contains(u.UsageDay))
+            .ToList();
+
+        foreach (var ((featureId, usageDay), count) in dailyCounts)
+        {
+            var row = usageRows.FirstOrDefault(u => u.FeatureId == featureId && u.UsageDay == usageDay);
+            if (row is null)
+            {
+                _context.FeatureUsage.Add(new FeatureUsageEntity
+                {
+                    FeatureId = featureId,
+                    UsageDay = usageDay,
+                    UseCount = count,
+                });
+            }
+            else
+            {
+                row.UseCount += count;
+            }
         }
 
         _context.SaveChanges();
+    }
+
+    private static Dictionary<int, DateTime> LatestUse(
+        IReadOnlyDictionary<FeatureUsageBuffer.UsageKey, FeatureUsageBuffer.UsageEntry> entries,
+        Func<FeatureUsageBuffer.UsageKey, int> idSelector) =>
+        entries
+            .GroupBy(entry => idSelector(entry.Key))
+            .ToDictionary(group => group.Key, group => group.Max(entry => entry.Value.LastUsedAt));
+
+    /// <summary>
+    /// Applies a use that happened at <paramref name="usedAt"/>: bumps LastUsedAt and restores the
+    /// entity if it was marked PendingDeletion before that use (the sweep may mark it between a
+    /// buffered use and its flush).
+    /// </summary>
+    private static void ApplyUse(IUsageTrackedEntity entity, DateTime usedAt)
+    {
+        if (entity.Status == EntityStatus.PendingDeletion
+            && (entity.PendingDeletionSince is null || entity.PendingDeletionSince <= usedAt))
+        {
+            entity.Status = EntityStatus.Active;
+            entity.PendingDeletionSince = null;
+        }
+
+        if (usedAt > entity.LastUsedAt)
+        {
+            entity.LastUsedAt = usedAt;
+        }
     }
 
     private FeatureEntity? FindFeatureForApplication(

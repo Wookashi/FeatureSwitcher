@@ -29,10 +29,19 @@ public interface IFeatureRepository
     public FeatureUpdateResultDto UpdateFeature(ApplicationDto application, FeatureDto featureDto);
 
     /// <summary>
-    /// Records a single use for the given (app, feature) pair on today's UTC date. If the feature
-    /// is PendingDeletion, it is also restored. Bumps LastUsedAt on both feature and application.
+    /// Records a single use for the given (app, feature) pair on today's UTC date. If the link,
+    /// feature or application is PendingDeletion, it is restored immediately. The use itself
+    /// (LastUsedAt and the daily count) is buffered in memory and written by
+    /// <see cref="FlushFeatureUsage"/>, so recording a use does not write to the database.
     /// </summary>
     public void RecordFeatureUsage(ApplicationDto application, string featureName);
+
+    /// <summary>
+    /// Writes all buffered usage (from <see cref="RecordFeatureUsage"/> and registrations) in a single
+    /// transaction. On failure the usage stays buffered for the next flush and the exception is
+    /// rethrown. Returns the number of buffered entries written.
+    /// </summary>
+    public int FlushFeatureUsage();
 
     // ---- Sweep ----
 

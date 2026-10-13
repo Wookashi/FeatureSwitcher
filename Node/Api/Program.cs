@@ -43,6 +43,7 @@ builder.Services.AddHttpClient("ManagerHealthCheck", client =>
 builder.Services.AddHostedService<ManagerRegistrationHostedService>();
 builder.Services.AddHostedService<SoftDeleteSweepHostedService>();
 builder.Services.AddHostedService<RuntimeDiagnosticsHostedService>();
+builder.Services.AddHostedService<FeatureUsageFlushHostedService>();
 
 //Console logs configuration
 builder.Logging.ClearProviders();
@@ -76,6 +77,7 @@ logger.LogInformation("============================");
 
 // Outermost: log unhandled exceptions together with the request that caused them (Kestrel's own
 // entry only carries a connection id) and answer with a ProblemDetails 500 instead of an empty one.
+// A database locked by another writer is transient, so it is answered with 503 + Retry-After instead.
 app.Use(async (context, next) =>
 {
     try
@@ -85,6 +87,23 @@ app.Use(async (context, next) =>
     catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
     {
         logger.LogDebug("Request {Method} {Path} aborted by the client", context.Request.Method, context.Request.Path);
+    }
+    catch (Exception ex) when (ex.IsDatabaseBusy())
+    {
+        logger.LogWarning(ex, "Database busy while processing {Method} {Path}; responding with 503", context.Request.Method, context.Request.Path);
+
+        if (context.Response.HasStarted)
+        {
+            throw;
+        }
+
+        context.Response.Clear();
+        context.Response.Headers.RetryAfter = "5";
+        await Results.Problem(
+                title: "Database busy",
+                detail: "The node database is temporarily locked by another write. Retry shortly.",
+                statusCode: StatusCodes.Status503ServiceUnavailable)
+            .ExecuteAsync(context);
     }
     catch (Exception ex)
     {

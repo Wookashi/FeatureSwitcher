@@ -50,13 +50,23 @@ docker run -d \
 | `NodeConfiguration__FeatureStaleAfter` | `30.00:00:00` | Idle time before a flag is marked pending-deletion |
 | `NodeConfiguration__FeatureCleanupInterval` | `1.00:00:00` | How often the soft-delete sweep runs |
 | `NodeConfiguration__DiagnosticsInterval` | _(not set — disabled)_ | How often memory/GC statistics are logged, e.g. `00:15:00`; not set or `00:00:00` disables |
+| `NodeConfiguration__UsageFlushInterval` | `00:01:00` | How often buffered flag usage (last-used time, daily counts) is written to the database |
 | `ManagerSettings__Url` | `http://localhost:5033` | URL of the Manager service |
 | `ManagerSettings__Username` | _(empty)_ | Manager admin username for self-registration |
 | `ManagerSettings__Password` | _(empty)_ | Manager admin password for self-registration |
 | `ASPNETCORE_ENVIRONMENT` | `Production` | Hosting environment |
 | `TZ` | `Europe/Warsaw` | Timezone |
 
-Mount a volume at **`/data`** to persist the SQLite database (`fs_node.db`).
+Mount a volume at **`/data`** to persist the SQLite database (`fs_node.db`). Give each node its own
+volume, don't open the database with external tools while the node runs, and back it up with
+SQLite's online backup rather than copying the file — another process holding the database lock makes
+the node answer `503` ("Database busy"). The image doesn't include the `sqlite3` CLI; use a helper
+container mounting the same volume:
+
+```bash
+docker run --rm -v fs_node_prod_data:/data -v /backup:/backup alpine \
+  sh -c "apk add --no-cache sqlite && sqlite3 /data/fs_node.db '.backup /backup/fs_node.db'"
+```
 Migrations run automatically on startup.
 
 **Source:** https://github.com/wookashi/FeatureSwitcher

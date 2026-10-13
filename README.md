@@ -79,6 +79,8 @@ Registration on the Node is **append-only**: re-registering an application never
 
 The Node tracks `LastUsedAt` per application-feature link and keeps a per-day usage counter per global flag. The Feature Matrix shows the link-level last-used time and the 7-day use count in each cell's tooltip.
 
+Flag-state reads don't write to the database: usage is aggregated in memory and written in one transaction every `UsageFlushInterval` (default **60 seconds**, `NodeConfiguration__UsageFlushInterval`), before each soft-delete sweep, and on graceful shutdown. Usage shown in the Manager can therefore lag by up to that interval, and a hard kill of the node loses at most that much usage data; flag states are never affected. A read of a flag that is pending deletion still restores it immediately.
+
 A background sweep marks stale application-feature links, and then applications with no active links, as `PendingDeletion` when their `LastUsedAt` is older than `FeatureStaleAfter` (default **30 days**). Pending items disappear from the normal matrix view, auto-restore when an app reads or re-registers them, and become available for permanent deletion through an Admin-only dialog reachable from the warning-icon badge in the header.
 
 Permanent deletion of a pending flag removes the application-feature link. The global flag row is deleted only when no other application still references it. Permanent deletion is recorded in the Audit Log.

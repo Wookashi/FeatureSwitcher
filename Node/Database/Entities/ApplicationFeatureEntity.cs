@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Wookashi.FeatureSwitcher.Node.Database.Entities;
 
 [Index(nameof(ApplicationId), nameof(FeatureId), IsUnique = true)]
-public sealed class ApplicationFeatureEntity
+public sealed class ApplicationFeatureEntity : IUsageTrackedEntity
 {
     [Key]
     public int Id { get; set; }

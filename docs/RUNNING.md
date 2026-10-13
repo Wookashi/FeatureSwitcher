@@ -271,6 +271,7 @@ Listens on **5033** (HTTP). Mount a volume at **`/data`** to persist the databas
 | `NodeConfiguration__FeatureStaleAfter` | `30.00:00:00` | Idle time (`d.hh:mm:ss`) before a flag is marked pending-deletion |
 | `NodeConfiguration__FeatureCleanupInterval` | `1.00:00:00` | How often the soft-delete sweep runs |
 | `NodeConfiguration__DiagnosticsInterval` | _(not set — disabled)_ | How often memory/GC statistics are logged, e.g. `00:15:00`; not set or `00:00:00` disables |
+| `NodeConfiguration__UsageFlushInterval` | `00:01:00` | How often buffered flag usage (last-used time, daily counts) is written to the database |
 | `ManagerSettings__Url` | `http://localhost:5033` | URL of the Manager service |
 | `ManagerSettings__Username` | _(empty)_ | Manager admin username, for self-registration |
 | `ManagerSettings__Password` | _(empty)_ | Manager admin password, for self-registration |
@@ -284,7 +285,9 @@ Listens on **5216** (HTTP). Health endpoints:
 - `GET /health` — full report including Manager connectivity (`Degraded` while the Manager is
   unavailable, still HTTP 200). Used by the Manager UI to show node status and version. Don't use it as
   a liveness probe: the Manager check can take longer than a typical probe timeout.
-Mount a volume at **`/data`** to persist the database.
+
+Mount a volume at **`/data`** to persist the database. Give each node its own volume — see
+"Node responds 503 / logs database busy" below.
 
 > Configuration keys use the .NET double-underscore convention: `Section__Key`
 > maps to the `Section:Key` entry in `appsettings.json`.
@@ -313,6 +316,24 @@ dev secret.)
 With `docker run`, both containers must be on the same network and `ManagerSettings__Url`
 must use the Manager's **container name** (`http://manager:5033`), not `localhost`.
 `localhost` inside a container refers to that container, not the host.
+
+**Node responds 503 / logs "Database busy".**
+The node's SQLite database was locked by another writer for longer than the write timeout
+(10 s). The request is answered with `503` and `Retry-After`; clients fall back to their
+cached flag state. Within a single node this should not happen under normal load, so check
+for something else holding the database:
+- each node must have **its own** `/data` volume — never share one database file between
+  node containers;
+- don't open the database with external tools (e.g. `sqlite3`, DB browsers) while the node
+  is running;
+- back up with SQLite's online backup instead of copying the file — a plain copy of a WAL
+  database can also be inconsistent. The node image doesn't include the `sqlite3` CLI, so run it
+  from the host or a helper container mounting the same volume, e.g.:
+  ```bash
+  docker run --rm -v fs_node_prod_data:/data -v /backup:/backup alpine \
+    sh -c "apk add --no-cache sqlite && sqlite3 /data/fs_node.db '.backup /backup/fs_node.db'"
+  ```
+- slow storage (network volumes) makes every write slower and raises lock contention.
 
 **I want to start completely fresh.**
 `docker-compose down -v` removes the data volumes, wiping users, nodes, and flags. The

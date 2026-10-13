@@ -45,6 +45,7 @@ public static class ConfigureServices
                 services.AddScoped<IFeaturesDataContext, FeaturesDataContext>();
             }
 
+            services.AddSingleton<FeatureUsageBuffer>();
             return services.AddScoped<IFeatureRepository, FeatureRepository>();
         }
     }

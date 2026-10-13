@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Wookashi.FeatureSwitcher.Node.Database.Entities;
 
 [Index(nameof(Name), IsUnique = true)]
-public class ApplicationEntity
+public class ApplicationEntity : IUsageTrackedEntity
 {
     [Key]
     public int Id { get; set; }
