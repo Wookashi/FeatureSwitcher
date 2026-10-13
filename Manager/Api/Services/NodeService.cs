@@ -119,6 +119,13 @@ internal sealed class NodeService
         {
             var features = await _httpClient.GetFromJsonAsync<List<FeatureWithUsageDto>>(url, ct);
             _logger.LogDebug("Retrieved {Count} feature(s) for app {AppName} from node {NodeId}", features?.Count ?? 0, appName, nodeId);
+
+            // Links end up as <a href> in the UI; never pass on anything but http(s), whatever the node sends.
+            foreach (var feature in features ?? [])
+            {
+                feature.Links = (feature.Links ?? []).Where(l => IsHttpUrl(l?.Url)).ToList();
+            }
+
             return features ?? [];
         }
         catch (HttpRequestException ex)
@@ -242,6 +249,10 @@ internal sealed class NodeService
             return new HttpResponseMessage(HttpStatusCode.GatewayTimeout);
         }
     }
+
+    private static bool IsHttpUrl(string? url) =>
+        Uri.TryCreate(url, UriKind.Absolute, out var uri)
+        && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
 
     private static string JoinUrl(string baseAddress, string path)
     {

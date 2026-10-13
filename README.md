@@ -25,6 +25,20 @@ a `Shared` counter in the summary cards. Changing a shared flag from any
 application cell updates the global flag state and therefore affects every
 application on that Node that registered the same flag name.
 
+## Feature Details
+
+Applications can describe each feature in code — a short description and links such as a ticket,
+documentation or a runbook (see [Describing features](./Client/README.md#describing-features) in the
+client documentation). Clicking a feature name in the Feature Matrix opens a panel with:
+
+- the description and links registered by that application; when nodes run different versions of the
+  application and report different details, a switch shows each node's version,
+- the state and usage of the feature on every node,
+- for shared flags, the description of every other application that uses the flag.
+
+Features with details are marked with an info icon in the matrix. Details are stored per application on
+each Node and replaced on every registration, so the application's code stays the source of truth.
+
 ## How to run?
 
 > **Full instructions:** see **[docs/RUNNING.md](./docs/RUNNING.md)** for a complete,

@@ -11,11 +11,19 @@ export interface ApplicationDto {
   environment: string;
 }
 
+export interface FeatureLink {
+  url: string;
+  title?: string | null; // without it the UI shows host + path
+}
+
 export interface FeatureDto {
   name: string;
   state: boolean;
   lastUsedAt?: string;
   usesLast7Days?: number;
+  // Details registered by the application; absent from older nodes.
+  description?: string | null;
+  links?: FeatureLink[];
 }
 
 export interface NodeStateDto {
@@ -29,9 +37,16 @@ export interface CellUsage {
   usesLast7Days?: number;
 }
 
+// Details as registered by the application on this node (they may differ between nodes
+// running different versions of the application).
+export interface FeatureDetails {
+  description?: string | null;
+  links: FeatureLink[];
+}
+
 export type CellState =
   | { kind: 'loading' }
-  | ({ kind: 'value'; value: boolean } & CellUsage)
+  | ({ kind: 'value'; value: boolean; details?: FeatureDetails } & CellUsage)
   | { kind: 'unknown'; reason?: string };
 
 // Row in the feature matrix table

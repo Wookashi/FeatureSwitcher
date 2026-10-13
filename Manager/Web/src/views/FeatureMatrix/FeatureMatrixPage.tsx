@@ -47,6 +47,7 @@ import {
   AuditOutlined,
   LeftOutlined,
   RightOutlined,
+  InfoCircleOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 
@@ -58,6 +59,7 @@ import { ChangePasswordModal } from '../UserManagement';
 import { PendingDeletionModal, usePendingDeletion } from '../PendingDeletion';
 import { useAppVersion } from '../../version/useAppVersion';
 import type { FeatureMatrixRow, CellState, NodeDto } from './types';
+import { FeatureDetailsDrawer, rowDetails, type FeatureDetailsTarget } from './FeatureDetailsDrawer';
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -200,7 +202,10 @@ export default function FeatureMatrixPage() {
   const [diffMode, setDiffMode] = useState<DiffMode>('off');
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [pendingDeletionOpen, setPendingDeletionOpen] = useState(false);
+  const [detailsTarget, setDetailsTarget] = useState<FeatureDetailsTarget | null>(null);
   const pendingDeletion = usePendingDeletion(isAdmin);
+
+  const { token } = antTheme.useToken();
 
   const nodeNames = useMemo(() => nodes.map((n) => n.name), [nodes]);
   const { orderedNames, moveLeft, moveRight, canMoveLeft, canMoveRight } = useColumnOrder(nodeNames);
@@ -366,9 +371,20 @@ export default function FeatureMatrixPage() {
               </Space>
             );
           }
+          const details = rowDetails(record, orderedNames);
           return (
             <Space size={6} style={{ marginLeft: 8 }}>
-              <Text code style={{ fontSize: 13 }}>{text}</Text>
+              <Tooltip title={details?.description ? details.description.split('\n')[0] : 'Show details'}>
+                <span
+                  className="feature-name-link"
+                  onClick={() => setDetailsTarget({ application: record.application, feature: record.feature })}
+                >
+                  <Text code style={{ fontSize: 13 }}>{text}</Text>
+                  {details && (
+                    <InfoCircleOutlined style={{ marginLeft: 6, color: token.colorTextSecondary }} />
+                  )}
+                </span>
+              </Tooltip>
               {sharedFeatureInfo.has(record.feature) && (
                 <Tooltip
                   title={`Shared by ${sharedFeatureInfo.get(record.feature)!.apps.join(', ')}`}
@@ -523,11 +539,9 @@ export default function FeatureMatrixPage() {
     }));
 
     return [...baseColumns, ...nodeColumns];
-  }, [orderedNodes, nodes, unreachableNodes, nodeStates, isLoading, toggleFeatureState, isAdmin, deleteNode, moveLeft, moveRight, canMoveLeft, canMoveRight, sharedFeatureInfo]);
+  }, [orderedNodes, nodes, unreachableNodes, nodeStates, isLoading, toggleFeatureState, isAdmin, deleteNode, moveLeft, moveRight, canMoveLeft, canMoveRight, sharedFeatureInfo, token, orderedNames]);
 
   const isDark = themeMode === 'dark';
-
-  const { token } = antTheme.useToken();
 
   return (
     <ConfigProvider
@@ -825,6 +839,14 @@ export default function FeatureMatrixPage() {
         pending={pendingDeletion}
       />
 
+      <FeatureDetailsDrawer
+        target={detailsTarget}
+        nodes={orderedNodes}
+        rows={rows}
+        onClose={() => setDetailsTarget(null)}
+        formatRelativeTime={formatRelativeTime}
+      />
+
       <style>{`
         .app-row > td {
           background: ${isDark ? 'rgba(114, 46, 209, 0.08)' : 'rgba(114, 46, 209, 0.04)'} !important;
@@ -848,6 +870,12 @@ export default function FeatureMatrixPage() {
         }
         .ant-table-thead > tr > th {
           background: ${isDark ? '#1f1f1f' : '#fafafa'} !important;
+        }
+        .feature-name-link {
+          cursor: pointer;
+        }
+        .feature-name-link:hover code {
+          text-decoration: underline;
         }
         .ant-table-row-expand-icon {
           margin-right: 8px !important;
