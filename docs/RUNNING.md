@@ -270,13 +270,20 @@ Listens on **5033** (HTTP). Mount a volume at **`/data`** to persist the databas
 | `NodeConfiguration__ConnectionString` | `Data Source=/data/fs_node.db` | SQLite DB path |
 | `NodeConfiguration__FeatureStaleAfter` | `30.00:00:00` | Idle time (`d.hh:mm:ss`) before a flag is marked pending-deletion |
 | `NodeConfiguration__FeatureCleanupInterval` | `1.00:00:00` | How often the soft-delete sweep runs |
+| `NodeConfiguration__DiagnosticsInterval` | _(not set — disabled)_ | How often memory/GC statistics are logged, e.g. `00:15:00`; not set or `00:00:00` disables |
 | `ManagerSettings__Url` | `http://localhost:5033` | URL of the Manager service |
 | `ManagerSettings__Username` | _(empty)_ | Manager admin username, for self-registration |
 | `ManagerSettings__Password` | _(empty)_ | Manager admin password, for self-registration |
 | `ASPNETCORE_ENVIRONMENT` | `Production` | Hosting environment |
 | `TZ` | `Europe/Warsaw` | Timezone |
 
-Listens on **5216** (HTTP), with a built-in health check at `GET /health`.
+Listens on **5216** (HTTP). Health endpoints:
+
+- `GET /health/live` — liveness: answers as long as the node serves requests, without contacting any
+  dependency. Use it for container/orchestrator probes (the image's built-in `HEALTHCHECK` does).
+- `GET /health` — full report including Manager connectivity (`Degraded` while the Manager is
+  unavailable, still HTTP 200). Used by the Manager UI to show node status and version. Don't use it as
+  a liveness probe: the Manager check can take longer than a typical probe timeout.
 Mount a volume at **`/data`** to persist the database.
 
 > Configuration keys use the .NET double-underscore convention: `Section__Key`

@@ -42,7 +42,7 @@ services:
       manager:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:5216/health || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5216/health/live || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -70,7 +70,7 @@ services:
       manager:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:5216/health || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5216/health/live || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -98,7 +98,7 @@ services:
       manager:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:5216/health || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5216/health/live || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 5

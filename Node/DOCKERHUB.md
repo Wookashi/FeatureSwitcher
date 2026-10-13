@@ -15,7 +15,8 @@ state; the Node auto-registers itself with the central Manager on startup.
 - Runtime: **.NET 10.0** (base `mcr.microsoft.com/dotnet/aspnet:10.0`)
 - Storage: Entity Framework Core + **SQLite** (`/data/fs_node.db`)
 - Listens on **port 5216** (HTTP)
-- Health check: `GET /health` (built into the image)
+- Health checks: `GET /health/live` (liveness, used by the image's built-in `HEALTHCHECK`) and
+  `GET /health` (full report including Manager connectivity)
 
 ## Quick start
 

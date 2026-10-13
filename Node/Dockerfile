@@ -22,5 +22,5 @@ ENV TZ=Europe/Warsaw ASPNETCORE_URLS=http://+:5216 ASPNETCORE_ENVIRONMENT=Produc
 RUN apt-get update && apt-get install -y tzdata wget && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/publish .
 EXPOSE 5216
-HEALTHCHECK --interval=10s --timeout=3s --retries=5 CMD wget -qO- http://localhost:5216/health || exit 1
+HEALTHCHECK --interval=10s --timeout=3s --retries=5 CMD wget -qO- http://localhost:5216/health/live || exit 1
 ENTRYPOINT ["dotnet", "Wookashi.FeatureSwitcher.Node.Api.dll"]

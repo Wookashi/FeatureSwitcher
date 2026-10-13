@@ -14,8 +14,8 @@ internal sealed class ManagerHealthCheck(
     private readonly ManagerSettings _options = options.Value;
 
     /// <summary>
-    /// Manager availability as seen by the previous check, shared across check instances. /health is
-    /// polled often (e.g. every few seconds by a container healthcheck), so only changes are logged.
+    /// Manager availability as seen by the previous check, shared across check instances. /health can be
+    /// polled often (monitoring, the Manager UI), so only changes are logged.
     /// </summary>
     private static bool? _lastAvailable;
     private static readonly Stopwatch UnavailableFor = new();
