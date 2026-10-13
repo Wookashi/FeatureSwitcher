@@ -100,6 +100,10 @@ Admin actions are recorded to an audit log accessible from the header (audit ico
 - `FeaturePermanentlyDeleted` — application-feature link removed from the pending-deletion dialog; the global flag is deleted only when no other application references it
 - `ApplicationPermanentlyDeleted` — application removed from the pending-deletion dialog, including how many feature links and orphaned global flags were removed
 
+### Timestamps
+
+All timestamps are stored and returned by the Manager and Node APIs in UTC, as ISO 8601 with the `Z` suffix (e.g. `2026-10-13T18:02:36Z`). The Manager UI shows them in the browser's local time zone. The container time zone (`TZ`) does not affect stored or returned timestamps.
+
 ## Contributing
 
 By submitting a pull request, you agree to the

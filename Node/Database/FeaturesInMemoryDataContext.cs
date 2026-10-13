@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Wookashi.FeatureSwitcher.Node.Database.Entities;
+using Wookashi.FeatureSwitcher.Node.Database.Extensions;
 
 namespace Wookashi.FeatureSwitcher.Node.Database;
 
@@ -14,4 +15,9 @@ public class FeaturesInMemoryDataContext : DbContext, IFeaturesDataContext
     public DbSet<ApplicationEntity> Applications { get; set; }
     public DbSet<ApplicationFeatureEntity> ApplicationFeatures { get; set; }
     public DbSet<FeatureUsageEntity> FeatureUsage { get; set; }
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.UseUtcDateTimes();
+    }
 }

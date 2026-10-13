@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Wookashi.FeatureSwitcher.Manager.Database.Entities;
+using Wookashi.FeatureSwitcher.Manager.Database.Extensions;
 
 namespace Wookashi.FeatureSwitcher.Manager.Database;
 
@@ -31,5 +32,10 @@ public class NodesDataContext : DbContext, INodeDataContext
                 .HasForeignKey(e => e.NodeId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+    }
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.UseUtcDateTimes();
     }
 }

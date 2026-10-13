@@ -8,6 +8,7 @@ using Wookashi.FeatureSwitcher.Node.Api.HealthChecks;
 using Wookashi.FeatureSwitcher.Node.Api.Models;
 using Wookashi.FeatureSwitcher.Node.Api.Services;
 using Wookashi.FeatureSwitcher.Node.Database.Extensions;
+using Wookashi.FeatureSwitcher.Shared.Abstraction.Json;
 using Wookashi.FeatureSwitcher.Shared.Abstraction.Logger;
 using Wookashi.FeatureSwitcher.Shared.Abstraction.Models;
 
@@ -16,6 +17,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
+// Timestamps go out as UTC ("…Z") so consumers don't read them as local time.
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.Converters.Add(new UtcDateTimeJsonConverter()));
 builder.Services.Configure<ManagerSettings>(
     builder.Configuration.GetSection("ManagerSettings"));
 builder.Services.Configure<NodeConfiguration>(

@@ -10,6 +10,7 @@ using Wookashi.FeatureSwitcher.Manager.Api.Configuration;
 using Wookashi.FeatureSwitcher.Manager.Api.Extensions;
 using Wookashi.FeatureSwitcher.Manager.Api.Services;
 using Wookashi.FeatureSwitcher.Manager.Database.Extensions;
+using Wookashi.FeatureSwitcher.Shared.Abstraction.Json;
 using Wookashi.FeatureSwitcher.Shared.Abstraction.Logger;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,7 +21,11 @@ builder.Services.AddControllers()
     .ConfigureApplicationPartManager(manager =>
     {
         manager.FeatureProviders.Add(new InternalControllerFeatureProvider());
-    });
+    })
+    // Timestamps go out as UTC ("…Z"), including ones relayed from nodes that send them without a zone.
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new UtcDateTimeJsonConverter()));
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.Converters.Add(new UtcDateTimeJsonConverter()));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
