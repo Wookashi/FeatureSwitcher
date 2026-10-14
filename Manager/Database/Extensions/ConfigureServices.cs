@@ -13,8 +13,12 @@ public static class ConfigureServices
     {
         if (string.IsNullOrEmpty(connectionString))
         {
+            // EF Core shares in-memory databases with the same name across the whole process, so a
+            // fixed name let parallel tests see each other's rows. One name per service collection
+            // keeps every container isolated while all contexts within it still share one database.
+            var databaseName = $"Test_db_{Guid.NewGuid():N}";
             services.AddDbContext<NodesInMemoryDataContext>(options =>
-                options.UseInMemoryDatabase(databaseName: "Test_db"));
+                options.UseInMemoryDatabase(databaseName));
             services.AddScoped<INodeDataContext, NodesInMemoryDataContext>();
         }
         else
