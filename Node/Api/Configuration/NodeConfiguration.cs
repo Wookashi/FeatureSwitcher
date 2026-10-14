@@ -41,9 +41,10 @@ internal sealed class NodeConfiguration
 
     /// <summary>
     /// How long daily read counts are kept; older ones are deleted by the sweep (see
-    /// <see cref="FeatureCleanupInterval"/>). Defaults to 30 days; zero or negative keeps them
-    /// indefinitely, positive values below <see cref="MinUsageRetention"/> are raised to it.
-    /// LastUsedAt is not affected.
+    /// <see cref="FeatureCleanupInterval"/>). The last read shown in the Manager is derived from them,
+    /// so keep this at least as long as the Manager's unread warning (45 days by default). Defaults to
+    /// 60 days; zero or negative keeps them indefinitely, positive values below
+    /// <see cref="MinUsageRetention"/> are raised to it. LastUsedAt is not affected.
     /// </summary>
-    public TimeSpan UsageRetention { get; set; } = TimeSpan.FromDays(30);
+    public TimeSpan UsageRetention { get; set; } = TimeSpan.FromDays(60);
 }

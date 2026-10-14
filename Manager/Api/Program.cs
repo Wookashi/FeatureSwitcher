@@ -68,6 +68,7 @@ builder.Services.AddScoped<NodeAccessService>();
 builder.Services.AddScoped<NodeService>();
 
 builder.Services.Configure<AuditLogSettings>(builder.Configuration.GetSection("AuditLog"));
+builder.Services.Configure<FeatureUsageSettings>(builder.Configuration.GetSection("FeatureUsage"));
 builder.Services.AddHostedService<AuditLogRetentionHostedService>();
 
 //Console logs configuration
@@ -114,6 +115,9 @@ logger.LogInformation("Environment: {Environment}", app.Environment.EnvironmentN
 logger.LogInformation("Database: {ConnectionString}", string.IsNullOrEmpty(dbConnectionString) ? "(in-memory)" : $"{dbConnectionString} (configured)");
 logger.LogInformation("JWT Issuer: {Issuer}, Audience: {Audience}, Expiration: {Expiration} min",
     jwtSettings.Issuer, jwtSettings.Audience, jwtSettings.ExpirationMinutes);
+var featureUsageSettings = builder.Configuration.GetSection("FeatureUsage").Get<FeatureUsageSettings>() ?? new FeatureUsageSettings();
+logger.LogInformation("Unread feature warning: {UnreadWarningAfter}",
+    featureUsageSettings.UnreadWarningAfter > TimeSpan.Zero ? $"after {featureUsageSettings.UnreadWarningAfter}" : "disabled");
 logger.LogInformation("================================");
 
 if (dbConnectionString != string.Empty)

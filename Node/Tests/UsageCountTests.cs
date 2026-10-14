@@ -94,6 +94,77 @@ public sealed class UsageCountTests : IDisposable
     }
 
     [Fact]
+    public void List_ReturnsLastReadDay_AndNullWithoutReads()
+    {
+        Migrate();
+        var app = new ApplicationDto("App");
+        WithRepository(r => r.RegisterApplication(app, [new FeatureDto("Read", true), new FeatureDto("NeverRead", true)]));
+        var today = DateTime.UtcNow.Date;
+
+        WithContext(context =>
+        {
+            var linkId = context.ApplicationFeatures.Single(l => l.Feature.Name == "Read").Id;
+            foreach (var daysAgo in new[] { 20, 10 })
+            {
+                context.ApplicationFeatureUsage.Add(new ApplicationFeatureUsageEntity
+                {
+                    ApplicationFeatureId = linkId,
+                    UsageDay = today.AddDays(-daysAgo),
+                    UseCount = 3,
+                });
+            }
+            context.SaveChanges();
+        });
+
+        var listed = WithRepository(r => r.GetFeaturesWithUsageForApplication(app)).ToDictionary(f => f.Name);
+
+        Assert.Equal(today.AddDays(-10), listed["Read"].LastReadAt);
+        Assert.Equal(DateTimeKind.Utc, listed["Read"].LastReadAt!.Value.Kind);
+        Assert.Equal(0, listed["Read"].UsesLast7Days); // both days are older than the 7-day window
+        Assert.Null(listed["NeverRead"].LastReadAt);
+    }
+
+    [Fact]
+    public void RegisteredAt_IsSetOnFirstRegistration_AndKeptOnReRegistration()
+    {
+        Migrate();
+        var app = new ApplicationDto("App");
+        var before = DateTime.UtcNow;
+        WithRepository(r => r.RegisterApplication(app, [new FeatureDto("Flag", true)]));
+        var registeredAt = WithRepository(r => r.GetFeaturesWithUsageForApplication(app)).Single().RegisteredAt;
+
+        Thread.Sleep(20);
+        WithRepository(r => r.RegisterApplication(app, [new FeatureDto("Flag", true)]));
+
+        Assert.True(registeredAt >= before);
+        Assert.Equal(registeredAt, WithRepository(r => r.GetFeaturesWithUsageForApplication(app)).Single().RegisteredAt);
+    }
+
+    [Fact]
+    public void Migration_SetsCreatedAtOfExistingLinksToUpgradeTime()
+    {
+        using (var context = CreateContext())
+        {
+            context.GetService<IMigrator>().Migrate("20261014082528_CountUsagePerApplication");
+            context.Database.ExecuteSqlRaw(
+                """
+                INSERT INTO Applications (Id, Name, LastUsedAt, Status) VALUES (1, 'App', '2026-01-01 00:00:00', 0);
+                INSERT INTO Features (Id, Name, IsEnabled, LastUsedAt, Status) VALUES (1, 'Flag', 1, '2026-01-01 00:00:00', 0);
+                INSERT INTO ApplicationFeatures (Id, ApplicationId, FeatureId, LastUsedAt, Status) VALUES (1, 1, 1, '2026-01-01 00:00:00', 0);
+                """);
+        }
+
+        var before = DateTime.UtcNow.AddSeconds(-1);
+        using (var context = CreateContext())
+        {
+            context.Database.Migrate();
+        }
+
+        var createdAt = WithRepository(r => r.GetFeaturesWithUsageForApplication(new ApplicationDto("App"))).Single().RegisteredAt;
+        Assert.InRange(createdAt, before, DateTime.UtcNow.AddSeconds(1));
+    }
+
+    [Fact]
     public void Migration_CopiesCountsOfSingleApplicationFlags_AndDropsSharedOnes()
     {
         using (var context = CreateContext())

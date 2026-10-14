@@ -32,6 +32,14 @@ public sealed class ApplicationFeatureEntity : IUsageTrackedEntity
     public DateTime LastUsedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
+    /// When the application first registered the feature. Set once and never updated, so the Manager
+    /// does not report a recently added feature as unread. Links that existed before this column was
+    /// added carry the time of the upgrade.
+    /// </summary>
+    [Required]
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
     /// Description registered by the application for this feature; replaced on every registration.
     /// </summary>
     [MaxLength(FeatureDetailsSanitizer.MaxDescriptionLength)]

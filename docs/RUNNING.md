@@ -256,6 +256,7 @@ dotnet run --project Console/Console.csproj
 | `Jwt__ExpirationMinutes` | `60` | Token lifetime in minutes |
 | `Database__ConnectionString` | `Data Source=/data/fs_manager.db` | SQLite DB path |
 | `AuditLog__Retention` | `365.00:00:00` | How long audit log entries are kept (`d.hh:mm:ss`); older ones are deleted at startup and daily. `00:00:00` keeps them indefinitely |
+| `FeatureUsage__UnreadWarningAfter` | `45.00:00:00` | After how long without reads a registered feature is reported as unread in the UI (dimmed cell, "Not read" filter, cleanup hint); recently registered features are not reported. `00:00:00` disables the warning. Keep the nodes' `NodeConfiguration__UsageRetention` at least this long |
 | `ASPNETCORE_ENVIRONMENT` | `Production` | Hosting environment |
 | `TZ` | `Europe/Warsaw` | Timezone |
 
@@ -273,7 +274,7 @@ Listens on **5033** (HTTP). Mount a volume at **`/data`** to persist the databas
 | `NodeConfiguration__FeatureCleanupInterval` | `1.00:00:00` | How often the soft-delete sweep runs |
 | `NodeConfiguration__DiagnosticsInterval` | _(not set — disabled)_ | How often memory/GC statistics are logged, e.g. `00:15:00`; not set or `00:00:00` disables |
 | `NodeConfiguration__UsageFlushInterval` | `00:01:00` | How often buffered flag usage (last-used time, daily read counts) is written to the database |
-| `NodeConfiguration__UsageRetention` | `30.00:00:00` | How long daily read counts are kept; older ones are deleted by the daily sweep. `00:00:00` keeps them indefinitely; values below 7 days are raised to 7 |
+| `NodeConfiguration__UsageRetention` | `60.00:00:00` | How long daily read counts are kept; older ones are deleted by the daily sweep. The last read shown in the Manager comes from them, so keep it at least as long as the Manager's `FeatureUsage__UnreadWarningAfter`. `00:00:00` keeps them indefinitely; values below 7 days are raised to 7 |
 | `ManagerSettings__Url` | `http://localhost:5033` | URL of the Manager service |
 | `ManagerSettings__Username` | _(empty)_ | Manager admin username, for self-registration |
 | `ManagerSettings__Password` | _(empty)_ | Manager admin password, for self-registration |

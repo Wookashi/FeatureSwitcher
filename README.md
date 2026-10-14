@@ -39,6 +39,28 @@ client documentation). Clicking a feature name in the Feature Matrix opens a pan
 Hovering a feature name shows the first line of its description. Details are stored per application on
 each Node and replaced on every registration, so the application's code stays the source of truth.
 
+## Cleanup candidates
+
+Feature flags tend to stay in code long after they are needed. The Manager points out two kinds of
+candidates for removal, under **Filter → Cleanup candidates** in the Feature Matrix and as hints in the
+feature details panel:
+
+- **Not read for a period** (default **45 days**, Manager setting `FeatureUsage__UnreadWarningAfter`;
+  `00:00:00` disables it). The application registers the flag on a node, but no code has read its state
+  there for that long — typically a leftover after a refactoring or a flag that was never wired up.
+  Such cells are dimmed, and their tooltip says when the flag was last read. Features registered more
+  recently than the period are not reported (they show "not read yet"). A flag read only rarely, e.g. by
+  a monthly job, can show up too, so treat it as a hint to check the code.
+- **Same state on all nodes**: the flag is present on every node with the same state — ON usually means
+  the rollout is complete, OFF that the feature was abandoned. Either way the flag and the unused code
+  path can likely be removed.
+
+Reads are counted per application on each node, from the daily read counts, so a node's
+`NodeConfiguration__UsageRetention` (default 60 days) should be at least as long as the warning period.
+After an upgrade, existing features count as registered at the time of the upgrade, so the first
+"not read" warnings appear one warning period later. Nodes older than the Manager don't report reads;
+their features are never reported as unread.
+
 ## How to run?
 
 > **Full instructions:** see **[docs/RUNNING.md](./docs/RUNNING.md)** for a complete,
@@ -91,7 +113,7 @@ If nodes start before setup is completed, they will log an authentication error 
 
 Registration on the Node is **append-only**: re-registering an application never deletes flags missing from the payload, so two services accidentally sharing an `applicationName` cannot wipe each other's data. The application decides which flags it registers; there are no manual link/unlink actions in the Manager.
 
-The Node tracks `LastUsedAt` per application-feature link (updated by state reads and registrations) and counts state reads per application and day; registrations are not counted as reads. The Feature Matrix shows the last-used time and the application's reads in the last 7 days in each cell's tooltip. Daily read counts older than `UsageRetention` (default **30 days**, `NodeConfiguration__UsageRetention`; `00:00:00` keeps them indefinitely, values below 7 days are raised to 7) are deleted by the daily sweep; `LastUsedAt` is not affected.
+The Node tracks `LastUsedAt` per application-feature link (updated by state reads and registrations) and counts state reads per application and day; registrations are not counted as reads. The Feature Matrix shows the application's last read and its reads in the last 7 days in each cell's tooltip. Daily read counts older than `UsageRetention` (default **60 days**, `NodeConfiguration__UsageRetention`; `00:00:00` keeps them indefinitely, values below 7 days are raised to 7) are deleted by the daily sweep; `LastUsedAt` is not affected. The last read is derived from these counts, so keep the retention at least as long as the Manager's unread warning (see [Cleanup candidates](#cleanup-candidates)).
 
 Flag-state reads don't write to the database: usage is aggregated in memory and written in one transaction every `UsageFlushInterval` (default **60 seconds**, `NodeConfiguration__UsageFlushInterval`), before each soft-delete sweep, and on graceful shutdown. Usage shown in the Manager can therefore lag by up to that interval, and a hard kill of the node loses at most that much usage data; flag states are never affected. A read of a flag that is pending deletion still restores it immediately.
 

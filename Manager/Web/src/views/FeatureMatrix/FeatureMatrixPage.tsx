@@ -58,7 +58,16 @@ import { ChangePasswordModal } from '../UserManagement';
 import { PendingDeletionModal, usePendingDeletion } from '../PendingDeletion';
 import { useAppVersion } from '../../version/useAppVersion';
 import type { FeatureMatrixRow, CellState, NodeDto } from './types';
-import { FeatureDetailsDrawer, rowDetails, type FeatureDetailsTarget } from './FeatureDetailsDrawer';
+import { FeatureDetailsDrawer, type FeatureDetailsTarget } from './FeatureDetailsDrawer';
+import {
+  describeReads,
+  formatRelativeTime,
+  isUnreadOnAnyNode,
+  readStatus,
+  rowDetails,
+  sameStateEverywhere,
+} from './featureInsights';
+import { useUiSettings } from './useUiSettings';
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -82,24 +91,11 @@ interface SharedFeatureInfo {
 interface CellRendererProps {
   state: CellState | undefined;
   onClick?: () => void;
+  warnAfterDays: number | null;
 }
 
-function formatRelativeTime(iso: string): string {
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return iso;
-  const diffMs = Date.now() - then;
-  const minutes = Math.round(diffMs / 60_000);
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${minutes} min ago`;
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
-  const days = Math.round(hours / 24);
-  if (days < 30) return `${days} day${days === 1 ? '' : 's'} ago`;
-  const months = Math.round(days / 30);
-  return `${months} month${months === 1 ? '' : 's'} ago`;
-}
 
-function CellRenderer({ state, onClick }: CellRendererProps) {
+function CellRenderer({ state, onClick, warnAfterDays }: CellRendererProps) {
   if (!state || state.kind === 'loading') {
     return (
       <Flex justify="center" align="center" style={{ minHeight: 32 }}>
@@ -126,17 +122,27 @@ function CellRenderer({ state, onClick }: CellRendererProps) {
 
   const isEnabled = state.value;
   const action = onClick ? (isEnabled ? 'Click to disable' : 'Click to enable') : 'View only';
+  const status = readStatus(state, warnAfterDays);
+  const reads = describeReads(state, warnAfterDays);
   const tooltip = (
     <div style={{ minWidth: 180 }}>
       <div>{action}</div>
-      {state.lastUsedAt && (
+      {reads ? (
+        <div style={{ marginTop: 4, opacity: 0.85 }}>{reads}</div>
+      ) : state.lastUsedAt && (
+        // Older nodes don't report reads; fall back to the last registration or read.
         <div style={{ marginTop: 4, opacity: 0.85 }}>
           Last used: {formatRelativeTime(state.lastUsedAt)}
         </div>
       )}
       {typeof state.usesLast7Days === 'number' && (
         <div style={{ opacity: 0.85 }}>
-          Uses (7d): {state.usesLast7Days.toLocaleString()}
+          Reads (7d): {state.usesLast7Days.toLocaleString()}
+        </div>
+      )}
+      {status === 'unread' && (
+        <div style={{ marginTop: 6, opacity: 0.85, maxWidth: 240 }}>
+          The application registers this flag, but no code has read it for {warnAfterDays} days. It may be safe to remove.
         </div>
       )}
     </div>
@@ -155,6 +161,7 @@ function CellRenderer({ state, onClick }: CellRendererProps) {
             borderRadius: 6,
             fontWeight: 500,
             transition: 'all 0.2s ease',
+            ...(status === 'unread' ? { opacity: 0.45, borderStyle: 'dashed' } : {}),
           }}
         >
           {isEnabled ? 'ON' : 'OFF'}
@@ -164,7 +171,9 @@ function CellRenderer({ state, onClick }: CellRendererProps) {
   );
 }
 
-type DiffMode = 'off' | 'value' | 'all';
+// 'unread' and 'uniform' are the cleanup candidates: features not read for the warning period, and
+// features with the same state on every node (fully rolled out or abandoned).
+type DiffMode = 'off' | 'value' | 'all' | 'unread' | 'uniform';
 
 function hasDifferences(row: FeatureMatrixRow, nodeNames: string[], mode: DiffMode): boolean {
   // Each comparable cell is reduced to a state token. In 'value' mode only
@@ -196,6 +205,7 @@ export default function FeatureMatrixPage() {
   const { isAdmin } = useAuth();
   const appVersion = useAppVersion();
   const { nodes, rows, errors, unreachableNodes, nodeStates, isLoadingNodes, isLoading, refresh, toggleFeatureState, deleteNode } = useFeatureMatrix();
+  const { unreadWarningAfterDays } = useUiSettings();
 
   const [searchText, setSearchText] = useState('');
   const [diffMode, setDiffMode] = useState<DiffMode>('off');
@@ -305,12 +315,16 @@ export default function FeatureMatrixPage() {
       );
     }
 
-    if (diffMode !== 'off') {
+    if (diffMode === 'unread') {
+      result = result.filter((row) => isUnreadOnAnyNode(row, nodeNames, unreadWarningAfterDays));
+    } else if (diffMode === 'uniform') {
+      result = result.filter((row) => sameStateEverywhere(row, nodeNames) !== null);
+    } else if (diffMode !== 'off') {
       result = result.filter((row) => hasDifferences(row, nodeNames, diffMode));
     }
 
     return result;
-  }, [rows, searchText, diffMode, nodeNames]);
+  }, [rows, searchText, diffMode, nodeNames, unreadWarningAfterDays]);
 
   // Convert flat rows to tree structure grouped by application
   const treeData = useMemo(() => {
@@ -496,7 +510,7 @@ export default function FeatureMatrixPage() {
           const reason = errorMsg
             ? `Node unreachable: ${errorMsg}`
             : 'Feature not present on this node';
-          return <CellRenderer state={{ kind: 'unknown', reason }} />;
+          return <CellRenderer state={{ kind: 'unknown', reason }} warnAfterDays={unreadWarningAfterDays} />;
         }
         const canToggleNode = isAdmin || node.role === 'Editor';
         const handleClick = (cellState?.kind === 'value' && canToggleNode)
@@ -530,12 +544,18 @@ export default function FeatureMatrixPage() {
               });
             }
           : undefined;
-        return <CellRenderer state={cellState} onClick={handleClick} />;
+        return (
+          <CellRenderer
+            state={cellState}
+            onClick={handleClick}
+            warnAfterDays={unreadWarningAfterDays}
+          />
+        );
       },
     }));
 
     return [...baseColumns, ...nodeColumns];
-  }, [orderedNodes, nodes, unreachableNodes, nodeStates, isLoading, toggleFeatureState, isAdmin, deleteNode, moveLeft, moveRight, canMoveLeft, canMoveRight, sharedFeatureInfo, token, orderedNames]);
+  }, [orderedNodes, nodes, unreachableNodes, nodeStates, isLoading, toggleFeatureState, isAdmin, deleteNode, moveLeft, moveRight, canMoveLeft, canMoveRight, sharedFeatureInfo, token, orderedNames, unreadWarningAfterDays]);
 
   const isDark = themeMode === 'dark';
 
@@ -738,16 +758,29 @@ export default function FeatureMatrixPage() {
                         { key: 'off', label: 'Show all features' },
                         { key: 'value', label: 'Differences (On/Off only)' },
                         { key: 'all', label: 'Differences (including N/A)' },
+                        { type: 'group', label: 'Cleanup candidates', children: [
+                          // Hidden when the unread warning is disabled in the Manager configuration.
+                          ...(unreadWarningAfterDays !== null
+                            ? [{ key: 'unread', label: `Not read in ${unreadWarningAfterDays} days` }]
+                            : []),
+                          { key: 'uniform', label: 'Same state on all nodes' },
+                        ] },
                       ],
                       onClick: ({ key }) => setDiffMode(key as DiffMode),
                     }}
                   >
-                    <Tooltip title="Filter features by differing states across nodes">
+                    <Tooltip title="Filter features by state across nodes or by usage">
                       <Button
                         icon={<FilterOutlined />}
                         type={diffMode !== 'off' ? 'primary' : 'default'}
                       >
-                        {diffMode === 'all' ? 'Differences (incl. N/A)' : 'Differences'}
+                        {{
+                          off: 'Filter',
+                          value: 'Differences',
+                          all: 'Differences (incl. N/A)',
+                          unread: `Not read in ${unreadWarningAfterDays} days`,
+                          uniform: 'Same state everywhere',
+                        }[diffMode]}
                       </Button>
                     </Tooltip>
                   </Dropdown>
@@ -840,7 +873,7 @@ export default function FeatureMatrixPage() {
         nodes={orderedNodes}
         rows={rows}
         onClose={() => setDetailsTarget(null)}
-        formatRelativeTime={formatRelativeTime}
+        warnAfterDays={unreadWarningAfterDays}
       />
 
       <style>{`

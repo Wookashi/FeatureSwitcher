@@ -54,6 +54,9 @@ namespace Wookashi.FeatureSwitcher.Node.Database.Migrations
                     b.Property<int>("ApplicationId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Description")
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");

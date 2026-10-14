@@ -161,6 +161,8 @@ export function useFeatureMatrix(): UseFeatureMatrixResult {
             value: f.state,
             lastUsedAt: f.lastUsedAt,
             usesLast7Days: f.usesLast7Days,
+            lastReadAt: f.lastReadAt,
+            registeredAt: f.registeredAt,
             details: { description: f.description, links: f.links ?? [] },
           });
         });

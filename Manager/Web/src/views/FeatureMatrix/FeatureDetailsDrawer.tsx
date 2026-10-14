@@ -21,28 +21,73 @@ import {
 } from '@ant-design/icons';
 
 import type { CellState, FeatureDetails, FeatureMatrixRow, NodeDto } from './types';
+import {
+  cellDetails,
+  cleanupHints,
+  describeReads,
+  formatRelativeTime,
+  hasContent,
+  readStatus,
+  rowDetails,
+  type CleanupHints,
+} from './featureInsights';
+
+// The same rules as the "Cleanup candidates" filters, explained for one feature.
+function CleanupHintsSection({
+  hints,
+  nodeCount,
+  warnAfterDays,
+}: {
+  hints: CleanupHints;
+  nodeCount: number;
+  warnAfterDays: number | null;
+}) {
+  if (hints.unreadOn.length === 0 && hints.notReadYetOn.length === 0 && hints.sameState === null) {
+    return null;
+  }
+
+  return (
+    <section>
+      <Title level={5} style={{ marginTop: 0 }}>Cleanup hints</Title>
+      <Flex vertical gap={8}>
+        {hints.unreadOn.length > 0 && (
+          <Alert
+            type="warning"
+            showIcon
+            title={`Not read in the last ${warnAfterDays} days on ${hints.unreadOn.length === nodeCount ? 'any node' : hints.unreadOn.join(', ')}`}
+            description="The application registers this flag, but no code has read it there. It may be left over after a refactoring or never wired up — check the code and remove it if it is unused. A flag read only rarely (e.g. by a monthly job) can show up here too."
+          />
+        )}
+        {hints.sameState !== null && (
+          <Alert
+            type="info"
+            showIcon
+            title={`${hints.sameState ? 'ON' : 'OFF'} on all ${nodeCount} nodes`}
+            description={
+              hints.sameState
+                ? 'If the rollout is complete, the flag and the old code path can be removed from the application.'
+                : 'If the feature was abandoned, the flag and the unused code path can be removed from the application.'
+            }
+          />
+        )}
+        {hints.notReadYetOn.map((n) => (
+          <Alert
+            key={n.node}
+            type="success"
+            showIcon
+            title={`${n.node}: ${n.text}`}
+            description={`Features are reported as unread only once they have been registered for ${warnAfterDays} days without being read.`}
+          />
+        ))}
+      </Flex>
+    </section>
+  );
+}
 
 const { Text, Paragraph, Title } = Typography;
 
 const CLIENT_DOCS_URL =
   'https://github.com/Wookashi/FeatureSwitcher/blob/main/Client/README.md#describing-features';
-
-function cellDetails(cell?: CellState): FeatureDetails | undefined {
-  return cell?.kind === 'value' ? cell.details : undefined;
-}
-
-function hasContent(details?: FeatureDetails): details is FeatureDetails {
-  return Boolean(details && (details.description || details.links.length > 0));
-}
-
-// Details of a row as registered on the first node that has any; used for the matrix hint.
-export function rowDetails(row: Pick<FeatureMatrixRow, 'cells'>, nodeNames: string[]): FeatureDetails | undefined {
-  for (const name of nodeNames) {
-    const details = cellDetails(row.cells[name]);
-    if (hasContent(details)) return details;
-  }
-  return undefined;
-}
 
 // Defense in depth: the Manager API already drops other schemes, but never render one as a link.
 function isHttpUrl(url: string): boolean {
@@ -64,7 +109,7 @@ interface FeatureDetailsDrawerProps {
   nodes: NodeDto[];
   rows: FeatureMatrixRow[];
   onClose: () => void;
-  formatRelativeTime: (iso: string) => string;
+  warnAfterDays: number | null; // null = unread warning disabled
 }
 
 function sameDetails(a?: FeatureDetails, b?: FeatureDetails): boolean {
@@ -182,7 +227,7 @@ function StateTag({ cell }: { cell?: CellState }) {
   );
 }
 
-export function FeatureDetailsDrawer({ target, nodes, rows, onClose, formatRelativeTime }: FeatureDetailsDrawerProps) {
+export function FeatureDetailsDrawer({ target, nodes, rows, onClose, warnAfterDays }: FeatureDetailsDrawerProps) {
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
 
   const row = useMemo(
@@ -239,6 +284,11 @@ export function FeatureDetailsDrawer({ target, nodes, rows, onClose, formatRelat
     >
       {target && (
         <Space orientation="vertical" size={24} style={{ width: '100%' }}>
+          <CleanupHintsSection
+            hints={cleanupHints(row, nodes.map((n) => n.name), warnAfterDays)}
+            nodeCount={nodes.length}
+            warnAfterDays={warnAfterDays}
+          />
           <section>
             <Title level={5} style={{ marginTop: 0 }}>About</Title>
             {differs && (
@@ -281,9 +331,14 @@ export function FeatureDetailsDrawer({ target, nodes, rows, onClose, formatRelat
                   children: (
                     <Flex justify="space-between" align="center" gap={12}>
                       <StateTag cell={cell} />
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        {usage?.lastUsedAt ? `used ${formatRelativeTime(usage.lastUsedAt)}` : 'never used'}
-                        {typeof usage?.usesLast7Days === 'number' && ` · ${usage.usesLast7Days} uses / 7d`}
+                      <Text
+                        type={usage && readStatus(usage, warnAfterDays) === 'unread' ? 'warning' : 'secondary'}
+                        style={{ fontSize: 12 }}
+                      >
+                        {usage
+                          ? (describeReads(usage, warnAfterDays) ?? (usage.lastUsedAt ? `used ${formatRelativeTime(usage.lastUsedAt)}` : ''))
+                          : 'not registered'}
+                        {typeof usage?.usesLast7Days === 'number' && ` · ${usage.usesLast7Days} read${usage.usesLast7Days === 1 ? '' : 's'} / 7d`}
                       </Text>
                     </Flex>
                   ),

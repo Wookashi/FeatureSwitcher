@@ -19,4 +19,15 @@ public sealed class FeatureWithUsageDto(
     public long UsesLast7Days { get; } = usesLast7Days;
     public string? Description { get; } = description;
     public IReadOnlyList<FeatureLinkDto> Links { get; } = links;
+
+    /// <summary>
+    /// UTC day of the application's last read of the feature within the retained read history;
+    /// <c>null</c> when there is none.
+    /// </summary>
+    public DateTime? LastReadAt { get; init; }
+
+    /// <summary>
+    /// When the application first registered the feature.
+    /// </summary>
+    public DateTime RegisteredAt { get; init; }
 }

@@ -49,6 +49,7 @@ internal sealed class FeatureRepository : IFeatureRepository
                 link.Feature.Name,
                 link.Feature.IsEnabled,
                 link.LastUsedAt,
+                link.CreatedAt,
                 link.Description,
                 link.LinksJson,
             })
@@ -59,26 +60,39 @@ internal sealed class FeatureRepository : IFeatureRepository
             return [];
         }
 
-        // Reads by this application in the last 7 days, including today. UsageDay is stored
-        // normalized to UTC midnight.
+        // Per link: reads by this application in the last 7 days (including today) and the last day
+        // with reads within the retained history. UsageDay is stored normalized to UTC midnight.
         var since = DateTime.UtcNow.Date.AddDays(-6);
         var linkIds = features.Select(f => f.Id).ToList();
 
-        var counts = _context.ApplicationFeatureUsage
-            .Where(u => linkIds.Contains(u.ApplicationFeatureId) && u.UsageDay >= since)
+        var usage = _context.ApplicationFeatureUsage
+            .Where(u => linkIds.Contains(u.ApplicationFeatureId) && u.UseCount > 0)
             .GroupBy(u => u.ApplicationFeatureId)
-            .Select(g => new { LinkId = g.Key, Total = g.Sum(u => u.UseCount) })
+            .Select(g => new
+            {
+                LinkId = g.Key,
+                Total = g.Where(u => u.UsageDay >= since).Sum(u => u.UseCount),
+                LastReadDay = g.Max(u => u.UsageDay),
+            })
             .ToList()
-            .ToDictionary(x => x.LinkId, x => x.Total);
+            .ToDictionary(x => x.LinkId);
 
         return features
-            .Select(f => new FeatureWithUsageDto(
-                f.Name,
-                f.IsEnabled,
-                f.LastUsedAt,
-                counts.TryGetValue(f.Id, out var c) ? c : 0,
-                f.Description,
-                FeatureDetailsSanitizer.DeserializeLinks(f.LinksJson)))
+            .Select(f =>
+            {
+                var linkUsage = usage.GetValueOrDefault(f.Id);
+                return new FeatureWithUsageDto(
+                    f.Name,
+                    f.IsEnabled,
+                    f.LastUsedAt,
+                    linkUsage?.Total ?? 0,
+                    f.Description,
+                    FeatureDetailsSanitizer.DeserializeLinks(f.LinksJson))
+                {
+                    LastReadAt = linkUsage is null ? null : DateTime.SpecifyKind(linkUsage.LastReadDay, DateTimeKind.Utc),
+                    RegisteredAt = f.CreatedAt,
+                };
+            })
             .ToList();
     }
 
@@ -154,6 +168,7 @@ internal sealed class FeatureRepository : IFeatureRepository
                     FeatureId = existing.Id,
                     Status = EntityStatus.Active,
                     LastUsedAt = now,
+                    CreatedAt = now,
                 };
                 _context.ApplicationFeatures.Add(link);
                 _context.SaveChanges();

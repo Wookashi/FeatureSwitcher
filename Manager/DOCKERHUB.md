@@ -50,6 +50,7 @@ otherwise the nodes can't authenticate to self-register.
 | `Jwt__ExpirationMinutes` | `60` | Token lifetime |
 | `Database__ConnectionString` | `Data Source=/data/fs_manager.db` | SQLite DB path |
 | `AuditLog__Retention` | `365.00:00:00` | Audit log retention (`d.hh:mm:ss`); older entries are deleted at startup and daily. `00:00:00` keeps them indefinitely |
+| `FeatureUsage__UnreadWarningAfter` | `45.00:00:00` | Report features not read for this long as cleanup candidates in the UI; `00:00:00` disables it. Keep the nodes' `NodeConfiguration__UsageRetention` at least this long |
 | `ASPNETCORE_ENVIRONMENT` | `Production` | Hosting environment |
 | `TZ` | `Europe/Warsaw` | Timezone |
 

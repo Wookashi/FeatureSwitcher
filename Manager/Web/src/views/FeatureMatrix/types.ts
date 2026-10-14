@@ -24,6 +24,10 @@ export interface FeatureDto {
   // Details registered by the application; absent from older nodes.
   description?: string | null;
   links?: FeatureLink[];
+  // UTC day of the application's last read (null: none in the node's retained history) and the
+  // first registration; both absent from older nodes.
+  lastReadAt?: string | null;
+  registeredAt?: string | null;
 }
 
 export interface NodeStateDto {
@@ -34,7 +38,9 @@ export interface NodeStateDto {
 // Cell state for the matrix
 export interface CellUsage {
   lastUsedAt?: string;
-  usesLast7Days?: number;
+  usesLast7Days?: number; // reads by this application in the last 7 days
+  lastReadAt?: string | null;
+  registeredAt?: string | null;
 }
 
 // Details as registered by the application on this node (they may differ between nodes
