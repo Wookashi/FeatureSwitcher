@@ -7,6 +7,30 @@ namespace Wookashi.FeatureSwitcher.Node.Api.Services;
 
 internal sealed class FeatureService
 {
+    /// <summary>
+    /// Recommended maximum length of application and feature names; mirrors <c>NameLimits</c> in the
+    /// client. Longer names are accepted and only logged.
+    /// </summary>
+    internal const int RecommendedNameMaxLength = 50;
+
+    /// <summary>
+    /// Application and feature names of a registration longer than <see cref="RecommendedNameMaxLength"/>,
+    /// each with its length, for logging.
+    /// </summary>
+    internal static List<string> NamesOverRecommendedLength(string applicationName, List<RegisterFeatureStateModel> features)
+    {
+        var names = new List<string>();
+        if (applicationName.Length > RecommendedNameMaxLength)
+        {
+            names.Add($"application '{applicationName}' ({applicationName.Length} characters)");
+        }
+
+        names.AddRange(features
+            .Where(f => f.FeatureName.Length > RecommendedNameMaxLength)
+            .Select(f => $"feature '{f.FeatureName}' ({f.FeatureName.Length} characters)"));
+        return names;
+    }
+
     private readonly IFeatureRepository _featureRepository;
 
     public FeatureService(IFeatureRepository featuresRepository)

@@ -99,6 +99,26 @@ if (await featureManager.IsFeatureEnabledAsync("DarkMode"))
 
 `AddFeatureFlags` also takes the list of features to manage.
 
+## Feature and application names
+
+Names are part of the Node's URLs and are shown in the Manager's feature matrix, so keep them short and
+URL-safe; put the explanation in the [description](#describing-features).
+
+**Recommended** (the next major version will require it): at most **50 characters**, ASCII letters,
+digits, `_`, `-` and `.`, starting with a letter — for example `NewCheckout`, `billing.retry-v2`.
+Names that don't follow it (longer, with diacritics, spaces or other characters) keep working; the
+client logs one warning at startup listing them, so they can be replaced as the flags are retired.
+
+**Required** (checked when the feature or the `FeatureManager` is created, throws `ArgumentException`):
+
+| Rule | Why |
+|------|-----|
+| not empty, no leading or trailing whitespace | such a name produces an invalid URL |
+| at most **100 characters** | the Node's database limit |
+| none of `/ \ ? # %` or control characters | they break the Node's URLs; the flag could not be read and silently kept its cached state |
+
+The same rules apply to the application name. The limits are available as constants in `NameLimits`.
+
 ## Describing features
 
 A feature can carry a description and links (ticket, documentation, runbook, dashboard…). The Manager

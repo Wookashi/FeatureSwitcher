@@ -94,19 +94,16 @@ public class FeatureStateModelTests
     }
 
     [Fact]
-    public void Constructor_AcceptsEmptyString_ForName()
+    public void Constructor_RejectsEmptyString_ForName()
     {
-        var model = new FeatureStateModel("");
-
-        Assert.Equal("", model.Name);
+        // An empty name produced an invalid Node URL, so the feature could never be read.
+        Assert.Throws<ArgumentException>(() => new FeatureStateModel(""));
     }
 
     [Fact]
-    public void Constructor_AcceptsWhitespaceString_ForName()
+    public void Constructor_RejectsWhitespaceString_ForName()
     {
-        var model = new FeatureStateModel("   ");
-
-        Assert.Equal("   ", model.Name);
+        Assert.Throws<ArgumentException>(() => new FeatureStateModel("   "));
     }
 
     [Fact]

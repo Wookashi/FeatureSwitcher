@@ -58,7 +58,9 @@ public class FeatureManager : IFeatureManager
     /// <exception cref="ArgumentNullException">Thrown when required parameters are null.</exception>
     /// <exception cref="FeatureNameCollisionException">Thrown when feature names are not unique.</exception>
     /// <exception cref="ArgumentException">
-    /// Thrown when the details of a feature (<see cref="IFeatureDetails"/>) exceed <see cref="FeatureDetailsLimits"/>.
+    /// Thrown when the application name or a feature name breaks the required rules of <see cref="NameLimits"/>,
+    /// or when the details of a feature (<see cref="IFeatureDetails"/>) exceed <see cref="FeatureDetailsLimits"/>.
+    /// Names that only miss the recommended format are logged as a warning.
     /// </exception>
     public FeatureManager(
         string applicationName,
@@ -83,11 +85,21 @@ public class FeatureManager : IFeatureManager
             throw new ArgumentNullException(nameof(features));
         }
 
+        // Names are part of the Node's URLs: reject the ones that cannot work (custom IFeatureStateModel
+        // implementations bypass FeatureStateModel's check) and warn about the discouraged ones.
+        NameValidator.ValidateRequired("Application", applicationName, nameof(applicationName));
+        foreach (var feature in features)
+        {
+            NameValidator.ValidateRequired("Feature", feature.Name, nameof(features));
+        }
+
         // Validate feature names are unique
         if (features.GroupBy(f => f.Name).Any(g => g.Count() > 1))
         {
             throw new FeatureNameCollisionException("Feature names must be unique.");
         }
+
+        WarnAboutDiscouragedNames(features);
 
         // FeatureStateModel checks its details when they are set; custom IFeatureDetails implementations
         // are checked here, so an invalid definition fails at startup instead of being sent to the Node.
@@ -246,6 +258,33 @@ public class FeatureManager : IFeatureManager
             _features.Count, _appName, _nodeAddress);
     }
 
+    private void WarnAboutDiscouragedNames(List<IFeatureStateModel> features)
+    {
+        var discouraged = new List<string>();
+        if (NameValidator.RecommendationProblem(_appName) is { } appProblem)
+        {
+            discouraged.Add($"application '{_appName}' ({appProblem})");
+        }
+
+        foreach (var feature in features)
+        {
+            if (NameValidator.RecommendationProblem(feature.Name) is { } problem)
+            {
+                discouraged.Add($"feature '{feature.Name}' ({problem})");
+            }
+        }
+
+        if (discouraged.Count > 0)
+        {
+            _logger.LogWarning(
+                "{Count} name(s) don't follow the recommended format: at most {RecommendedMaxLength} characters, " +
+                "ASCII letters, digits, '_', '-' and '.', starting with a letter. They work for now, but the next " +
+                "major version of the client will reject them; use shorter names for new features and put details " +
+                "in the description. Names: {Names}",
+                discouraged.Count, NameLimits.RecommendedMaxLength, string.Join("; ", discouraged));
+        }
+    }
+
     private static AppRegistrationModel.RegisterFeatureStateModel CreateRegistrationFeature(IFeatureStateModel feature)
     {
         var model = new AppRegistrationModel.RegisterFeatureStateModel(feature.Name, feature.InitialState);
@@ -275,7 +314,7 @@ public class FeatureManager : IFeatureManager
                 featureName, _appName, _nodeAddress);
 
             var response = await httpClient.GetAsync(
-                $"{_nodeAddress}applications/{_appName}/features/{featureName}/state/",
+                $"{_nodeAddress}applications/{Uri.EscapeDataString(_appName)}/features/{Uri.EscapeDataString(featureName)}/state/",
                 cts.Token);
 
             if (!response.IsSuccessStatusCode)

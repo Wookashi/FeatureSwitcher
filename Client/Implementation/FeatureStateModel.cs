@@ -95,11 +95,21 @@ public class FeatureStateModel : IFeatureStateModel, IFeatureDetails
     /// <summary>
     /// Creates a new feature state.
     /// </summary>
-    /// <param name="name">Unique name for this feature.</param>
+    /// <param name="name">
+    /// Unique name for this feature. Recommended: at most <see cref="NameLimits.RecommendedMaxLength"/>
+    /// characters, ASCII letters, digits, <c>_</c>, <c>-</c> and <c>.</c>, starting with a letter; see
+    /// <see cref="NameLimits"/>.
+    /// </param>
     /// <param name="initialState">Initial state (defaults to false/disabled).</param>
+    /// <exception cref="ArgumentNullException"><paramref name="name"/> is null.</exception>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="name"/> is empty, starts or ends with whitespace, is longer than
+    /// <see cref="NameLimits.MaxLength"/> characters or contains characters that break URLs.
+    /// </exception>
     public FeatureStateModel(string name, bool initialState = false)
     {
         Name = name ?? throw new ArgumentNullException(nameof(name));
+        NameValidator.ValidateRequired("Feature", name, nameof(name));
         InitialState = initialState;
         CurrentLocalState = initialState;
     }

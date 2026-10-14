@@ -29,14 +29,14 @@ var featureCollection = new List<IFeatureStateModel>
         ],
     },
     new FeatureStateModel("Test", true) { Links = ["https://www.test.pl"] },
-    new FeatureStateModel("Function one", false),
-    new FeatureStateModel("Function two", true)
+    new FeatureStateModel("FunctionOne", false),
+    new FeatureStateModel("FunctionTwo", true)
     {
         Description = "Kill switch for function two. Dashboard: https://www.functiontwo.pl/dashboard",
     },
-    new FeatureStateModel("Some other function", false),
-    new FeatureStateModel("Another test", true),
-    new FeatureStateModel("last function", false),
+    new FeatureStateModel("SomeOtherFunction", false),
+    new FeatureStateModel("AnotherTest", true),
+    new FeatureStateModel("LastFunction", false),
 };
 
 var serviceProvider = new ServiceCollection().AddHttpClient().BuildServiceProvider();

@@ -170,6 +170,17 @@ app.MapPost("/applications",
                     registerModel.AppName, featureName, string.Join("; ", problems));
             }
 
+            // Long names are accepted (existing flags must keep working, and nodes are upgraded
+            // independently of clients); the warning reaches teams using clients without their own check.
+            var longNames = FeatureService.NamesOverRecommendedLength(registerModel.AppName, registerModel.Features ?? []);
+            if (longNames.Count > 0)
+            {
+                logger.LogWarning(
+                    "App {AppName} registered name(s) longer than the recommended {RecommendedMaxLength} characters: {Names}. " +
+                    "They work, but the next major version of the client will reject them.",
+                    registerModel.AppName, FeatureService.RecommendedNameMaxLength, string.Join("; ", longNames));
+            }
+
             logger.LogInformation("App {AppName} registered successfully", registerModel.AppName);
             return Results.Created();
         })
