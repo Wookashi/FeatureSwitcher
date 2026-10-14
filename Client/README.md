@@ -93,7 +93,7 @@ if (await featureManager.IsFeatureEnabledAsync("DarkMode"))
 | `applicationName` | Unique identifier for your application |
 | `environmentName` | Environment name (e.g., Development, Production) |
 | `nodeAddress` | URI of the Feature Switcher Node service |
-| `allowStartWithoutNode` | Optional. When `true`, the host starts even if the Node is unreachable during startup registration. Features serve their `initialState` until the Node becomes reachable. Defaults to `false`. |
+| `allowStartWithoutNode` | Optional. When `true`, the host starts even if the Node is unreachable during startup registration. Features serve their `initialState` until the Node becomes reachable, and registration is retried in the background. Use it deliberately, see [Resilience](#resilience). Defaults to `false`. |
 | `requestTimeout` | Optional. Maximum time to wait for a single request to the Node before treating it as unreachable and falling back to the cached state. Defaults to 3 seconds. |
 | `circuitBreakDuration` | Optional. After the Node is found unreachable, how long to keep serving cached state without contacting the Node again. Defaults to 30 seconds. |
 
@@ -225,13 +225,35 @@ So from the client's perspective: flags removed from your application code disap
 
 ## Resilience
 
-The client caches feature states locally. If the Node service becomes unreachable, the client falls back to cached values, ensuring your application continues to function.
+A feature check never throws because the Node is unavailable: the application keeps working, and the
+check returns a fallback state instead of the current one set in the Manager. Which state that is
+depends on the situation:
+
+| Situation | `IsFeatureEnabledAsync` returns |
+|-----------|---------------------------------|
+| The Node responds | the current state set in the Manager |
+| The Node stops responding after the feature was read | the **last known** state (kept in memory) |
+| The application started without the Node (`allowStartWithoutNode`) and hasn't reached it since | the **`initialState`** from code |
+| The Node responds, but doesn't know the feature (not registered there yet) | the last known state, or `initialState`; other features are not affected |
+
+The last known state lives in the application's memory only, so a restart while the Node is unreachable
+falls back to `initialState`.
+
+### Choosing `initialState`
+
+`initialState` is the state used whenever the current one is not available, so choose the value that is
+**safe** if the Node cannot be reached — not the value you expect to set in the Manager:
+
+- a new feature being rolled out: usually `false`, so an outage doesn't enable an unfinished feature;
+- a kill switch that disables something in an emergency: the normal operating state, so an outage
+  doesn't switch the feature off;
+- a feature that is on everywhere and about to be removed: `true` — or better, remove the flag.
 
 ### Tolerating an unreachable Node at startup
 
 By default, `AddFeatureFlags` registers a hosted service that calls `RegisterFeaturesOnNodeAsync` on startup. If the Node is unreachable, registration throws `NodeUnreachableException` and the host fails to start.
 
-Set `allowStartWithoutNode: true` on the configuration to let the application boot anyway. The failure is logged as a warning and features serve their `initialState` until subsequent `IsFeatureEnabledAsync` calls successfully reach the Node:
+Set `allowStartWithoutNode: true` on the configuration to let the application boot anyway. The failure is logged as a warning and features serve their `initialState` until subsequent `IsFeatureEnabledAsync` calls successfully reach the Node; registration is retried in the background (after 5, 15 and 30 seconds, then every minute) until it succeeds:
 
 ```csharp
 var config = new FeatureSwitcherBasicClientConfiguration(
@@ -243,7 +265,33 @@ var config = new FeatureSwitcherBasicClientConfiguration(
 services.AddFeatureFlags(config, features);
 ```
 
-Only `NodeUnreachableException` is suppressed. `EnvironmentMismatchException` and `RegistrationException` (errors returned by a reachable Node) still abort startup because they indicate misconfiguration rather than a transient connectivity issue.
+Only transient failures are tolerated: `NodeUnreachableException` and `RegistrationException` with a server
+error (5xx, e.g. the Node's database is busy). `EnvironmentMismatchException` and other errors returned by a
+reachable Node still abort startup because they indicate misconfiguration.
+
+**Use it deliberately.** With `allowStartWithoutNode`, an application started during a Node outage runs on
+the `initialState` values from code instead of the states set in the Manager, until the Node is reachable
+again — for every feature, not only new ones. Prefer the default when running with the wrong feature
+states is worse than not starting; if you enable it, choose safe `initialState` values (see above) and
+monitor the [health check](#health-check). Applications that create `FeatureManager` manually (without
+`AddFeatureFlags`) have to retry `RegisterFeaturesOnNodeAsync` themselves.
+
+### Health check
+
+`AddFeatureSwitcher` adds an ASP.NET Core health check that reports whether feature states come from the
+Node:
+
+```csharp
+services.AddHealthChecks().AddFeatureSwitcher();
+```
+
+It is `Healthy` when the features are registered and the latest request to the Node got a response, and
+`Degraded` otherwise, with a description saying whether the application uses initial or last known
+states. It sends no request of its own: it reports the outcome of the latest registration and feature
+check. The default status `Degraded` is deliberate — the application keeps working, and restarting it or
+taking it out of rotation because of a Node outage would only reset features to their initial states.
+Pass `failureStatus: HealthStatus.Unhealthy` if your setup requires the current states. The same
+information is available on `FeatureManager` as `IsRegistered`, `IsNodeReachable` and `LastNodeContactAt`.
 
 ### Bounded requests and circuit breaker
 

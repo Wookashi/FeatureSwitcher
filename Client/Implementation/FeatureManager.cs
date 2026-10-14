@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -35,6 +36,38 @@ public class FeatureManager : IFeatureManager
     private readonly TimeSpan _requestTimeout;
     private readonly TimeSpan _circuitBreakDuration;
     private long _circuitOpenUntilTicks;
+    private volatile bool _isRegistered;
+    private volatile bool _isNodeReachable;
+    private long _lastNodeContactTicks;
+
+    // Features the Node answered 404 for, so the warning is logged once per feature, not on every read.
+    private readonly ConcurrentDictionary<string, byte> _notRegisteredWarned = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Whether the features have been registered on the Node by this instance. <c>false</c> after a start
+    /// without the Node (<c>allowStartWithoutNode</c>) until the background registration succeeds; until
+    /// then, features that are new to the Node use their initial states.
+    /// </summary>
+    public bool IsRegistered => _isRegistered;
+
+    /// <summary>
+    /// Whether the last request to the Node (registration or state read) got a response. While
+    /// <c>false</c>, feature checks return the last known states — or the initial states if the Node has
+    /// not been reached since startup. Updated only by requests, so it reflects the latest feature check.
+    /// </summary>
+    public bool IsNodeReachable => _isNodeReachable;
+
+    /// <summary>
+    /// When the Node last responded to this instance (UTC), or <c>null</c> if it never has.
+    /// </summary>
+    public DateTimeOffset? LastNodeContactAt
+    {
+        get
+        {
+            var ticks = Interlocked.Read(ref _lastNodeContactTicks);
+            return ticks == 0 ? null : new DateTimeOffset(ticks, TimeSpan.Zero);
+        }
+    }
 
     /// <summary>
     /// Creates a new FeatureManager.
@@ -170,12 +203,29 @@ public class FeatureManager : IFeatureManager
         try
         {
             var nodeState = await GetFeatureStateFromNodeAsync(featureName, cancellationToken);
-            feature.CurrentLocalState = nodeState;
             CloseCircuit();
+            if (nodeState is null)
+            {
+                // The Node is fine, but doesn't know this feature (e.g. registration hasn't succeeded yet,
+                // or it was permanently deleted). Only this feature falls back; other features keep
+                // reading their current state.
+                if (_notRegisteredWarned.TryAdd(featureName, 0))
+                {
+                    _logger.LogWarning(
+                        "Feature '{FeatureName}' is not registered on node {NodeAddress} — using its last known state ({State}) until it is registered",
+                        featureName, _nodeAddress, feature.CurrentLocalState);
+                }
+
+                return feature.CurrentLocalState;
+            }
+
+            _notRegisteredWarned.TryRemove(featureName, out _);
+            feature.CurrentLocalState = nodeState.Value;
             _logger.LogDebug("Feature '{FeatureName}' state retrieved from node: {State}", featureName, nodeState);
         }
         catch (NodeUnreachableException)
         {
+            _isNodeReachable = false;
             OpenCircuit();
             _logger.LogWarning(
                 "Node unreachable — falling back to cached state for feature '{FeatureName}': {CachedState}",
@@ -194,7 +244,15 @@ public class FeatureManager : IFeatureManager
     /// <exception cref="EnvironmentMismatchException">Thrown when environments don't match.</exception>
     /// <exception cref="RegistrationException">Thrown when registration fails.</exception>
     /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled.</exception>
-    public async Task RegisterFeaturesOnNodeAsync(CancellationToken cancellationToken = default)
+    public Task RegisterFeaturesOnNodeAsync(CancellationToken cancellationToken = default)
+        => RegisterFeaturesOnNodeAsync(cancellationToken, LogLevel.Error);
+
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <param name="transientFailureLevel">
+    /// Log level for failures worth retrying (Node unreachable, 5xx). The background registration retries
+    /// them and logs its own summary, so it passes a lower level to avoid an error on every attempt.
+    /// </param>
+    internal async Task RegisterFeaturesOnNodeAsync(CancellationToken cancellationToken, LogLevel transientFailureLevel)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -224,16 +282,21 @@ public class FeatureManager : IFeatureManager
         }
         catch (HttpRequestException ex) when (ex.InnerException is SocketException socketEx)
         {
-            _logger.LogError(ex, "Node unreachable at {NodeAddress} during feature registration", _nodeAddress);
+            _isNodeReachable = false;
+            _logger.Log(transientFailureLevel, ex, "Node unreachable at {NodeAddress} during feature registration", _nodeAddress);
             throw new NodeUnreachableException(ex.Message, socketEx.ErrorCode);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            _logger.LogError(
+            _isNodeReachable = false;
+            _logger.Log(
+                transientFailureLevel,
                 "Node unreachable at {NodeAddress} during feature registration (no response within {Timeout})",
                 _nodeAddress, _requestTimeout);
             throw new NodeUnreachableException($"Node did not respond within {_requestTimeout}.");
         }
+
+        MarkNodeContact();
 
         if (response.StatusCode == (HttpStatusCode)422)
         {
@@ -245,7 +308,8 @@ public class FeatureManager : IFeatureManager
 
         if (!response.IsSuccessStatusCode)
         {
-            _logger.LogError(
+            _logger.Log(
+                (int)response.StatusCode >= 500 ? transientFailureLevel : LogLevel.Error,
                 "Feature registration failed with status {StatusCode}: {Reason}",
                 (int)response.StatusCode, response.ReasonPhrase);
             throw new RegistrationException(
@@ -253,6 +317,7 @@ public class FeatureManager : IFeatureManager
                 (int)response.StatusCode);
         }
 
+        _isRegistered = true;
         _logger.LogInformation(
             "Successfully registered {FeatureCount} feature(s) for app '{AppName}' on node {NodeAddress}",
             _features.Count, _appName, _nodeAddress);
@@ -302,7 +367,17 @@ public class FeatureManager : IFeatureManager
         return model;
     }
 
-    private async Task<bool> GetFeatureStateFromNodeAsync(string featureName, CancellationToken cancellationToken)
+    private void MarkNodeContact()
+    {
+        _isNodeReachable = true;
+        Interlocked.Exchange(ref _lastNodeContactTicks, DateTime.UtcNow.Ticks);
+    }
+
+    /// <summary>
+    /// Returns the feature's state on the Node, or <c>null</c> when the Node responded that the feature is
+    /// not registered there (404) — the Node itself is fine in that case.
+    /// </summary>
+    private async Task<bool?> GetFeatureStateFromNodeAsync(string featureName, CancellationToken cancellationToken)
     {
         using var cts = CreateRequestCts(cancellationToken);
         try
@@ -317,6 +392,12 @@ public class FeatureManager : IFeatureManager
                 $"{_nodeAddress}applications/{Uri.EscapeDataString(_appName)}/features/{Uri.EscapeDataString(featureName)}/state/",
                 cts.Token);
 
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                MarkNodeContact();
+                return null;
+            }
+
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogWarning(
@@ -326,7 +407,9 @@ public class FeatureManager : IFeatureManager
             }
 
             var responseBody = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<bool>(responseBody);
+            var state = JsonSerializer.Deserialize<bool>(responseBody);
+            MarkNodeContact();
+            return state;
         }
         catch (HttpRequestException ex) when (ex.InnerException is SocketException socketEx)
         {

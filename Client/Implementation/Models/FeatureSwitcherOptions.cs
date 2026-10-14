@@ -4,7 +4,7 @@ namespace Wookashi.FeatureSwitcher.Client.Implementation.Models;
 
 /// <summary>
 /// Payload sent to the Node to register an application and its features. Used internally by
-/// <see cref="FeatureManager.RegisterFeaturesOnNodeAsync"/>.
+/// <see cref="FeatureManager.RegisterFeaturesOnNodeAsync(CancellationToken)"/>.
 /// </summary>
 public sealed class AppRegistrationModel
 {

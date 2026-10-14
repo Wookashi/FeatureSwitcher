@@ -100,7 +100,11 @@ public class FeatureStateModel : IFeatureStateModel, IFeatureDetails
     /// characters, ASCII letters, digits, <c>_</c>, <c>-</c> and <c>.</c>, starting with a letter; see
     /// <see cref="NameLimits"/>.
     /// </param>
-    /// <param name="initialState">Initial state (defaults to false/disabled).</param>
+    /// <param name="initialState">
+    /// State used when the current one is not available: when the feature is created on the Node, and when
+    /// the application has not reached the Node since startup. Choose the value that is safe during a Node
+    /// outage. Defaults to false/disabled.
+    /// </param>
     /// <exception cref="ArgumentNullException"><paramref name="name"/> is null.</exception>
     /// <exception cref="ArgumentException">
     /// <paramref name="name"/> is empty, starts or ends with whitespace, is longer than

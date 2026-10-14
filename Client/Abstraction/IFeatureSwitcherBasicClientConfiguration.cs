@@ -21,8 +21,10 @@ public interface IFeatureSwitcherBasicClientConfiguration
     Uri NodeAddress { get; }
 
     /// <summary>
-    /// When true, the host starts even if the Node is unreachable during startup registration.
-    /// Features fall back to their initial/cached states until the Node becomes reachable.
+    /// When true, the host starts even if the Node is unreachable during startup registration (or answers
+    /// with a server error). Features then use their initial states — not the states set in the Manager —
+    /// until the Node becomes reachable, and registration is retried in the background. Use it only when
+    /// running with the initial states is better than not starting.
     /// </summary>
     bool AllowStartWithoutNode { get; }
 

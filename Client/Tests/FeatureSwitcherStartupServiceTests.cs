@@ -81,6 +81,7 @@ public class FeatureSwitcherStartupServiceTests
         var service = new FeatureSwitcherStartupService(manager, allowStartWithoutNode: true);
 
         await service.StartAsync(CancellationToken.None);
+        await service.StopAsync(CancellationToken.None); // stops the background registration
     }
 
     [Fact]
