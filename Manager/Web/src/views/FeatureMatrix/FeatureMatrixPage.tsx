@@ -47,7 +47,6 @@ import {
   AuditOutlined,
   LeftOutlined,
   RightOutlined,
-  InfoCircleOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 
@@ -380,9 +379,6 @@ export default function FeatureMatrixPage() {
                   onClick={() => setDetailsTarget({ application: record.application, feature: record.feature })}
                 >
                   <Text code style={{ fontSize: 13 }}>{text}</Text>
-                  {details && (
-                    <InfoCircleOutlined style={{ marginLeft: 6, color: token.colorTextSecondary }} />
-                  )}
                 </span>
               </Tooltip>
               {sharedFeatureInfo.has(record.feature) && (
@@ -874,8 +870,13 @@ export default function FeatureMatrixPage() {
         .feature-name-link {
           cursor: pointer;
         }
+        .feature-name-link code {
+          transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+        }
         .feature-name-link:hover code {
-          text-decoration: underline;
+          color: ${token.colorPrimary};
+          border-color: ${isDark ? 'rgba(22, 119, 255, 0.5)' : token.colorPrimaryBorder};
+          background: ${isDark ? 'rgba(22, 119, 255, 0.15)' : token.colorPrimaryBg};
         }
         .ant-table-row-expand-icon {
           margin-right: 8px !important;

@@ -36,7 +36,7 @@ client documentation). Clicking a feature name in the Feature Matrix opens a pan
 - the state and usage of the feature on every node,
 - for shared flags, the description of every other application that uses the flag.
 
-Features with details are marked with an info icon in the matrix. Details are stored per application on
+Hovering a feature name shows the first line of its description. Details are stored per application on
 each Node and replaced on every registration, so the application's code stays the source of truth.
 
 ## How to run?
