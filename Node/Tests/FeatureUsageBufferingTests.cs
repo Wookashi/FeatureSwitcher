@@ -27,7 +27,8 @@ public sealed class FeatureUsageBufferingTests : IDisposable
         using var scope = _provider.CreateScope();
         scope.ServiceProvider.GetRequiredService<FeaturesDataContext>().Database.Migrate();
 
-        // Registration records one use; flush it so every test starts from a written baseline of 1.
+        // Registration only bumps LastUsedAt (it is not a read); flush it so every test starts from a
+        // written baseline with no reads counted.
         WithRepository(repository => repository.RegisterApplication(_app, [_feature]));
         WithRepository(repository => repository.FlushFeatureUsage());
     }
@@ -44,14 +45,14 @@ public sealed class FeatureUsageBufferingTests : IDisposable
             repository.RecordFeatureUsage(_app, _feature.Name);
         });
 
-        Assert.Equal(1, ReadTotalUseCount());
+        Assert.Equal(0, ReadTotalUseCount());
         Assert.Equal(lastUsedBefore, ReadLink().LastUsedAt);
 
         var written = 0;
         WithRepository(repository => written = repository.FlushFeatureUsage());
 
         Assert.Equal(1, written); // three uses of one link on one day aggregate into one entry
-        Assert.Equal(4, ReadTotalUseCount());
+        Assert.Equal(3, ReadTotalUseCount());
         Assert.True(ReadLink().LastUsedAt > lastUsedBefore);
     }
 
@@ -72,7 +73,7 @@ public sealed class FeatureUsageBufferingTests : IDisposable
         });
         WithRepository(repository => repository.FlushFeatureUsage());
 
-        Assert.Equal(1 + threads * usesPerThread, ReadTotalUseCount());
+        Assert.Equal(threads * usesPerThread, ReadTotalUseCount());
     }
 
     [Fact]
@@ -135,7 +136,7 @@ public sealed class FeatureUsageBufferingTests : IDisposable
         WithRepository(repository => written = repository.FlushFeatureUsage());
 
         Assert.Equal(1, written);
-        WithContext(context => Assert.Empty(context.FeatureUsage.AsNoTracking().ToList()));
+        WithContext(context => Assert.Empty(context.ApplicationFeatureUsage.AsNoTracking().ToList()));
     }
 
     [Fact]
@@ -145,16 +146,16 @@ public sealed class FeatureUsageBufferingTests : IDisposable
         var buffer = _provider.GetRequiredService<FeatureUsageBuffer>();
         var today = DateTime.UtcNow.Date;
 
-        buffer.Record(link.Id, link.ApplicationId, link.FeatureId, today.AddTicks(-1)); // yesterday 23:59:59.9999999
-        buffer.Record(link.Id, link.ApplicationId, link.FeatureId, today.AddHours(1));
-        buffer.Record(link.Id, link.ApplicationId, link.FeatureId, today.AddHours(2));
+        buffer.Record(link.Id, link.ApplicationId, link.FeatureId, today.AddTicks(-1), countAsRead: true); // yesterday 23:59:59.9999999
+        buffer.Record(link.Id, link.ApplicationId, link.FeatureId, today.AddHours(1), countAsRead: true);
+        buffer.Record(link.Id, link.ApplicationId, link.FeatureId, today.AddHours(2), countAsRead: true);
         WithRepository(repository => repository.FlushFeatureUsage());
 
         WithContext(context =>
         {
-            var rows = context.FeatureUsage.AsNoTracking().ToList();
+            var rows = context.ApplicationFeatureUsage.AsNoTracking().ToList();
             Assert.Equal(1, rows.Single(u => u.UsageDay == today.AddDays(-1)).UseCount);
-            Assert.Equal(1 + 2, rows.Single(u => u.UsageDay == today).UseCount); // + registration baseline
+            Assert.Equal(2, rows.Single(u => u.UsageDay == today).UseCount);
         });
     }
 
@@ -164,10 +165,10 @@ public sealed class FeatureUsageBufferingTests : IDisposable
         var buffer = new FeatureUsageBuffer();
         var usedAt = new DateTime(2026, 1, 1, 10, 0, 0, DateTimeKind.Utc);
 
-        buffer.Record(1, 2, 3, usedAt);
-        buffer.Record(1, 2, 3, usedAt);
+        buffer.Record(1, 2, 3, usedAt, countAsRead: true);
+        buffer.Record(1, 2, 3, usedAt, countAsRead: true);
         var failed = buffer.Drain();
-        buffer.Record(1, 2, 3, usedAt.AddMinutes(5));
+        buffer.Record(1, 2, 3, usedAt.AddMinutes(5), countAsRead: true);
         buffer.Requeue(failed);
 
         var entry = Assert.Single(buffer.Drain());
@@ -224,7 +225,7 @@ public sealed class FeatureUsageBufferingTests : IDisposable
     private long ReadTotalUseCount()
     {
         long total = 0;
-        WithContext(context => total = context.FeatureUsage.AsNoTracking().Sum(u => u.UseCount));
+        WithContext(context => total = context.ApplicationFeatureUsage.AsNoTracking().Sum(u => u.UseCount));
         return total;
     }
 }

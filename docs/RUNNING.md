@@ -272,7 +272,8 @@ Listens on **5033** (HTTP). Mount a volume at **`/data`** to persist the databas
 | `NodeConfiguration__FeatureStaleAfter` | `30.00:00:00` | Idle time (`d.hh:mm:ss`) before a flag is marked pending-deletion |
 | `NodeConfiguration__FeatureCleanupInterval` | `1.00:00:00` | How often the soft-delete sweep runs |
 | `NodeConfiguration__DiagnosticsInterval` | _(not set — disabled)_ | How often memory/GC statistics are logged, e.g. `00:15:00`; not set or `00:00:00` disables |
-| `NodeConfiguration__UsageFlushInterval` | `00:01:00` | How often buffered flag usage (last-used time, daily counts) is written to the database |
+| `NodeConfiguration__UsageFlushInterval` | `00:01:00` | How often buffered flag usage (last-used time, daily read counts) is written to the database |
+| `NodeConfiguration__UsageRetention` | `30.00:00:00` | How long daily read counts are kept; older ones are deleted by the daily sweep. `00:00:00` keeps them indefinitely; values below 7 days are raised to 7 |
 | `ManagerSettings__Url` | `http://localhost:5033` | URL of the Manager service |
 | `ManagerSettings__Username` | _(empty)_ | Manager admin username, for self-registration |
 | `ManagerSettings__Password` | _(empty)_ | Manager admin password, for self-registration |

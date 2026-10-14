@@ -33,4 +33,17 @@ internal sealed class NodeConfiguration
     /// kill loses at most this much usage data; flag states are not affected. Defaults to 60 seconds.
     /// </summary>
     public TimeSpan UsageFlushInterval { get; set; } = DefaultUsageFlushInterval;
+
+    /// <summary>
+    /// The Manager shows reads from the last 7 days, so a shorter retention would make them incomplete.
+    /// </summary>
+    internal static readonly TimeSpan MinUsageRetention = TimeSpan.FromDays(7);
+
+    /// <summary>
+    /// How long daily read counts are kept; older ones are deleted by the sweep (see
+    /// <see cref="FeatureCleanupInterval"/>). Defaults to 30 days; zero or negative keeps them
+    /// indefinitely, positive values below <see cref="MinUsageRetention"/> are raised to it.
+    /// LastUsedAt is not affected.
+    /// </summary>
+    public TimeSpan UsageRetention { get; set; } = TimeSpan.FromDays(30);
 }

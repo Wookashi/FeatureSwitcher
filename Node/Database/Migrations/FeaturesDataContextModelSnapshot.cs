@@ -83,6 +83,31 @@ namespace Wookashi.FeatureSwitcher.Node.Database.Migrations
                     b.ToTable("ApplicationFeatures");
                 });
 
+            modelBuilder.Entity("Wookashi.FeatureSwitcher.Node.Database.Entities.ApplicationFeatureUsageEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ApplicationFeatureId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("UsageDay")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UseCount")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UsageDay");
+
+                    b.HasIndex("ApplicationFeatureId", "UsageDay")
+                        .IsUnique();
+
+                    b.ToTable("ApplicationFeatureUsage");
+                });
+
             modelBuilder.Entity("Wookashi.FeatureSwitcher.Node.Database.Entities.FeatureEntity", b =>
                 {
                     b.Property<int>("Id")
@@ -114,29 +139,6 @@ namespace Wookashi.FeatureSwitcher.Node.Database.Migrations
                     b.ToTable("Features");
                 });
 
-            modelBuilder.Entity("Wookashi.FeatureSwitcher.Node.Database.Entities.FeatureUsageEntity", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("FeatureId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("UsageDay")
-                        .HasColumnType("TEXT");
-
-                    b.Property<long>("UseCount")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FeatureId", "UsageDay")
-                        .IsUnique();
-
-                    b.ToTable("FeatureUsage");
-                });
-
             modelBuilder.Entity("Wookashi.FeatureSwitcher.Node.Database.Entities.ApplicationFeatureEntity", b =>
                 {
                     b.HasOne("Wookashi.FeatureSwitcher.Node.Database.Entities.ApplicationEntity", "Application")
@@ -156,15 +158,15 @@ namespace Wookashi.FeatureSwitcher.Node.Database.Migrations
                     b.Navigation("Feature");
                 });
 
-            modelBuilder.Entity("Wookashi.FeatureSwitcher.Node.Database.Entities.FeatureUsageEntity", b =>
+            modelBuilder.Entity("Wookashi.FeatureSwitcher.Node.Database.Entities.ApplicationFeatureUsageEntity", b =>
                 {
-                    b.HasOne("Wookashi.FeatureSwitcher.Node.Database.Entities.FeatureEntity", "Feature")
+                    b.HasOne("Wookashi.FeatureSwitcher.Node.Database.Entities.ApplicationFeatureEntity", "ApplicationFeature")
                         .WithMany()
-                        .HasForeignKey("FeatureId")
+                        .HasForeignKey("ApplicationFeatureId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Feature");
+                    b.Navigation("ApplicationFeature");
                 });
 
             modelBuilder.Entity("Wookashi.FeatureSwitcher.Node.Database.Entities.ApplicationEntity", b =>

@@ -29,10 +29,18 @@ internal sealed class SoftDeleteSweepHostedService : BackgroundService
     {
         var staleAfter = _config.FeatureStaleAfter;
         var interval = _config.FeatureCleanupInterval;
+        var usageRetention = _config.UsageRetention;
+        if (usageRetention > TimeSpan.Zero && usageRetention < NodeConfiguration.MinUsageRetention)
+        {
+            _logger.LogWarning(
+                "UsageRetention {Configured} is shorter than the 7-day read count shown in the Manager; using {Minimum}",
+                usageRetention, NodeConfiguration.MinUsageRetention);
+            usageRetention = NodeConfiguration.MinUsageRetention;
+        }
 
         _logger.LogInformation(
-            "SoftDeleteSweepHostedService started. StaleAfter={StaleAfter}, Interval={Interval}",
-            staleAfter, interval);
+            "SoftDeleteSweepHostedService started. StaleAfter={StaleAfter}, Interval={Interval}, UsageRetention={UsageRetention}",
+            staleAfter, interval, usageRetention > TimeSpan.Zero ? (object)usageRetention : "disabled");
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -45,6 +53,18 @@ internal sealed class SoftDeleteSweepHostedService : BackgroundService
                 _logger.LogError(ex, "Soft-delete sweep failed");
             }
 
+            if (usageRetention > TimeSpan.Zero)
+            {
+                try
+                {
+                    DeleteOldUsage(usageRetention);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Usage retention cleanup failed");
+                }
+            }
+
             try
             {
                 await Task.Delay(interval, stoppingToken);
@@ -53,6 +73,25 @@ internal sealed class SoftDeleteSweepHostedService : BackgroundService
             {
                 break;
             }
+        }
+    }
+
+    private void DeleteOldUsage(TimeSpan retention)
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var repository = scope.ServiceProvider.GetRequiredService<IFeatureRepository>();
+
+        var threshold = DateTime.UtcNow - retention;
+        var deleted = repository.DeleteUsageOlderThan(threshold);
+
+        if (deleted > 0)
+        {
+            _logger.LogInformation(
+                "Usage retention deleted {Count} daily read count(s) before {Threshold:yyyy-MM-dd}", deleted, threshold);
+        }
+        else
+        {
+            _logger.LogDebug("Usage retention found no daily read counts before {Threshold:yyyy-MM-dd}", threshold);
         }
     }
 

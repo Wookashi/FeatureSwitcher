@@ -45,7 +45,7 @@ internal sealed class FeatureRepository : IFeatureRepository
                            && link.Feature.Status == EntityStatus.Active)
             .Select(link => new
             {
-                link.Feature.Id,
+                link.Id,
                 link.Feature.Name,
                 link.Feature.IsEnabled,
                 link.LastUsedAt,
@@ -59,16 +59,17 @@ internal sealed class FeatureRepository : IFeatureRepository
             return [];
         }
 
-        // Last 7 days, including today. UsageDay is stored normalized to UTC midnight.
+        // Reads by this application in the last 7 days, including today. UsageDay is stored
+        // normalized to UTC midnight.
         var since = DateTime.UtcNow.Date.AddDays(-6);
-        var featureIds = features.Select(f => f.Id).ToList();
+        var linkIds = features.Select(f => f.Id).ToList();
 
-        var counts = _context.FeatureUsage
-            .Where(u => featureIds.Contains(u.FeatureId) && u.UsageDay >= since)
-            .GroupBy(u => u.FeatureId)
-            .Select(g => new { FeatureId = g.Key, Total = g.Sum(u => u.UseCount) })
+        var counts = _context.ApplicationFeatureUsage
+            .Where(u => linkIds.Contains(u.ApplicationFeatureId) && u.UsageDay >= since)
+            .GroupBy(u => u.ApplicationFeatureId)
+            .Select(g => new { LinkId = g.Key, Total = g.Sum(u => u.UseCount) })
             .ToList()
-            .ToDictionary(x => x.FeatureId, x => x.Total);
+            .ToDictionary(x => x.LinkId, x => x.Total);
 
         return features
             .Select(f => new FeatureWithUsageDto(
@@ -180,7 +181,8 @@ internal sealed class FeatureRepository : IFeatureRepository
             link.Description = incoming.Details?.Description;
             link.LinksJson = FeatureDetailsSanitizer.SerializeLinks(incoming.Details?.Links);
 
-            _usageBuffer.Record(link.Id, applicationEntity.Id, existing.Id, now);
+            // A registration keeps the link alive (LastUsedAt) but is not a read of the flag.
+            _usageBuffer.Record(link.Id, applicationEntity.Id, existing.Id, now, countAsRead: false);
         }
 
         _context.SaveChanges();
@@ -239,7 +241,7 @@ internal sealed class FeatureRepository : IFeatureRepository
             RestoreLink(usage.Id, now);
         }
 
-        _usageBuffer.Record(usage.Id, usage.ApplicationId, usage.FeatureId, now);
+        _usageBuffer.Record(usage.Id, usage.ApplicationId, usage.FeatureId, now, countAsRead: true);
     }
 
     public int FlushFeatureUsage()
@@ -314,6 +316,38 @@ internal sealed class FeatureRepository : IFeatureRepository
         }
 
         return stale.Count;
+    }
+
+    public int DeleteUsageOlderThan(DateTime thresholdUtc)
+    {
+        const int batchSize = 1000;
+        var day = thresholdUtc.Date;
+        var total = 0;
+
+        // Small batches, each in its own transaction, so a large backlog (e.g. the first run after an
+        // upgrade) doesn't hold SQLite's single write lock for long.
+        while (true)
+        {
+            var expired = _context.ApplicationFeatureUsage
+                .Where(u => u.UsageDay < day)
+                .OrderBy(u => u.UsageDay)
+                .Take(batchSize)
+                .ToList();
+
+            if (expired.Count == 0)
+            {
+                return total;
+            }
+
+            _context.ApplicationFeatureUsage.RemoveRange(expired);
+            _context.SaveChanges();
+            total += expired.Count;
+
+            if (expired.Count < batchSize)
+            {
+                return total;
+            }
+        }
     }
 
     // ---- Pending queries ----
@@ -454,8 +488,9 @@ internal sealed class FeatureRepository : IFeatureRepository
 
     /// <summary>
     /// Writes buffered usage in a single SaveChanges (one transaction): bumps LastUsedAt on links,
-    /// applications and features, and adds the counts to the per-day usage rows. Only one flush runs at
-    /// a time and nothing else writes usage rows, so the read-modify-write of the counters is safe.
+    /// applications and features, and adds the read counts to the per-link, per-day usage rows. Only
+    /// one flush runs at a time and nothing else writes usage rows (the retention cleanup only deletes
+    /// days before the current one), so the read-modify-write of the counters is safe.
     /// </summary>
     private void WriteUsage(IReadOnlyDictionary<FeatureUsageBuffer.UsageKey, FeatureUsageBuffer.UsageEntry> entries)
     {
@@ -464,7 +499,8 @@ internal sealed class FeatureRepository : IFeatureRepository
         var featureUses = LatestUse(entries, key => key.FeatureId);
 
         var linkIds = linkUses.Keys.ToList();
-        foreach (var link in _context.ApplicationFeatures.Where(l => linkIds.Contains(l.Id)).ToList())
+        var links = _context.ApplicationFeatures.Where(l => linkIds.Contains(l.Id)).ToList();
+        foreach (var link in links)
         {
             ApplyUse(link, linkUses[link.Id]);
         }
@@ -482,26 +518,27 @@ internal sealed class FeatureRepository : IFeatureRepository
             ApplyUse(feature, featureUses[feature.Id]);
         }
 
-        // Counts for features permanently deleted since they were used have nothing to attach to.
-        var existingFeatureIds = features.Select(f => f.Id).ToHashSet();
+        // Only reads are counted (registrations have Count 0). Counts for links permanently deleted
+        // since they were used have nothing to attach to.
+        var existingLinkIds = links.Select(l => l.Id).ToHashSet();
         var dailyCounts = entries
-            .Where(entry => existingFeatureIds.Contains(entry.Key.FeatureId))
-            .GroupBy(entry => (entry.Key.FeatureId, entry.Key.UsageDay))
-            .ToDictionary(group => group.Key, group => group.Sum(entry => entry.Value.Count));
+            .Where(entry => entry.Value.Count > 0 && existingLinkIds.Contains(entry.Key.ApplicationFeatureId))
+            .ToDictionary(entry => (entry.Key.ApplicationFeatureId, entry.Key.UsageDay), entry => entry.Value.Count);
 
+        var countedLinkIds = dailyCounts.Keys.Select(key => key.ApplicationFeatureId).Distinct().ToList();
         var days = dailyCounts.Keys.Select(key => key.UsageDay).Distinct().ToList();
-        var usageRows = _context.FeatureUsage
-            .Where(u => featureIds.Contains(u.FeatureId) && days.Contains(u.UsageDay))
+        var usageRows = _context.ApplicationFeatureUsage
+            .Where(u => countedLinkIds.Contains(u.ApplicationFeatureId) && days.Contains(u.UsageDay))
             .ToList();
 
-        foreach (var ((featureId, usageDay), count) in dailyCounts)
+        foreach (var ((linkId, usageDay), count) in dailyCounts)
         {
-            var row = usageRows.FirstOrDefault(u => u.FeatureId == featureId && u.UsageDay == usageDay);
+            var row = usageRows.FirstOrDefault(u => u.ApplicationFeatureId == linkId && u.UsageDay == usageDay);
             if (row is null)
             {
-                _context.FeatureUsage.Add(new FeatureUsageEntity
+                _context.ApplicationFeatureUsage.Add(new ApplicationFeatureUsageEntity
                 {
-                    FeatureId = featureId,
+                    ApplicationFeatureId = linkId,
                     UsageDay = usageDay,
                     UseCount = count,
                 });

@@ -14,7 +14,7 @@ public class FeaturesInMemoryDataContext : DbContext, IFeaturesDataContext
     public DbSet<FeatureEntity> Features { get; set; }
     public DbSet<ApplicationEntity> Applications { get; set; }
     public DbSet<ApplicationFeatureEntity> ApplicationFeatures { get; set; }
-    public DbSet<FeatureUsageEntity> FeatureUsage { get; set; }
+    public DbSet<ApplicationFeatureUsageEntity> ApplicationFeatureUsage { get; set; }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {

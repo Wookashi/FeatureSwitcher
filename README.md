@@ -91,7 +91,7 @@ If nodes start before setup is completed, they will log an authentication error 
 
 Registration on the Node is **append-only**: re-registering an application never deletes flags missing from the payload, so two services accidentally sharing an `applicationName` cannot wipe each other's data. The application decides which flags it registers; there are no manual link/unlink actions in the Manager.
 
-The Node tracks `LastUsedAt` per application-feature link and keeps a per-day usage counter per global flag. The Feature Matrix shows the link-level last-used time and the 7-day use count in each cell's tooltip.
+The Node tracks `LastUsedAt` per application-feature link (updated by state reads and registrations) and counts state reads per application and day; registrations are not counted as reads. The Feature Matrix shows the last-used time and the application's reads in the last 7 days in each cell's tooltip. Daily read counts older than `UsageRetention` (default **30 days**, `NodeConfiguration__UsageRetention`; `00:00:00` keeps them indefinitely, values below 7 days are raised to 7) are deleted by the daily sweep; `LastUsedAt` is not affected.
 
 Flag-state reads don't write to the database: usage is aggregated in memory and written in one transaction every `UsageFlushInterval` (default **60 seconds**, `NodeConfiguration__UsageFlushInterval`), before each soft-delete sweep, and on graceful shutdown. Usage shown in the Manager can therefore lag by up to that interval, and a hard kill of the node loses at most that much usage data; flag states are never affected. A read of a flag that is pending deletion still restores it immediately.
 

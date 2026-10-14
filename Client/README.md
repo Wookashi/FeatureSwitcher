@@ -191,7 +191,7 @@ application-feature links maintained by the Node.
 
 Registration is **append-only** on the Node. New application-feature links are inserted; features missing from the payload are NOT deleted at registration time, so two services that accidentally share an `applicationName` cannot wipe each other's flags.
 
-Every registration and every state read updates `LastUsedAt` on the application-feature link and today's usage counter for the global flag. The Node aggregates these updates in memory and writes them periodically (every minute by default), so usage shown in the Manager can lag slightly.
+Every registration and every state read updates `LastUsedAt` on the application-feature link; state reads are also counted per application and day (registrations are not). The Node aggregates these updates in memory and writes them periodically (every minute by default), so usage shown in the Manager can lag slightly.
 
 A background sweep on the Node periodically marks application-feature links whose `LastUsedAt` is older than the configured stale threshold (default 30 days) as `PendingDeletion`. Applications with no active links can also be marked as `PendingDeletion`. Flags in `PendingDeletion`:
 

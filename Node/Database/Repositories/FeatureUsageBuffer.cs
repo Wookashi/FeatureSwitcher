@@ -3,7 +3,8 @@ using System.Runtime.InteropServices;
 namespace Wookashi.FeatureSwitcher.Node.Database.Repositories;
 
 /// <summary>
-/// In-memory aggregation of feature usage (reads and registrations), shared by all requests.
+/// In-memory aggregation of feature usage, shared by all requests: LastUsedAt for reads and
+/// registrations, and the per-day read count (registrations are not counted as reads).
 /// Recording a use is a dictionary update instead of a database write, so the hot flag-state read
 /// path never has to wait for SQLite's single writer. <see cref="FeatureRepository.FlushFeatureUsage"/>
 /// periodically writes the aggregate in one transaction.
@@ -35,13 +36,20 @@ internal sealed class FeatureUsageBuffer
         }
     }
 
-    internal void Record(int applicationFeatureId, int applicationId, int featureId, DateTime usedAtUtc)
+    /// <param name="countAsRead">
+    /// <c>true</c> for a flag-state read, which is added to the daily read count; <c>false</c> for a
+    /// registration, which only keeps LastUsedAt current.
+    /// </param>
+    internal void Record(int applicationFeatureId, int applicationId, int featureId, DateTime usedAtUtc, bool countAsRead)
     {
         var key = new UsageKey(applicationFeatureId, applicationId, featureId, usedAtUtc.Date);
         lock (_entriesLock)
         {
             ref var entry = ref CollectionsMarshal.GetValueRefOrAddDefault(_entries, key, out _);
-            entry.Count++;
+            if (countAsRead)
+            {
+                entry.Count++;
+            }
             if (usedAtUtc > entry.LastUsedAt)
             {
                 entry.LastUsedAt = usedAtUtc;

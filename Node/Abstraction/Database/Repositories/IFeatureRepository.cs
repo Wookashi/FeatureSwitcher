@@ -11,7 +11,8 @@ public interface IFeatureRepository
 
     /// <summary>
     /// Same as <see cref="GetFeaturesForApplication"/> but each feature carries usage metadata
-    /// (LastUsedAt and the aggregated use count for the last 7 days). Used by the Manager UI.
+    /// (LastUsedAt and the number of state reads by this application in the last 7 days) and the
+    /// registered details. Used by the Manager UI.
     /// </summary>
     public List<FeatureWithUsageDto> GetFeaturesWithUsageForApplication(ApplicationDto application);
 
@@ -31,10 +32,11 @@ public interface IFeatureRepository
     public FeatureUpdateResultDto UpdateFeature(ApplicationDto application, FeatureDto featureDto);
 
     /// <summary>
-    /// Records a single use for the given (app, feature) pair on today's UTC date. If the link,
+    /// Records a single state read for the given (app, feature) pair on today's UTC date. If the link,
     /// feature or application is PendingDeletion, it is restored immediately. The use itself
-    /// (LastUsedAt and the daily count) is buffered in memory and written by
+    /// (LastUsedAt and the application's daily read count) is buffered in memory and written by
     /// <see cref="FlushFeatureUsage"/>, so recording a use does not write to the database.
+    /// Registrations update LastUsedAt but are not counted as reads.
     /// </summary>
     public void RecordFeatureUsage(ApplicationDto application, string featureName);
 
@@ -58,6 +60,12 @@ public interface IFeatureRepository
     /// (b) its LastUsedAt is older than the threshold. Returns the number transitioned.
     /// </summary>
     public int MarkStaleApplicationsPending(DateTime threshold);
+
+    /// <summary>
+    /// Deletes daily read counts for days before the UTC day of <paramref name="thresholdUtc"/>, in
+    /// batches. Returns the number of rows deleted.
+    /// </summary>
+    public int DeleteUsageOlderThan(DateTime thresholdUtc);
 
     // ---- Pending-delete queries ----
 
