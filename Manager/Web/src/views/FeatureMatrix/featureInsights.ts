@@ -112,7 +112,6 @@ export function sameStateEverywhere(row: FeatureMatrixRow, nodeNames: string[]):
 
 export interface CleanupHints {
   unreadOn: string[];
-  notReadYetOn: { node: string; text: string }[];
   sameState: boolean | null;
 }
 
@@ -121,18 +120,12 @@ export function cleanupHints(
   nodeNames: string[],
   warnAfterDays: number | null,
 ): CleanupHints {
-  const hints: CleanupHints = { unreadOn: [], notReadYetOn: [], sameState: null };
+  const hints: CleanupHints = { unreadOn: [], sameState: null };
   if (!row) return hints;
 
   for (const nodeName of nodeNames) {
     const cell = valueCell(row, nodeName);
-    if (!cell) continue;
-    const status = readStatus(cell, warnAfterDays);
-    if (status === 'unread') hints.unreadOn.push(nodeName);
-    // Only worth explaining while the warning is enabled: why a feature without reads isn't flagged.
-    if (status === 'not-read-yet' && warnAfterDays !== null) {
-      hints.notReadYetOn.push({ node: nodeName, text: describeReads(cell, warnAfterDays) ?? '' });
-    }
+    if (cell && readStatus(cell, warnAfterDays) === 'unread') hints.unreadOn.push(nodeName);
   }
 
   hints.sameState = sameStateEverywhere(row, nodeNames);

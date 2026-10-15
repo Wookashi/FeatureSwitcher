@@ -42,7 +42,7 @@ function CleanupHintsSection({
   nodeCount: number;
   warnAfterDays: number | null;
 }) {
-  if (hints.unreadOn.length === 0 && hints.notReadYetOn.length === 0 && hints.sameState === null) {
+  if (hints.unreadOn.length === 0 && hints.sameState === null) {
     return null;
   }
 
@@ -70,15 +70,6 @@ function CleanupHintsSection({
             }
           />
         )}
-        {hints.notReadYetOn.map((n) => (
-          <Alert
-            key={n.node}
-            type="success"
-            showIcon
-            title={`${n.node}: ${n.text}`}
-            description={`Features are reported as unread only once they have been registered for ${warnAfterDays} days without being read.`}
-          />
-        ))}
       </Flex>
     </section>
   );
@@ -345,6 +336,16 @@ export function FeatureDetailsDrawer({ target, nodes, rows, onClose, warnAfterDa
                 };
               })}
             />
+            {/* Explains why a node without reads isn't flagged; only relevant while the warning is enabled. */}
+            {warnAfterDays !== null &&
+              nodes.some((n) => {
+                const cell = row?.cells[n.name];
+                return cell?.kind === 'value' && readStatus(cell, warnAfterDays) === 'not-read-yet';
+              }) && (
+                <Text type="secondary" style={{ display: 'block', marginTop: 8, fontSize: 12 }}>
+                  Features are reported as unread only once they have been registered for {warnAfterDays} days without being read.
+                </Text>
+              )}
           </section>
 
           {otherApps.length > 0 && (
